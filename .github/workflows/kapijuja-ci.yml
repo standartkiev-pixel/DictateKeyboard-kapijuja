@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: kapijuja-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,6 +28,12 @@ jobs:
           ./tools/fetch-sherpa-onnx.sh
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kapijuja-voice-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
       - name: Run upstream unit tests
         continue-on-error: true
         run: ./gradlew :app:testDebugUnitTest --stacktrace
