@@ -68,7 +68,7 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "net.devemperor.dictate"
+        applicationId = "net.kapijuja.voice"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
         versionCode = projectVersionCode.toInt()
@@ -117,8 +117,8 @@ configure<ApplicationExtension> {
     // is absent (e.g. on CI without secrets, or a contributor's machine) the release build simply has
     // no signing config attached and falls back to an unsigned build, exactly as before.
     //
-    // IMPORTANT: For uploads to Google Play this must be the *upload key* the existing
-    // net.devemperor.dictate listing expects (the old Java app's key) — a fresh key gets rejected.
+    // Kapijuja Voice uses its own release signing identity. Keep the keystore outside Git and
+// reuse the same key for every release so Android updates install in place.
     val keystorePropsFile = rootProject.file("keystore.properties")
     val keystoreProps = if (keystorePropsFile.exists()) {
         Properties().apply { keystorePropsFile.inputStream().use { load(it) } }
@@ -227,9 +227,6 @@ dependencies {
     // testImplementation(composeBom)
     // androidTestImplementation(composeBom)
 
-    // Play Billing for the optional Dictate Cloud credit packs (#255 follow-up). Version 8 is
-    // not a choice: from 31.08.2026 Play refuses uploads built against anything older.
-    implementation(libs.android.billing.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.autofill)
