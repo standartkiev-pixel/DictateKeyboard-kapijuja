@@ -38,9 +38,6 @@ import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.florisDialogScroll
 import org.florisboard.lib.compose.stringRes
 
-/** PayPal donation link, kept in sync with the in-keyboard donate promo (see DictateController). */
-private const val DONATE_URL = "https://paypal.me/DevEmperor"
-
 /**
  * Temporary debug switch to preview the dialog. When true, the dialog is shown on every launch
  * regardless of the version bookkeeping (which never triggers on debug builds, since their version
@@ -55,8 +52,7 @@ private const val DEBUG_FORCE_SHOW = false
  * dismissal so it does not reappear on the next launch.
  *
  * The body lists the notes for every release newer than the version the user last saw (so skipping a
- * few updates still surfaces all changes since the installed version), plus a tappable donation
- * invite and a link to the full online changelog/releases page.
+ * few updates still surfaces all changes since the installed version), plus a link to the full online changelog/releases page.
  *
  * Note: for debug/CI builds the version name carries a suffix that [AppVersionUtils] cannot parse, so
  * the dialog only surfaces on proper release builds — matching the upstream behavior. Use
@@ -94,27 +90,6 @@ fun ChangelogDialog() {
         onDismiss = { markSeenAndClose() },
     ) {
         Column {
-            Text(text = stringRes(R.string.changelog__intro))
-            entries.forEach { entry ->
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = stringRes(R.string.changelog__version_header, "version" to entry.version),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = stringRes(entry.notes))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { context.launchUrl(DONATE_URL) }
-                    .padding(vertical = 4.dp),
-                text = stringRes(R.string.changelog__donate),
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium,
-            )
         }
     }
 }
