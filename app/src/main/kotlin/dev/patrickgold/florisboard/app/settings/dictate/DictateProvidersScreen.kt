@@ -99,7 +99,7 @@ import org.florisboard.lib.compose.stringRes
  *
  * Two of the four ways out of the provider step already have a screen here — a server of the user's own
  * and the full on-device model list — and rebuilding either inside the wizard would mean a second editor
- * to keep working. A flag rather than a route argument, for the same reason [DictateCloud.openedFromSetup]
+ * to keep working. A flag rather than a route argument, for the same reason the setup handoff
  * is one: the route is also a deep link, and a deep link carrying an onboarding flag would be a way to
  * reach a half-state from outside the app.
  */
@@ -206,28 +206,7 @@ fun DictateProvidersScreen() = FlorisScreen {
             // the rest keep their registry display order (sortedByDescending is stable).
             val orderedPresets = ProviderRegistry.presets
                 .sortedByDescending { it.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE }
-            val cloudAccount = accounts.getOrEmpty(ProviderRegistry.CLOUD.id)
-            val cloudNoCredit = stringRes(R.string.dictate__cloud_row_summary_none)
-            val cloudBalance = stringRes(
-                R.string.dictate__cloud_row_summary_balance,
-                "minutes" to (cloudAccount.balanceSeconds.coerceAtLeast(0) / 60).toString(),
-            )
-
             orderedPresets.forEach { preset ->
-                // Dictate Cloud has no API key to type in — it has a balance, packs and a recovery
-                // code — so its row opens its own screen instead of the credential editor.
-                if (preset.id == ProviderRegistry.CLOUD.id) {
-                    Preference(
-                        // The service's own mark, like every other provider in this list — a
-                        // generic cloud here is what the app uses for "an endpoint with no logo".
-                        icon = providerIcon(preset.id),
-                        modifier = Modifier.settingsSearchAnchor("dictate__cloud_title"),
-                        title = preset.displayName,
-                        summary = if (cloudAccount.hasWallet) cloudBalance else cloudNoCredit,
-                        onClick = { navController.navigate(Routes.Settings.DictateCloud) },
-                    )
-                    return@forEach
-                }
                 val account = accounts[preset.id]
                 Preference(
                     icon = providerIcon(preset.id),
