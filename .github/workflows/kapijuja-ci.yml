@@ -22,6 +22,14 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Audit removed Dictate Cloud wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nE 'api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_' --               ':!README.md' ':!PRIVACY_POLICY.md' ':!SECURITY.md' ':!NOTICE'; then
+            echo "Forbidden Dictate Cloud / Billing wiring is still present."
+            exit 1
+          fi
       - name: Fetch pinned native STT runtime
         run: |
           chmod +x tools/fetch-sherpa-onnx.sh
