@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="wear_app_name">Dictate</string>
+    <string name="wear_app_name">Kapijuja Voice</string>
     <string name="wear_ime_label">Dictate (Wear)</string>
 
     <!-- Pager tabs (content descriptions) -->
@@ -16,7 +16,7 @@
 
     <!-- Content descriptions -->
     <string name="wear_cd_stop">Stop</string>
-    <string name="wear_cd_dictate">Dictate</string>
+    <string name="wear_cd_dictate">Kapijuja Voice</string>
     <string name="wear_cd_cancel">Cancel</string>
     <string name="wear_cd_pause">Pause</string>
     <string name="wear_cd_resume">Resume</string>
