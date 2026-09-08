@@ -3169,7 +3169,7 @@ object DictateController {
     }
 
     /**
-     * Acts on the active promo and marks it done: RATE/DONATE open the Play Store / PayPal page,
+     * Acts on the active promo and marks it done: RATE/DONATE open the Kapijuja project page,
      * CHANGELOG opens the app (which then shows the "What's new" dialog), FLOATING_BUTTON deep-links to its
      * settings screen. No-op otherwise.
      */
@@ -3178,7 +3178,7 @@ object DictateController {
         runCatching {
             val intent = when (kind) {
                 PromoKind.RATE -> Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://play.google.com/store/apps/details?id=net.kapijuja.voice"))
+                    Uri.parse("https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja"))
                 PromoKind.DONATE -> Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja"))
                 PromoKind.CHANGELOG -> Intent(context, FlorisAppActivity::class.java)
                 PromoKind.FLOATING_BUTTON -> Intent(
