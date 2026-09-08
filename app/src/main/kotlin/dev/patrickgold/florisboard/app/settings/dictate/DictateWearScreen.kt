@@ -56,7 +56,7 @@ fun DictateWearScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__wear_install_title),
             summary = stringRes(R.string.dictate__wear_install_summary),
             onClick = {
-                context.launchUrl("https://play.google.com/store/apps/details?id=net.devemperor.dictate")
+                context.launchUrl("https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja/releases")
             },
         )
         SwitchPreference(
