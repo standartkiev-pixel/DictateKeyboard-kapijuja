@@ -42,6 +42,5 @@ jobs:
           name: kapijuja-voice-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-      - name: Run upstream unit tests
-        continue-on-error: true
+      - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
