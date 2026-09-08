@@ -3108,14 +3108,9 @@ object DictateController {
      * Called when the keyboard appears so it never interrupts an in-flight recording/transcription.
      */
     fun maybePromptForReview() {
-        if (_state.value !is UiState.Idle) return
-        val total = prefs.dictate.totalAudioSeconds.get()
-        val kind = when {
-            total > DONATE_THRESHOLD_SECONDS && !prefs.dictate.hasDonated.get() -> PromoKind.DONATE
-            total > RATE_THRESHOLD_SECONDS && total <= DONATE_THRESHOLD_SECONDS && !prefs.dictate.hasRated.get() -> PromoKind.RATE
-            else -> return
-        }
-        _state.value = UiState.Promo(kind)
+        // Kapijuja Voice has no store listing or donation endpoint yet.
+        // Keep this hook intentionally quiet rather than sending users to upstream monetization.
+        return
     }
 
     /**
