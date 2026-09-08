@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.ime.smartbar
 
 import java.text.BreakIterator
+import java.util.regex.Pattern
 
 /**
  * Counting what is selected (issue #335).
@@ -69,11 +70,12 @@ object SelectionMetrics {
      */
     fun charsOnly(length: Int): Counts = Counts(words = null, chars = length.coerceAtLeast(0))
 
+    private val graphemePattern: Pattern = Pattern.compile("\\X")
+
     private fun countGraphemes(text: String): Int {
-        val iterator = BreakIterator.getCharacterInstance()
-        iterator.setText(text)
+        val matcher = graphemePattern.matcher(text)
         var count = 0
-        while (iterator.next() != BreakIterator.DONE) count++
+        while (matcher.find()) count++
         return count
     }
 
