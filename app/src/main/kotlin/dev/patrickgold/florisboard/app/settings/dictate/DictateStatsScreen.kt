@@ -363,7 +363,7 @@ private fun EmptyState() {
 
 // --- helpers --------------------------------------------------------------------------------------
 
-private const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=net.devemperor.dictate"
+private const val PLAY_STORE_URL = "https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja"
 private val BAR_MAX_HEIGHT = 64.dp
 
 private fun shareStats(context: android.content.Context, text: String) {
