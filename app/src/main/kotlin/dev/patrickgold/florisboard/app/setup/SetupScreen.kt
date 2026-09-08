@@ -85,7 +85,6 @@ import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.dictate.cloud.DictateCloud
 import dev.patrickgold.florisboard.dictate.ui.DictateWaveform
 import dev.patrickgold.florisboard.app.settings.dictate.ProviderSetupHandoff
 import dev.patrickgold.florisboard.app.settings.dictate.providerIcon
@@ -445,10 +444,6 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             ProviderSetupStep(
                 onSaveKey = ::saveKey,
                 onSkip = onSkipProvider,
-                onOpenCloud = {
-                    DictateCloud.openedFromSetup = true
-                    navController.navigate(Routes.Settings.DictateCloud)
-                },
                 onActivateLocalModel = ::activateLocalModel,
                 onOpenAllModels = { openProviderEditor(ProviderRegistry.LOCAL.id) },
                 onOpenServerEditor = { openProviderEditor(ProviderSetupHandoff.ADD_CUSTOM) },
@@ -527,7 +522,6 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
 private fun FlorisStepLayoutScope.ProviderSetupStep(
     onSaveKey: (providerId: String, key: String) -> Unit,
     onSkip: () -> Unit,
-    onOpenCloud: () -> Unit,
     onActivateLocalModel: (modelId: String) -> Unit,
     onOpenAllModels: () -> Unit,
     onOpenServerEditor: () -> Unit,
@@ -545,16 +539,6 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     // headline ways are meant to be equal here.
     var branch by rememberSaveable { mutableStateOf(ProviderBranch.CHOICE) }
 
-    // Coming back from the credit screen via "use my own provider" lands here, and must land on the
-    // key flow rather than on the fork the user has already answered.
-    val ownKeyRequested by DictateCloud.ownKeyRequested.collectAsState()
-    LaunchedEffect(ownKeyRequested) {
-        if (ownKeyRequested) {
-            branch = ProviderBranch.OWN_KEY
-            DictateCloud.ownKeyRequested.value = false
-        }
-    }
-
     // Every side of the fork is long enough to scroll, and to the layout this is one step
     // throughout — so without this, answering the fork from halfway down the page lands the key
     // flow halfway down as well, past its own heading.
@@ -568,7 +552,6 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
     when (branch) {
         ProviderBranch.CHOICE -> {
             ProviderChoice(
-                onChooseCloud = onOpenCloud,
                 onChooseOwnKey = { branch = ProviderBranch.OWN_KEY },
                 onChooseOnDevice = { branch = ProviderBranch.ON_DEVICE },
                 onChooseServer = onOpenServerEditor,
@@ -747,9 +730,6 @@ private fun FlorisStepLayoutScope.ProviderSetupStep(
                 ) {
                     ProviderRegistry.presets
                         .filter { it.capabilities.transcription }
-                        // Dictate Cloud is the *other* branch of this step, not an entry in the list
-                        // of providers to bring a key for — it has no key page and nothing to paste.
-                        .filter { it.id != ProviderRegistry.CLOUD.id }
                         .forEach { preset ->
                             DropdownMenuItem(
                                 leadingIcon = {
@@ -822,7 +802,6 @@ private fun SetupWelcomeWave() {
  */
 @Composable
 private fun FlorisStepLayoutScope.ProviderChoice(
-    onChooseCloud: () -> Unit,
     onChooseOwnKey: () -> Unit,
     onChooseOnDevice: () -> Unit,
     onChooseServer: () -> Unit,
@@ -831,15 +810,6 @@ private fun FlorisStepLayoutScope.ProviderChoice(
     StepText(stringRes(R.string.setup__provider__choose_intro))
     Spacer(modifier = Modifier.height(16.dp))
 
-    ChoiceCard(
-        title = stringRes(R.string.setup__provider__choice_cloud_title),
-        body = stringRes(R.string.setup__provider__choice_cloud_body),
-        buttonLabel = stringRes(R.string.setup__provider__choice_cloud_btn),
-        onClick = onChooseCloud,
-        // One mark, because this is one service.
-        marks = listOf(ProviderRegistry.CLOUD.id),
-    )
-    Spacer(modifier = Modifier.height(12.dp))
     ChoiceCard(
         title = stringRes(R.string.setup__provider__choice_own_title),
         body = stringRes(R.string.setup__provider__choice_own_body),
