@@ -124,40 +124,6 @@ object ProviderRegistry {
         ),
     )
 
-    /**
-     * Dictate Cloud — credit bought inside the app instead of an API key of one's own.
-     *
-     * Technically the least remarkable entry in this list: the server speaks the same OpenAI formats
-     * as everything else, so [OpenAiCompatibleClient] reaches it unchanged and the wallet token
-     * simply sits where an API key would, in [ProviderAccount.apiKey]. What differs is who decides.
-     * The model is not the user's pick but the server's, because the price is calculated from it —
-     * so there is nothing for the picker to offer and [supportsDynamicModels] is false. The ids
-     * below travel with the request and are overwritten upstream; they exist so the request stays
-     * well-formed, not because they name anything real.
-     *
-     * Realtime stays off on purpose rather than by omission: streaming costs nearly four times a
-     * dictated minute, and the on-device engine already does it for nothing.
-     */
-    val CLOUD = ProviderPreset(
-        id = "cloud",
-        displayName = "Dictate Cloud",
-        baseUrl = "https://api.dictatekeyboard.com/v1/",
-        capabilities = CHAT_AND_STT,
-        supportsDynamicModels = false,
-        apiKeyUrl = null,
-        defaultChatModel = "dictate-cloud",
-        defaultTranscriptionModel = "dictate-cloud",
-        supportsRealtime = false,
-        // Not copied from an upstream provider's list — the server does not say which one it used. This
-        // is what its OWN duration probe reads (`cloud/src/audio.ts`), and that matters to the person
-        // paying: a container it cannot probe is billed from a generous size estimate instead of the
-        // real length. Converting into this set is therefore cheaper for the user, not just safer.
-        acceptedAudioContainers = setOf(
-            AudioContainer.WAV, AudioContainer.MP3, AudioContainer.M4A,
-            AudioContainer.OGG, AudioContainer.FLAC,
-        ),
-    )
-
     val GROQ = ProviderPreset(
         id = "groq",
         displayName = "Groq",
@@ -255,7 +221,7 @@ object ProviderRegistry {
         // Attribution headers recommended by OpenRouter: both are used for app ranking and some routes
         // reject requests without an HTTP-Referer. The value is a stable identifier, not a real URL.
         extraHeaders = mapOf(
-            "HTTP-Referer" to "https://github.com/DevEmperor/Dictate",
+            "HTTP-Referer" to "https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja",
             "X-Title" to "Dictate",
         ),
     )
@@ -566,7 +532,7 @@ object ProviderRegistry {
 
     /** All built-in presets in display order. The custom option is added by the UI on top of these. */
     val presets: List<ProviderPreset> = listOf(
-        CLOUD, OPENAI, GROQ, OPENROUTER, GEMINI, ANTHROPIC, TOGETHER, DEEPINFRA, MISTRAL, SONIOX,
+        OPENAI, GROQ, OPENROUTER, GEMINI, ANTHROPIC, TOGETHER, DEEPINFRA, MISTRAL, SONIOX,
         ELEVENLABS, DEEPGRAM, ASSEMBLYAI, XAI, DEEPSEEK, SILICONFLOW, OLLAMA, LOCAL,
     )
 
@@ -611,7 +577,7 @@ object ProviderRegistry {
      *    Do not translate a duration into bytes here: the encoding is not theirs to assume.
      */
     fun maxUploadBytes(providerId: String): Long = when (providerId) {
-        "openai", "cloud", "groq", "openrouter" -> 25L * 1024 * 1024
+        "openai", "groq", "openrouter" -> 25L * 1024 * 1024
         "gemini" -> 15L * 1024 * 1024
         "siliconflow" -> 50L * 1024 * 1024
         "elevenlabs" -> 3L * 1024 * 1024 * 1024
