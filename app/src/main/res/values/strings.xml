@@ -1879,7 +1879,6 @@
     <string name="dictate__providers_test" comment="Button that checks the provider's base URL and API key">Test connection</string>
     <string name="dictate__providers_test_success" comment="Shown after a successful connection test. {count} is the number of available models.">Connected · {count} models</string>
     <string name="dictate__providers_test_failed" comment="Generic fallback shown when a connection test fails without a specific message">Connection failed</string>
-    <!-- Dictate Cloud: prepaid credit bought in the app, as an alternative to bringing your own API key -->
 
     <string name="dictate__providers_network_group" comment="Group title for network-level provider settings (proxy)">Network</string>
     <!-- How long a request to the AI provider may take (issue #337). One number for the gap between
