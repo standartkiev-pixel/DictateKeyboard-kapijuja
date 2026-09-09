@@ -231,7 +231,7 @@ private fun RecordingContent(state: DictateController.UiState.Recording) {
                 modifier = Modifier.fillMaxHeight().aspectRatio(1f),
             ) {
                 SnyggIcon(
-                    imageVector = Icons.Default.Close,
+                    imageVector = Icons.Default.Mic,
                     contentDescription = stringRes(R.string.dictate__cancel_confirm_continue),
                 )
             }
@@ -261,7 +261,6 @@ private fun RecordingContent(state: DictateController.UiState.Recording) {
 
     // Cancel button (far left) – FIRST TAP ONLY asks for confirmation. In long-form the confirmed
     // action drops only the current (uncut) segment and keeps recording, preserving upstream #183.
-    // segment and keeps recording, so you can scrap the last utterance without losing the transcript (#183).
     // While holding it is the discard target: it reddens as the finger approaches, and reaching it drops
     // the recording immediately (see DictateController.onPushToTalkSlide) rather than on release.
     SnyggIconButton(
