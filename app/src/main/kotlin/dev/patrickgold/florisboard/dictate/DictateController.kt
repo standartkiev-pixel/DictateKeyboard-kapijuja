@@ -2435,7 +2435,8 @@ object DictateController {
         segmentAudioFiles.clear() // files themselves are deleted by finalize/cancel, not here
         segmentInFlightCount = 0
         segmentStopped = false
-        segmentCancellationPending = false
+        // Do not clear segmentCancellationPending here. A cancelled native decode may return late; keeping
+        // the flag armed makes onSegmentResult ignore it. initSegmented() clears it for the next session.
         segmentVad?.release()
         segmentVad = null
         _segmentsInFlight.value = 0
@@ -2468,7 +2469,7 @@ object DictateController {
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
                 i to w
             } ?: return@launch
-            val (idx, wav) = assigned ?: return@launch
+            val (idx, wav) = assigned
             if (wav != null && wav.exists() && wav.length() > 0L) {
                 launchSegmentTranscription(appContext, idx, wav)
             } else {
@@ -2530,7 +2531,7 @@ object DictateController {
                 _segmentsInFlight.value = segmentInFlightCount
                 i to w
             }
-            val (idx, wav) = assigned
+            val (idx, wav) = assigned ?: return@launch
             if (!discardFinal && wav != null && wav.exists() && wav.length() > 0L) {
                 launchSegmentTranscription(appContext, idx, wav)
             } else {
@@ -2654,10 +2655,10 @@ object DictateController {
         val job = scope.launch {
             // Best-effort cross-segment continuity: bias the recognizer with what's committed so far.
             val continuity = realtimeShown.toString()
-            // One retry before giving up; a still-failed segment leaves a gap (no placeholder), but its
-            // audio is preserved in the merged history WAV so nothing is truly lost.
+            // Retry policy lives inside the provider client (initial attempt + at most one retry; OpenRouter
+            // zero). Do not wrap another retry here: that used to multiply billable uploads per segment.
+            // A still-failed segment leaves a gap, but its WAV remains available for session recovery.
             val text = transcribeSegmentRaw(appContext, wav, continuity)
-                ?: transcribeSegmentRaw(appContext, wav, continuity)
             // The session owns every segment WAV until final success/cancel. Keeping it in cache here is
             // what makes a later Stop recoverable even when permanent History audio retention is off.
             onSegmentResult(appContext, idx, text ?: "")
