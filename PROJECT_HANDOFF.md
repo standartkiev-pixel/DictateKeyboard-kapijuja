@@ -345,6 +345,15 @@ Implemented on `main`:
   batch path.
 - Network tests cover heartbeat emission and the one-retry ceiling.
 
+Additional race-safety hardening completed in the same phase:
+
+- Every RecordingController session/segment now writes to a unique cache WAV; the old fixed
+  `dictate_audio.wav` pathname is gone.
+- History replay, imported-audio handoff, trimmed/speed-up/packed request copies and long-form merged
+  files are request-scoped/unique as well.
+- Batch transcription owns a generation token. A cancelled native/local job returning late may clean up
+  only its own files/state and cannot cancel a newer request's watchdog or clear its rescue pointer.
+
 Next validation is device-level fault injection: disconnect Wi-Fi/mobile data while each provider path is
 in flight, verify the terminal resend state, then verify the archived recording can be replayed through a
 different recognizer.
