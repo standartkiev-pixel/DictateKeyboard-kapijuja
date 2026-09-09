@@ -245,9 +245,22 @@ class OpenAiCompatibleClient(
      * travels. Where nobody is listening it is the plain body it always was.
      */
     private fun TranscriptionRequest.audioBody(): RequestBody =
-        audioFile.asRequestBody(guessAudioMediaType(audioFile)).withUploadProgress(onUpload)
+        audioFile.asRequestBody(guessAudioMediaType(audioFile)).withUploadProgress(uploadProgressCallback())
 
-    /** [this] reporting its progress to [onUpload], or [this] untouched when there is nobody to tell. */
+    /**
+     * One callback fan-out for upload bytes. The import screen consumes byte counts; the keyboard only
+     * needs the fact that bytes are still moving for its no-progress watchdog. Keeping both on the same
+     * wrapper means every wire format reports liveness consistently.
+     */
+    private fun TranscriptionRequest.uploadProgressCallback(): ((sent: Long, total: Long) -> Unit)? {
+        if (onUpload == null && onProgress == null) return null
+        return { sent, total ->
+            onProgress?.invoke()
+            onUpload?.invoke(sent, total)
+        }
+    }
+
+    /** [this] reporting its progress to the supplied callback, or untouched when nobody is listening. */
     private fun RequestBody.withUploadProgress(
         onUpload: ((sent: Long, total: Long) -> Unit)?,
     ): RequestBody = if (onUpload == null) this else ProgressRequestBody(this, onUpload)
@@ -365,7 +378,7 @@ class OpenAiCompatibleClient(
         return Request.Builder()
             .url(config.normalizedBaseUrl + "audio/transcriptions")
             .headers(authHeaders())
-            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.onUpload))
+            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .tag(HttpCallDiagnostics::class.java, HttpCallDiagnostics(fallbackLabel))
             .build()
     }
@@ -427,7 +440,7 @@ class OpenAiCompatibleClient(
         val httpRequest = Request.Builder()
             .url(config.normalizedBaseUrl + "chat/completions")
             .headers(authHeaders())
-            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.onUpload))
+            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
         val body = executeForBody(httpRequest, onRetry = onRetry)
         val response = decode(ChatCompletionResponseDto.serializer(), body)
@@ -492,6 +505,7 @@ class OpenAiCompatibleClient(
                 SonioxTranscriptionDto.serializer(),
                 executeForBody(createRequest, onRetry = onRetry),
             ).id
+            request.onProgress?.invoke()
             transcriptionId = id
 
             // 3. Poll until the job completes or fails (or we exceed the overall budget).
@@ -507,6 +521,7 @@ class OpenAiCompatibleClient(
                     SonioxTranscriptionDto.serializer(),
                     executeForBody(statusRequest, maxRetries = 2, onRetry = onRetry),
                 )
+                request.onProgress?.invoke()
                 when (status.status) {
                     "completed" -> break
                     "error", "failed" -> {
@@ -543,6 +558,7 @@ class OpenAiCompatibleClient(
                 SonioxTranscriptDto.serializer(),
                 executeForBody(transcriptRequest, onRetry = onRetry),
             )
+            request.onProgress?.invoke()
             return TranscriptionResult(transcript.text.trim())
         } finally {
             // Best-effort cleanup so we don't pile up against Soniox's stored-object limits.
@@ -654,6 +670,7 @@ class OpenAiCompatibleClient(
             AssemblyTranscriptDto.serializer(),
             executeForBody(createRequest, onRetry = onRetry),
         ).id
+        request.onProgress?.invoke()
 
         // 3. Poll until completed / error, bounded by the overall budget.
         val statusUrl = base + "v2/transcript/" + id
@@ -668,6 +685,7 @@ class OpenAiCompatibleClient(
                 AssemblyTranscriptDto.serializer(),
                 executeForBody(pollRequest, maxRetries = 2, onRetry = onRetry),
             )
+            request.onProgress?.invoke()
             when (dto.status) {
                 "completed" -> return TranscriptionResult(dto.text.orEmpty().trim())
                 "error" -> throw DictateApiException.fromHttp(
@@ -730,7 +748,7 @@ class OpenAiCompatibleClient(
         val httpRequest = Request.Builder()
             .url(geminiNativeBaseUrl() + "models/" + model + ":generateContent")
             .headers(geminiNativeHeaders())
-            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.onUpload))
+            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
         val body = executeForBody(httpRequest, onRetry = onRetry)
         val response = decode(GeminiGenerateResponseDto.serializer(), body)
@@ -785,7 +803,7 @@ class OpenAiCompatibleClient(
         val httpRequest = Request.Builder()
             .url(geminiNativeBaseUrl() + "interactions")
             .headers(geminiNativeHeaders())
-            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.onUpload))
+            .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
         val body = executeForBody(httpRequest, onRetry = onRetry)
         return TranscriptionResult(transcriptOf(decode(GeminiInteractionResponseDto.serializer(), body)).trim())
