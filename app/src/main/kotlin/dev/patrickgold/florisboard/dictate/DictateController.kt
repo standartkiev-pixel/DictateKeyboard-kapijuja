@@ -2435,8 +2435,9 @@ object DictateController {
         segmentAudioFiles.clear() // files themselves are deleted by finalize/cancel, not here
         segmentInFlightCount = 0
         segmentStopped = false
-        // Do not clear segmentCancellationPending here. A cancelled native decode may return late; keeping
-        // the flag armed makes onSegmentResult ignore it. initSegmented() clears it for the next session.
+        // Cancellation keeps segmentCancellationPending armed across this reset while its rescue WAV is
+        // assembled; cancelSegmentedTranscription clears it only after every cancelled source file has
+        // been consumed. Normal successful sessions entered with the flag false and keep it false.
         segmentVad?.release()
         segmentVad = null
         _segmentsInFlight.value = 0
@@ -2614,6 +2615,11 @@ object DictateController {
                 null
             }
             withContext(Dispatchers.IO) { files.forEach { runCatching { it.delete() } } }
+
+            // All cancelled segment jobs are now stopped and their source files have been consumed. Clear
+            // the guard before exposing the resend UI, otherwise a later ordinary resend could be mistaken
+            // for the old long-form session by cancelTranscription().
+            segmentCancellationPending = false
 
             if (rescue != null) {
                 val previous = retained
