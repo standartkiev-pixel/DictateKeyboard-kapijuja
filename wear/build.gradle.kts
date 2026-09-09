@@ -57,7 +57,7 @@ configure<ApplicationExtension> {
         // Same applicationId as the phone app so Play delivers this as the "Wear OS" APK of the
         // same listing. Play still requires a unique versionCode per APK across the form factors;
         // we keep the Wear codes in a separate high band (see versionCode below).
-        applicationId = "net.kapijuja.voice"
+        applicationId = "net.kapijuja.dictate"
         minSdk = wearMinSdk
         targetSdk = projectTargetSdk.toInt()
         // Offset the Wear versionCode into its own band so it never collides with the phone APK
