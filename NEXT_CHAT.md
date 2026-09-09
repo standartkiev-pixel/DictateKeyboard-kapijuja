@@ -2,9 +2,10 @@
 
 This file is a continuing handoff for development.
 
-**First read `FULL_PROJECT_HANDOFF_2026-09-09.txt` and `DEVELOPER_GUIDE.md`.** They consolidate the
-latest verified recovery/watchdog architecture and correct several stale statements in older sections
-of this file. Then use the newest sections below for chronological detail.
+**First read `DEVELOPER_HANDOFF.md`.** It is the current authoritative handoff.
+Then read `FULL_PROJECT_HANDOFF_2026-09-09.txt`, `DEVELOPER_GUIDE.md`, and this file for detailed
+history. These documents consolidate the verified recovery/watchdog architecture and correct stale
+mid-refactor statements in older notes.
 
 The purpose is to avoid rediscovering work already done.
 
