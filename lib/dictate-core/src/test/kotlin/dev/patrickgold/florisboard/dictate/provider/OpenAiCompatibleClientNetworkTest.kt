@@ -285,6 +285,64 @@ class OpenAiCompatibleClientNetworkTest : FunSpec({
         }
     }
 
+    test("generic transcription upload reports a liveness heartbeat") {
+        val audio = createTempFile(suffix = ".wav").toFile().apply {
+            writeBytes("RIFF-heartbeat-test".encodeToByteArray())
+        }
+        try {
+            MockWebServer().use { server ->
+                server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"alive"}"""))
+                val client = OpenAiCompatibleClient(
+                    ProviderConfig(baseUrl = server.url("/").toString(), apiKey = "test"),
+                )
+                var heartbeats = 0
+
+                val result = client.transcribe(
+                    TranscriptionRequest(
+                        audioFile = audio,
+                        model = "gpt-4o-mini-transcribe",
+                        onProgress = { heartbeats++ },
+                    ),
+                )
+
+                result.text shouldBe "alive"
+                (heartbeats > 0) shouldBe true
+                server.requestCount shouldBe 1
+            }
+        } finally {
+            audio.delete()
+        }
+    }
+
+    test("generic transcription performs at most one application-level retry") {
+        val audio = createTempFile(suffix = ".wav").toFile().apply { writeBytes(ByteArray(32)) }
+        try {
+            MockWebServer().use { server ->
+                // If a third request appears, the old three-retry policy has returned.
+                repeat(2) {
+                    server.enqueue(
+                        MockResponse().setResponseCode(503).setBody("""{"error":{"message":"busy"}}"""),
+                    )
+                }
+                server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"too late"}"""))
+
+                val client = OpenAiCompatibleClient(
+                    ProviderConfig(baseUrl = server.url("/").toString(), apiKey = "test"),
+                )
+
+                val error = shouldThrow<DictateApiException> {
+                    client.transcribe(TranscriptionRequest(audio, "gpt-4o-mini-transcribe"))
+                }
+
+                error.kind shouldBe DictateApiException.Kind.SERVER_ERROR
+                OpenAiCompatibleClient.TRANSCRIPTION_NETWORK_MAX_RETRIES shouldBe 1
+                server.requestCount shouldBe 2
+            }
+        } finally {
+            audio.delete()
+        }
+    }
+
     test("OpenRouter transcription policy never replays a billable POST") {
         val audio = createTempFile(suffix = ".wav").toFile().apply { writeBytes(ByteArray(32)) }
         try {
