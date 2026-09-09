@@ -271,7 +271,7 @@ class OpenAiCompatibleClient(
         onRetry: (attempt: Int) -> Unit,
     ): TranscriptionResult {
         val httpRequest = buildMultipartTranscriptionRequest(request)
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         val response = decode(TranscriptionResponseDto.serializer(), body)
         return TranscriptionResult(response.text.trim())
     }
@@ -442,7 +442,7 @@ class OpenAiCompatibleClient(
             .headers(authHeaders())
             .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         val response = decode(ChatCompletionResponseDto.serializer(), body)
         val text = response.choices.firstOrNull()?.message?.content.orEmpty()
         if (text.isBlank() && response.choices.isEmpty()) {
@@ -482,7 +482,7 @@ class OpenAiCompatibleClient(
             .build()
         val fileId = decode(
             SonioxFileDto.serializer(),
-            executeForBody(uploadRequest, onRetry = onRetry),
+            executeForBody(uploadRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry),
         ).id
 
         var transcriptionId: String? = null
@@ -503,7 +503,7 @@ class OpenAiCompatibleClient(
                 .build()
             val id = decode(
                 SonioxTranscriptionDto.serializer(),
-                executeForBody(createRequest, onRetry = onRetry),
+                executeForBody(createRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry),
             ).id
             request.onProgress?.invoke()
             transcriptionId = id
@@ -556,7 +556,7 @@ class OpenAiCompatibleClient(
                 .build()
             val transcript = decode(
                 SonioxTranscriptDto.serializer(),
-                executeForBody(transcriptRequest, onRetry = onRetry),
+                executeForBody(transcriptRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry),
             )
             request.onProgress?.invoke()
             return TranscriptionResult(transcript.text.trim())
@@ -600,7 +600,7 @@ class OpenAiCompatibleClient(
             .header("xi-api-key", config.apiKey)
             .post(multipart)
             .build()
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         val response = decode(TranscriptionResponseDto.serializer(), body)
         return TranscriptionResult(response.text.trim())
     }
@@ -625,7 +625,7 @@ class OpenAiCompatibleClient(
             .header("Authorization", "Token ${config.apiKey}")
             .post(audioBody)
             .build()
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         val response = decode(DeepgramResponseDto.serializer(), body)
         val text = response.results?.channels?.firstOrNull()?.alternatives?.firstOrNull()?.transcript.orEmpty()
         return TranscriptionResult(text.trim())
@@ -650,7 +650,7 @@ class OpenAiCompatibleClient(
             .build()
         val uploadUrl = decode(
             AssemblyUploadDto.serializer(),
-            executeForBody(uploadRequest, onRetry = onRetry),
+            executeForBody(uploadRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry),
         ).uploadUrl
 
         // 2. Create the transcription job.
@@ -668,7 +668,7 @@ class OpenAiCompatibleClient(
             .build()
         val id = decode(
             AssemblyTranscriptDto.serializer(),
-            executeForBody(createRequest, onRetry = onRetry),
+            executeForBody(createRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry),
         ).id
         request.onProgress?.invoke()
 
@@ -750,7 +750,7 @@ class OpenAiCompatibleClient(
             .headers(geminiNativeHeaders())
             .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         val response = decode(GeminiGenerateResponseDto.serializer(), body)
         val text = response.candidates.firstOrNull()?.content?.parts.orEmpty()
             .mapNotNull { it.text }
@@ -805,7 +805,7 @@ class OpenAiCompatibleClient(
             .headers(geminiNativeHeaders())
             .post(payload.toRequestBody(JSON_MEDIA_TYPE).withUploadProgress(request.uploadProgressCallback()))
             .build()
-        val body = executeForBody(httpRequest, onRetry = onRetry)
+        val body = executeForBody(httpRequest, maxRetries = TRANSCRIPTION_NETWORK_MAX_RETRIES, onRetry = onRetry)
         return TranscriptionResult(transcriptOf(decode(GeminiInteractionResponseDto.serializer(), body)).trim())
     }
 
@@ -1552,6 +1552,19 @@ class OpenAiCompatibleClient(
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private const val RETRY_DELAY_MS = 3000L
+
+        /**
+         * Application-level retries for transcription calls: initial attempt + at most one retry.
+         *
+         * Speech uploads / job-creation POSTs can be billable and are effectively non-idempotent. After
+         * a timeout we cannot know whether the provider already received/charged the first attempt, so
+         * replaying it three more times is worse than surfacing recovery. OkHttp still handles failures
+         * it can prove safe at the transport layer; one app-level retry covers a quick transient break.
+         * Async status GETs keep their explicit retry budget because polling itself creates no new job.
+         */
+        internal const val TRANSCRIPTION_NETWORK_MAX_RETRIES = 1
+
+        /** OpenRouter is stricter: ambiguous retry of its billable STT POST is never automatic. */
         internal const val OPENROUTER_TRANSCRIPTION_MAX_RETRIES = 0
         private const val OPENROUTER_TRANSCRIPTION_TEMPERATURE = 0.0
         internal const val NETWORK_CONNECT_TIMEOUT_SECONDS = 8L
