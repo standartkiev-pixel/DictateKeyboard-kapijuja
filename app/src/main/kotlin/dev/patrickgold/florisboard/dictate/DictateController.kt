@@ -544,7 +544,7 @@ object DictateController {
      * Private cache copy made when the user presses Stop during Transcribing. The active request owns
      * and deletes its original file in finally, so the copy deliberately has a different name/lifetime.
      */
-    private const val CANCELLED_AUDIO_NAME = "dictate_cancelled.wav"
+    private const val CANCELLED_AUDIO_STEM = "dictate_cancelled"
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
@@ -1127,13 +1127,27 @@ object DictateController {
         if (keepForResend) {
             val source = inFlightAudio?.takeIf { it.exists() && it.length() > 0L }
             if (source != null) {
-                // A previous transient/error resend is superseded by this explicit Stop. Delete it first
-                // so copying over the fixed cache name cannot accidentally delete the brand-new copy.
-                discardRetainedAudio()
-                val copy = File(context.applicationContext.cacheDir, CANCELLED_AUDIO_NAME)
+                // Copy FIRST. During a resend, [retained.file] can be the very same file currently being
+                // uploaded; deleting the old retained object before copying would delete our source.
+                // Keep the actual container extension too: imported MP3/Ogg audio must never be renamed
+                // to .wav merely because it passed through the Stop path (#322 applies here as well).
+                val extension = source.extension.ifEmpty { "wav" }
+                val copy = File(context.applicationContext.cacheDir, "$CANCELLED_AUDIO_STEM.$extension")
+                val previous = retained
                 resendReady = runCatching {
                     source.copyTo(copy, overwrite = true)
                     if (copy.length() <= 0L) error("empty cancelled-audio copy")
+
+                    // Now the rescue copy is safe. Dispose an older, unrelated retained file; when the
+                    // previous retained file IS the active source, leave deletion to the cancelled
+                    // transcription's normal finally block.
+                    previous?.file
+                        ?.takeIf { it != source && it.exists() }
+                        ?.let { runCatching { it.delete() } }
+                    if (previous?.reason == RetainReason.INTERRUPTED) {
+                        scope.launch { clearInterruptedAudioPref() }
+                    }
+
                     retained = RetainedAudio(
                         file = copy,
                         reason = RetainReason.CANCELLED,
@@ -1304,7 +1318,7 @@ object DictateController {
      * button, held, doing the opposite: keeping the dictation and finishing it here.
      */
     fun canCancelToLocalModel(): Boolean =
-        _state.value is UiState.Transcribing && inFlightAudio != null
+        (_state.value as? UiState.Transcribing)?.onDevice == false && inFlightAudio != null
 
     /** Whether holding the Dictate button right now would run the on-device model (#228 or #270). */
     fun canLongPressLocal(): Boolean = canLongPressSendLocal() || canCancelToLocalModel()
@@ -1522,7 +1536,10 @@ object DictateController {
         _state.value = UiState.Transcribing(onDevice = localEngine)
         // What a held button can still rescue (#270): the recording this request is carrying, for as long
         // as it is in flight. Cleared in the finally below, so the offer disappears with the request.
-        inFlightAudio = if (localEngine) null else audioFile
+        // Keep a reference for explicit Stop even for the on-device engine. The "escape cloud to local"
+        // shortcut separately checks state.onDevice, so exposing the file here does not offer nonsense
+        // "switch to local" while local transcription is already running.
+        inFlightAudio = audioFile
         inFlightSeconds = recordedSeconds
         // Live prompt is consumed by this transcription only (the next recording is normal again).
         val live = livePromptArmed
