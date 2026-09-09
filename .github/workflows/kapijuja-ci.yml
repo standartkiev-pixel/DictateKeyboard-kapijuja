@@ -1,4 +1,4 @@
-name: Kapijuja Android CI
+name: Dictate Kapijuja Android CI
 
 on:
   push:
@@ -48,7 +48,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: kapijuja-voice-debug
+          name: dictate-kapijuja-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 

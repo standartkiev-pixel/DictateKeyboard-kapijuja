@@ -55,7 +55,7 @@ Passed:
 
 Debug artifact:
 
-- name: `kapijuja-voice-debug`
+- name: `dictate-kapijuja-debug`
 - artifact id: `10098628219`
 - approx. zip size: 73 MB
 - digest: `sha256:909b716cdccc34199617b48ff3704a8e514a6a542543de15d3705084e9d0aa0d`
@@ -637,7 +637,7 @@ Status:
 
 Debug artifact:
 
-`kapijuja-voice-debug`
+`dictate-kapijuja-debug`
 
 Artifact id:
 

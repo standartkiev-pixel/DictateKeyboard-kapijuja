@@ -18,7 +18,7 @@ Verified recovery/watchdog source baseline:
 - commit: `ba315c1b3ed7eb26a8b8f835287e51de91bb7eb1`
 - GitHub Actions run: `34337994539`
 - result: **success**
-- debug artifact: `kapijuja-voice-debug`
+- debug artifact: `dictate-kapijuja-debug`
 - Cloud/Billing audit, sherpa runtime fetch, debug APK build, artifact upload and unit tests all passed.
 
 Documentation commits after that checkpoint do not change the verified recovery source architecture.
