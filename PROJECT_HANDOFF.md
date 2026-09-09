@@ -2,6 +2,33 @@
 
 Date: 2026-09-09
 
+## 0. Current status correction — 2026-09-09
+
+The older sections below describe Cloud removal as unfinished because this file was originally written
+mid-cleanup. That is no longer the repository state.
+
+Verified on current `main`:
+
+- Dictate Cloud client/server/Billing wiring is removed from executable/source code.
+- The CI Cloud/Billing regression guard is fixed and passed.
+- `tools/fetch-sherpa-onnx.sh`, debug APK build and unit tests passed on the clean baseline.
+- The remaining generic `AudioReactiveCloudOrbView` is only a microphone visualization and must not be
+  removed as "Dictate Cloud".
+- Kapijuja now begins the recovery/audio-history phase:
+  - source-audio history retention defaults ON for new installs;
+  - default limits remain 50 entries / 30 days / 200 MB;
+  - History is promoted beside Clipboard in the default Smartbar actions;
+  - an explicit Stop control is being added to `Transcribing…`;
+  - Stop preserves a private audio copy and offers Send again instead of destroying the recording.
+
+Immediate next work after this checkpoint compiles cleanly:
+
+1. verify the Stop/resend/history changes in CI;
+2. add a provider chooser directly to a retained history recording, so the same audio can be sent to a
+   different recognizer without globally changing provider first;
+3. then implement the state-level no-progress watchdog so a genuinely stuck provider automatically
+   lands in the same recoverable resend state.
+
 ## 1. Project and origin
 
 Repository:
