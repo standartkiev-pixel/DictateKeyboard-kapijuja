@@ -408,6 +408,11 @@ object DictateController {
      */
     private var transcriptionWatchdogJob: Job? = null
     private var transcriptionWatchdogGeneration = 0L
+    /**
+     * Ownership token for batch requests. A cancelled native local decode can return much later; its old
+     * finally block must never clear the in-flight audio/watchdog belonging to a newer dictation.
+     */
+    private var transcriptionRequestGeneration = 0L
     @Volatile private var lastTranscriptionProgressAtMs = 0L
 
     // The in-flight manual rewording coroutine (a prompt chip / "Send"), so the stop button can abort it
@@ -1678,6 +1683,7 @@ object DictateController {
 
         ensureHapticObserver(appContext)
         val localEngine = preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE
+        val requestGeneration = ++transcriptionRequestGeneration
         _state.value = UiState.Transcribing(onDevice = localEngine)
         // What a held button can still rescue (#270): the recording this request is carrying, for as long
         // as it is in flight. Cleared in the finally below, so the offer disappears with the request.
@@ -1983,11 +1989,16 @@ object DictateController {
                     detail = t.message?.takeIf { it.isNotBlank() },
                 )
             } finally {
-                stopTranscriptionWatchdog()
-                // The request is over, however it ended: there is nothing left for a held button to rescue.
-                inFlightAudio = null
-                inFlightWasLive = false
-                inFlightHistoryMeta = null
+                // Only the request that still owns the active generation may clear shared in-flight state.
+                // A cancelled sherpa-onnx native call can return after the user has already sent a newer
+                // dictation; unguarded cleanup here used to be able to erase that newer request's rescue
+                // pointer or cancel its watchdog.
+                if (transcriptionRequestGeneration == requestGeneration) {
+                    stopTranscriptionWatchdog()
+                    inFlightAudio = null
+                    inFlightWasLive = false
+                    inFlightHistoryMeta = null
+                }
                 if (!keepAudio) audioFile.delete()
                 // Drop the derived upload copies — trimmed (#232) and/or sped up (#272); the original
                 // audioFile is the one history keeps.
