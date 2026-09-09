@@ -172,14 +172,21 @@ Kapijuja Voice treats captured speech as recoverable user data rather than dispo
 - The History panel is placed beside Clipboard in the default Smartbar actions.
 - A retained history recording can be transcribed again; the replay uses the currently selected
   transcription provider, which already makes cross-provider "second opinion" recognition possible.
+- During recording, the Smartbar trash/cancel button is non-destructive on the first tap. It opens an
+  in-keyboard confirmation for five seconds while microphone capture continues; only the explicit second
+  Delete action discards the recording. The legacy layout also requires a second confirmation tap.
+- RecordingController streams PCM continuously into `cache/dictate_audio.wav` while the user speaks, so
+  the already-captured portion is physically on disk during that confirmation rather than living only in RAM.
 - During `Transcribing…`, Kapijuja shows an explicit Stop control. Stopping cancels the in-flight
   provider request but keeps a private resend copy instead of deleting the recording.
 - After Stop, the Smartbar offers Send again and explicit discard. The user decides when the captured
   audio is no longer needed.
-
-The next recovery milestone is a provider chooser directly on a saved recording, so the same clip can
-be sent to OpenAI, Groq, Gemini, a custom endpoint or an on-device model without first leaving History
-to change the global provider.
+- The in-keyboard History panel now has a recognizer chooser for retained audio. A single saved recording
+  can be replayed through OpenAI, Groq, Gemini, Deepgram, other configured built-ins, a custom endpoint
+  or the installed on-device model.
+- A History replay uses a one-shot provider override: it does **not** change the user's global/default
+  transcription provider. After a successful replay, the entry's provider/model metadata is updated to
+  describe the recognizer that actually produced the new text.
 
 ## Unicode fix made during the fork
 
@@ -198,11 +205,13 @@ The next development work should proceed roughly in this order:
 1. produce the first **release** APK signed with the permanent Kapijuja Voice key;
 2. verify side-by-side installation with official Dictate;
 3. test basic typing, microphone dictation, OpenAI/Groq/Gemini/custom provider paths and local STT;
-4. add a provider chooser directly to saved History audio for one-tap cross-provider re-transcription;
+4. device-test safe recording cancellation, manual Stop/resend and the new per-recording recognizer chooser;
 5. fix the remaining case where transcription can stay indefinitely in the `Transcribing…` state after
    a network/provider failure (manual Stop already preserves the recording);
 6. add a state-level no-progress watchdog that automatically reaches the same recoverable resend state;
-7. reduce or change automatic retries for billable/non-idempotent transcription POSTs;
-8. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
+7. consider a future "recognition variants" model if side-by-side comparison of several AI transcripts
+   for the same retained audio is desired, without duplicating the audio file;
+8. reduce or change automatic retries for billable/non-idempotent transcription POSTs;
+9. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
 
 See **[NEXT_CHAT.md](NEXT_CHAT.md)** before modifying the project.
