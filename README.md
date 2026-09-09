@@ -8,7 +8,9 @@ The goal of this fork is to keep the excellent full keyboard and voice/AI archit
 the application independent from the upstream Dictate Cloud payment service and giving the fork its
 own Android identity, release-signing configuration and release line.
 
-For the complete development handoff, read **[FULL_PROJECT_HANDOFF_2026-09-09.txt](FULL_PROJECT_HANDOFF_2026-09-09.txt)**.
+For the current authoritative development handoff, read **[DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md)** first.
+Plain-text copies are available as **[FULL_PROJECT_HANDOFF_2026-09-09.txt](FULL_PROJECT_HANDOFF_2026-09-09.txt)** and
+**[KAPIJUJA_VOICE_PROJECT_HANDOFF_2026-09-09.txt](KAPIJUJA_VOICE_PROJECT_HANDOFF_2026-09-09.txt)**.
 Developers should also read **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** and **[NEXT_CHAT.md](NEXT_CHAT.md)** before changing recovery/network code.
 
 ## Current status
