@@ -111,6 +111,13 @@ data class TranscriptionRequest(
      * model thinking, not the upload — so the wrapping in [ProgressRequestBody] never happens there.
      */
     val onUpload: ((sent: Long, total: Long) -> Unit)? = null,
+    /**
+     * Lightweight liveness heartbeat for the caller. Unlike [onUpload], this carries no UI data: it is
+     * invoked whenever the provider pipeline makes meaningful forward progress (upload bytes, an async
+     * status poll that received a response, or an on-device decode step). Kapijuja's controller uses it
+     * to distinguish a slow-but-alive transcription from one that has genuinely stopped progressing.
+     */
+    val onProgress: (() -> Unit)? = null,
 )
 
 data class TranscriptionResult(
