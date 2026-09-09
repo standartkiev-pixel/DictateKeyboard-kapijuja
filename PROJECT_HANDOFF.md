@@ -1,6 +1,10 @@
-# Kapijuja Voice — handoff for the next ChatGPT session
+# Kapijuja Voice — historical handoff / development notes
 
 Date: 2026-09-09
+
+> **Current authoritative handoff:** read `FULL_PROJECT_HANDOFF_2026-09-09.txt` and
+> `DEVELOPER_GUIDE.md` before acting on older sections below. This file preserves chronology and may
+> contain descriptions of work that was still pending when first written.
 
 ## 0. Current status correction — 2026-09-09
 
@@ -172,33 +176,42 @@ Likely remaining work:
 
 Do NOT remove generic uses of the word "cloud" where it simply means an online provider, cloud orb animation, network fallback, etc. Only remove Dictate Cloud product-specific code.
 
-## 4. Branding and side-by-side installation — still to finish
+## 4. Branding and side-by-side installation — mostly complete
 
-Already done:
+Done:
 - package/application id: `net.kapijuja.voice`
+- app-visible name: **Kapijuja Voice**
+- full product wording: **Kapijuja Voice Keyboard**
+- distinct dark + gold/yellow **K** adaptive launcher icon
+- project/About/Issues/Privacy/Changelog links rebased to Kapijuja where appropriate
+- upstream funding/store links removed/redirected
+- README/PRIVACY_POLICY/SECURITY/NOTICE updated while preserving upstream attribution
+- side-by-side application identity is established
 
-Still pending:
-- change launcher/app-visible name to **Kapijuja Voice**
-- keep internal FlorisBoard namespaces unless there is a technical reason to rename them
-- replace upstream project links (Issues, Privacy, Changelog, commit URLs, Play Store/PayPal promo links) with our project or remove them
-- create a clearly distinct launcher icon: dark background + original gold/yellow **K** mark, not a modified copy of the Dictate microphone logo
-- update Wear icon/name consistently
-- update README/PRIVACY_POLICY/SECURITY and add Kapijuja derivative notice while retaining original LICENSE/NOTICE attribution
-- decide later whether to rename repository; not required technically
+Still worth auditing separately:
+- remaining Wear/legacy user-visible strings that still say "Dictate"
+- user-facing share/help wording
 
-## 5. Signing key — IMPORTANT, pending
+Keep internal FlorisBoard/Dictate namespaces/classes/protocol paths unless there is a technical reason
+to rename them. Do not mass-rename internals for cosmetic branding.
 
-A permanent Kapijuja release key was discussed, but at handoff time there is no verified completed tool action proving the JKS was actually created and safely delivered.
+## 5. Signing key — IMPORTANT, external key existence must be verified
 
-Next session should:
-1. Generate a new dedicated RSA release keystore for Kapijuja Voice.
-2. Use a stable alias, e.g. `kapijuja_voice_release`.
-3. Store the JKS and passwords OUTSIDE Git.
-4. Keep `keystore.properties` untracked.
-5. Record SHA-256 certificate fingerprint.
-6. Make a backup copy available to the project owner.
-7. Configure GitHub Actions secrets only if signed CI releases are later needed.
-8. Never regenerate the release key after users install releases, otherwise updates will no longer install over the previous version.
+The repository has release-signing configuration and a stable intended alias
+`kapijuja_voice_release`, but Git does not contain the JKS or a certificate fingerprint.
+
+Historical notes disagree about whether an external permanent JKS was already created/delivered.
+Therefore:
+
+1. **Do not generate a replacement key automatically.**
+2. First ask the project owner for the saved Kapijuja JKS/fingerprint backup.
+3. Verify any recovered key with `keytool` / `apksigner`.
+4. Keep JKS/passwords outside Git and `keystore.properties` untracked.
+5. Record the SHA-256 certificate fingerprint once verified.
+6. Use the same key for every future update.
+7. Only create a new permanent key if the owner explicitly confirms no earlier permanent key exists
+   and no distributed APK depends on one.
+8. Configure GitHub Actions signing secrets only if the owner deliberately chooses signed CI later.
 
 ## 6. The main functional bug to solve: endless "Transcribing…"
 
