@@ -1,6 +1,6 @@
-# Kapijuja Voice
+# Dictate Kapijuja
 
-**Kapijuja Voice** is an open-source Android voice keyboard derived from
+**Dictate Kapijuja** is an open-source Android voice keyboard derived from
 [Dictate Keyboard](https://github.com/DevEmperor/DictateKeyboard), which itself is built on
 [FlorisBoard](https://github.com/florisboard/florisboard).
 
@@ -17,13 +17,13 @@ Developers should also read **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** and **[
 
 The fork is functional and builds successfully in GitHub Actions.
 
-- Product name: **Kapijuja Voice**
-- Full name: **Kapijuja Voice Keyboard**
-- Android application id: `net.kapijuja.voice`
+- Product name: **Dictate Kapijuja**
+- Full name: **Dictate Kapijuja Keyboard**
+- Android application id: `net.kapijuja.dictate`
 - Current fork version line: `0.1.0` / versionCode `1`
 - Main development branch: `main`
 - Bootstrap/history branch retained: `kapijuja-bootstrap`
-- The official Dictate app and Kapijuja Voice can be installed side by side.
+- The official Dictate app and Dictate Kapijuja can be installed side by side.
 - Release-signing configuration and the stable alias `kapijuja_voice_release` are prepared; the external JKS itself is not stored in Git and must be verified/recovered before the first signed release.
 - Dictate Cloud and Google Play Billing are intentionally removed.
 - BYOK online providers, custom/self-hosted endpoints and on-device STT remain available.
@@ -32,7 +32,7 @@ The fork is functional and builds successfully in GitHub Actions.
 
 ## What was removed from upstream Dictate
 
-Kapijuja Voice does **not** include the upstream prepaid Dictate Cloud service.
+Dictate Kapijuja does **not** include the upstream prepaid Dictate Cloud service.
 
 Removed components include:
 
@@ -48,7 +48,7 @@ CI contains a regression guard which fails if Dictate Cloud/Billing wiring is ac
 
 ## AI providers
 
-Kapijuja Voice talks directly to the provider selected by the user. The current architecture supports
+Dictate Kapijuja talks directly to the provider selected by the user. The current architecture supports
 providers such as OpenAI, Gemini, Groq, OpenRouter, Mistral, Deepgram, Soniox, ElevenLabs, AssemblyAI
 and OpenAI-compatible custom/self-hosted servers.
 
@@ -129,7 +129,7 @@ It performs:
 
 The project has release-signing configuration for:
 
-- Package: `net.kapijuja.voice`
+- Package: `net.kapijuja.dictate`
 - Expected stable alias: `kapijuja_voice_release`
 - Intended key type: RSA-4096
 - The actual keystore and passwords are **not stored in Git**.
@@ -166,9 +166,9 @@ keystore.properties
 
 ## Branding
 
-Kapijuja Voice is intentionally visually distinct from Dictate.
+Dictate Kapijuja is intentionally visually distinct from Dictate.
 
-- App name: Kapijuja Voice
+- App name: Dictate Kapijuja
 - Adaptive launcher icon: dark background with a gold **K**
 - Project/About/Issues/Privacy/Changelog links point to this repository.
 - Upstream attribution is preserved in `NOTICE` and source copyright headers.
@@ -177,7 +177,7 @@ The fork remains Apache-2.0.
 
 ## Recording recovery and audio history
 
-Kapijuja Voice treats captured speech as recoverable user data rather than disposable request input.
+Dictate Kapijuja treats captured speech as recoverable user data rather than disposable request input.
 
 - Dictation history is enabled by default.
 - Source audio retention is enabled by default for new installs.
@@ -236,7 +236,7 @@ The next development work should proceed roughly in this order:
 1. device-test the new recovery path with a real network cut: ordinary batch, OpenAI/Groq/Gemini/
    Deepgram, Soniox/AssemblyAI async, local STT, realtime fallback and long-form final drain;
 2. test manual Stop/resend, process-death recovery through History, and the per-recording recognizer chooser;
-3. produce the first **release** APK signed with the permanent Kapijuja Voice key;
+3. produce the first **release** APK signed with the permanent Dictate Kapijuja key;
 4. verify side-by-side installation with official Dictate;
 5. consider a future "recognition variants" model if side-by-side comparison of several AI transcripts
    for the same retained audio is desired, without duplicating the audio file;
