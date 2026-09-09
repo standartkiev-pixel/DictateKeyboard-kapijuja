@@ -38,6 +38,11 @@ class RecordingController(private val context: Context) {
     // Serializes access to [raf]/[pcmBytes] between the capture thread's per-frame write and a caller's
     // [rotate]/[stop], so a mid-recording segment cut can never race with a frame write.
     private val fileLock = Any()
+    /**
+     * Unique per RecordingController instance. Old cancelled transcription jobs may finish late; giving
+     * every recording/segment its own path means their cleanup can never delete a newer session's WAV.
+     */
+    private val fileSessionId = "${System.currentTimeMillis()}_${System.nanoTime()}"
     private var segmentSeq = 0
     @Volatile private var recording = false
     @Volatile private var paused = false
@@ -79,7 +84,7 @@ class RecordingController(private val context: Context) {
             runCatching { rec.release() }
             error("AudioRecord failed to initialize")
         }
-        val file = File(context.cacheDir, AUDIO_FILE_NAME)
+        val file = nextAudioFile()
         val out = try {
             RandomAccessFile(file, "rw").apply {
                 setLength(0)
@@ -119,7 +124,7 @@ class RecordingController(private val context: Context) {
     /**
      * Cuts the current segment WITHOUT stopping the microphone (long-form segmented dictation, issue
      * #170): finalizes the in-progress WAV, hands it back for background transcription, and immediately
-     * reopens a fresh WAV so recording continues seamlessly. Returns the finalized segment file, or null
+     * opens a fresh uniquely named WAV so recording continues seamlessly. Returns the finalized segment file, or null
      * if nothing usable was captured since the last cut. Safe to call off the main thread while recording.
      */
     fun rotate(): File? = synchronized(fileLock) {
@@ -132,15 +137,20 @@ class RecordingController(private val context: Context) {
             old.write(wavHeader(bytes))
             old.close()
             if (bytes > 0 && base != null) {
-                val seg = File(context.cacheDir, "dictate_seg_${segmentSeq++}.wav")
-                seg.delete()
-                if (base.renameTo(seg)) seg else null
-            } else null
+                // The active file was unique from the moment recording began, so it can be handed to the
+                // background transcriber directly. No rename means no collision with a newer session.
+                base
+            } else {
+                base?.delete()
+                null
+            }
         } catch (_: Throwable) {
+            runCatching { old.close() }
+            base?.delete()
             null
         }
-        // Reopen a fresh WAV (the base name is now free after the rename) for the continuing recording.
-        val file = File(context.cacheDir, AUDIO_FILE_NAME)
+        // Open another unique WAV for the continuing recording. Never recycle the previous pathname.
+        val file = nextAudioFile()
         raf = try {
             RandomAccessFile(file, "rw").apply {
                 setLength(0)
@@ -227,8 +237,11 @@ class RecordingController(private val context: Context) {
     private fun wavHeader(dataLen: Long): ByteArray =
         AudioWav.header(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, dataLen)
 
+    /** Returns a never-reused cache pathname for this recording session / segment. */
+    private fun nextAudioFile(): File =
+        File(context.cacheDir, "dictate_audio_${fileSessionId}_${segmentSeq++}.wav")
+
     companion object {
-        private const val AUDIO_FILE_NAME = "dictate_audio.wav"
         private const val SAMPLE_RATE = 16_000
         private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
