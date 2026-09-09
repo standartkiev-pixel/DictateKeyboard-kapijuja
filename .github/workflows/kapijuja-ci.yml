@@ -26,7 +26,9 @@ jobs:
       # Kapijuja intentionally removed the upstream Dictate Cloud product and
       # Google Play Billing integration. Historical handoff/README documents
       # may still name those components, so this guard scans executable/source
-      # wiring while excluding Markdown documentation and this workflow itself.
+      # wiring while excluding Markdown documentation, NOTICE, and this workflow itself.
+      # A pathspec without a slash (':!*.md') is recursive in Git, including
+      # Markdown files stored at the repository root.
       - name: Audit removed Dictate Cloud wiring
         shell: bash
         run: |
