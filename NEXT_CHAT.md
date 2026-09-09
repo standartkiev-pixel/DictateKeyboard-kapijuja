@@ -815,3 +815,14 @@ Automated fault-injection coverage now also checks:
 
 Continue with real-device/network-cut testing after CI is green; do not use these unit tests as a substitute
 for process-death, local native, realtime fallback or long-form rescue tests on an actual Android device.
+
+### Update — Stop/watchdog process-death recovery
+
+Non-sensitive Stop/watchdog audio now has persistent staging in filesDir/dictate_recovery/.
+On the next keyboard open an unarchived rescue restores Send again/discard before instant recording.
+History only marks staging disposable after verifying its own audio copy exists. Sensitive fields never
+use this cross-process staging.
+
+Device test: speak -> Transcribing -> Stop (or trigger watchdog) -> force-stop/kill immediately -> reopen
+on a normal text field -> Send again must be offered and the same recording must remain usable. Repeat
+for long-form; its segment merge remains asynchronous and deserves separate fault injection.

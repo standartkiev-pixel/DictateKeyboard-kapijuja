@@ -661,3 +661,24 @@ Automated network fault tests now cover three recovery-critical invariants:
 These tests complement the existing heartbeat, generic one-retry cap and OpenRouter zero-retry tests.
 They do **not** replace the real-device fault matrix (airplane mode, Wi-Fi/mobile switch, process death,
 local/native late cancellation, realtime fallback and long-form rescue), which remains the next manual stage.
+
+## Update — process-death-safe Stop/watchdog staging
+
+Manual Stop/watchdog recovery for non-sensitive fields now uses a private staging directory under
+filesDir/dictate_recovery/ rather than relying only on in-memory state.
+
+Key rules:
+
+- the rescue filename carries timestamp, duration and live-prompt flag, but no transcript or provider secret;
+- ordinary Stop prefers an atomic rename from the request-owned file into recovery staging before cancelling
+  the provider job, so the cancelled job's old-path cleanup cannot delete the rescue;
+- sensitive/password fields remain transient and are never restored into a later field;
+- on keyboard open, an unarchived recovery file restores the neutral Send again/discard chip before
+  instant recording can start;
+- once History is verified to own a physical audio copy, an .archived sidecar makes the staging copy
+  disposable on the next open;
+- failure to archive errs toward preserving/possibly re-offering audio rather than deleting it.
+
+Long-form merged Stop/watchdog rescue is also written to this persistent staging area when non-sensitive.
+The remaining real-device test should still force-kill during/just after long-form cancellation, because
+segment merge itself is asynchronous.

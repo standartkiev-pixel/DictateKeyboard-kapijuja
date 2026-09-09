@@ -592,10 +592,87 @@ object DictateController {
     /** Cache file for a recording taken back from a hanging cloud request to finish on-device (#270). */
     private const val RESCUED_AUDIO_NAME = "dictate_rescued.wav"
     /**
-     * Private cache copy made when the user presses Stop during Transcribing. The active request owns
-     * and deletes its original file in finally, so the copy deliberately has a different name/lifetime.
+     * Manual Stop/watchdog rescue files for non-sensitive fields live in filesDir, not cacheDir.
+     *
+     * The filename carries just enough non-secret metadata to restore the Send again chip after process
+     * death without waiting for Room/History to finish an asynchronous archive copy. Once History has
+     * definitely copied the audio, a tiny ".archived" sidecar marks the staging file disposable on the
+     * next keyboard open. This deliberately favours an occasional duplicate recovery over losing speech.
      */
-    private const val CANCELLED_AUDIO_STEM = "dictate_cancelled"
+    private const val RECOVERY_DIR_NAME = "dictate_recovery"
+    private const val RECOVERY_AUDIO_PREFIX = "dictate_recovery_"
+    private const val RECOVERY_ARCHIVED_SUFFIX = ".archived"
+
+    internal data class RecoveryFileMeta(
+        val createdAtMs: Long,
+        val seconds: Long,
+        val wasLive: Boolean,
+    )
+
+    internal fun recoveryFileName(
+        createdAtMs: Long,
+        seconds: Long,
+        wasLive: Boolean,
+        extension: String,
+    ): String {
+        val safeExtension = extension.lowercase().filter { it.isLetterOrDigit() }.ifEmpty { "wav" }
+        return "$RECOVERY_AUDIO_PREFIX${createdAtMs}_${seconds.coerceAtLeast(0L)}_${if (wasLive) 1 else 0}.$safeExtension"
+    }
+
+    internal fun recoveryFileMeta(name: String): RecoveryFileMeta? {
+        val dot = name.lastIndexOf('.')
+        if (dot <= 0) return null
+        val stem = name.substring(0, dot)
+        if (!stem.startsWith(RECOVERY_AUDIO_PREFIX)) return null
+        val parts = stem.removePrefix(RECOVERY_AUDIO_PREFIX).split('_')
+        if (parts.size != 3) return null
+        val created = parts[0].toLongOrNull() ?: return null
+        val seconds = parts[1].toLongOrNull()?.takeIf { it >= 0L } ?: return null
+        val live = when (parts[2]) {
+            "0" -> false
+            "1" -> true
+            else -> return null
+        }
+        return RecoveryFileMeta(created, seconds, live)
+    }
+
+    private fun recoveryDir(context: Context): File =
+        File(context.applicationContext.filesDir, RECOVERY_DIR_NAME)
+
+    private fun newRecoveryFile(
+        context: Context,
+        extension: String,
+        seconds: Long,
+        wasLive: Boolean,
+    ): File = File(
+        recoveryDir(context).apply { mkdirs() },
+        recoveryFileName(System.currentTimeMillis(), seconds, wasLive, extension),
+    )
+
+    private fun isPersistentRecovery(file: File): Boolean =
+        file.parentFile?.name == RECOVERY_DIR_NAME && recoveryFileMeta(file.name) != null
+
+    private fun archivedRecoveryMarker(file: File): File =
+        File(file.parentFile, file.name + RECOVERY_ARCHIVED_SUFFIX)
+
+    private fun markRecoveryArchived(file: File) {
+        if (!isPersistentRecovery(file)) return
+        runCatching { archivedRecoveryMarker(file).writeText("history-copied") }
+    }
+
+    /**
+     * Removes staging audio only after a prior process proved that History owns another durable copy.
+     * Unmarked files are never pruned here: they are exactly the crash-recovery material we must preserve.
+     */
+    private fun cleanupArchivedRecoveries(context: Context) {
+        val dir = recoveryDir(context)
+        dir.listFiles { file -> file.isFile && file.name.endsWith(RECOVERY_ARCHIVED_SUFFIX) }
+            ?.forEach { marker ->
+                val audio = File(dir, marker.name.removeSuffix(RECOVERY_ARCHIVED_SUFFIX))
+                runCatching { audio.delete() }
+                runCatching { marker.delete() }
+            }
+    }
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
@@ -1185,22 +1262,36 @@ object DictateController {
         }
         stopTranscriptionWatchdog()
 
+        val metaSnapshot = inFlightHistoryMeta
         var resendReady = false
         if (keepForResend) {
             val source = inFlightAudio?.takeIf { it.exists() && it.length() > 0L }
             if (source != null) {
-                // Copy FIRST. During a resend, [retained.file] can be the very same file currently being
-                // uploaded; deleting the old retained object before copying would delete our source.
-                // Keep the actual container extension too: imported MP3/Ogg audio must never be renamed
-                // to .wav merely because it passed through the Stop path (#322 applies here as well).
+                // Preserve the real container: imported MP3/Ogg audio must never be relabelled as WAV.
+                // Non-sensitive rescues are staged in filesDir so an immediate process death can still
+                // recover them. Sensitive/password dictation deliberately remains cache-only and is never
+                // scanned on a later keyboard open.
                 val extension = source.extension.ifEmpty { "wav" }
-                val copy = File(
-                    context.applicationContext.cacheDir,
-                    "${CANCELLED_AUDIO_STEM}_${SystemClock.elapsedRealtime()}.$extension",
-                )
+                val persistent = metaSnapshot?.sensitive == false
+                val copy = if (persistent) {
+                    newRecoveryFile(context, extension, inFlightSeconds, inFlightWasLive)
+                } else {
+                    File(
+                        context.applicationContext.cacheDir,
+                        "dictate_cancelled_${SystemClock.elapsedRealtime()}.$extension",
+                    )
+                }
                 val previous = retained
                 resendReady = runCatching {
-                    source.copyTo(copy, overwrite = true)
+                    // Prefer an atomic rename into private persistent storage. Besides avoiding a full copy
+                    // of a long recording, this closes the ordinary process-death window. The cancelled
+                    // request still owns its OLD pathname, so its finally-delete cannot touch the moved
+                    // rescue. Fall back to copy if the filesystem refuses the rename.
+                    if (persistent) {
+                        if (!source.renameTo(copy)) source.copyTo(copy, overwrite = true)
+                    } else {
+                        source.copyTo(copy, overwrite = true)
+                    }
                     if (copy.length() <= 0L) error("empty cancelled-audio copy")
 
                     // Now the rescue copy is safe. Dispose an older, unrelated retained file; when the
@@ -1229,7 +1320,7 @@ object DictateController {
 
         if (resendReady) {
             val rescue = retained?.file
-            val meta = inFlightHistoryMeta
+            val meta = metaSnapshot
             if (rescue != null && meta != null && meta.replayHistoryId == null && !meta.sensitive) {
                 // Snapshot duration now too: a second dictation may begin before Room/file archival gets
                 // CPU time, and its inFlightSeconds must never relabel this recording.
@@ -2619,10 +2710,14 @@ object DictateController {
             realtimeShown.setLength(0)
 
             val rescue = if (files.isNotEmpty()) {
-                val dest = File(
-                    appContext.cacheDir,
-                    "${CANCELLED_AUDIO_STEM}_long_${SystemClock.elapsedRealtime()}.wav",
-                )
+                val dest = if (!meta.sensitive) {
+                    newRecoveryFile(appContext, "wav", seconds, wasLive = false)
+                } else {
+                    File(
+                        appContext.cacheDir,
+                        "dictate_cancelled_long_${SystemClock.elapsedRealtime()}.wav",
+                    )
+                }
                 val ok = withContext(Dispatchers.IO) {
                     dest.delete()
                     AudioConcat.concat(files, dest)
@@ -3248,6 +3343,40 @@ object DictateController {
     }
 
     /**
+     * Restores a manual-Stop/watchdog rescue left by a previous process.
+     *
+     * This is separate from interrupted-recording recovery: a stopped transcription is already complete
+     * and therefore offers Send again / discard, not "continue recording". Sensitive-field rescues are
+     * never written to [recoveryDir], so they cannot leak into a later field.
+     */
+    fun maybeOfferStoppedRecovery(context: Context): Boolean {
+        if (_state.value !is UiState.Idle) return false
+        if (isSensitiveDictationField(context.applicationContext)) return false
+        cleanupArchivedRecoveries(context)
+
+        val candidate = recoveryDir(context).listFiles()
+            ?.asSequence()
+            ?.filter { it.isFile && it.length() > 0L && recoveryFileMeta(it.name) != null }
+            ?.filterNot { archivedRecoveryMarker(it).exists() }
+            ?.maxByOrNull { recoveryFileMeta(it.name)?.createdAtMs ?: it.lastModified() }
+            ?: return false
+        val meta = recoveryFileMeta(candidate.name) ?: return false
+
+        retained = RetainedAudio(
+            file = candidate,
+            reason = RetainReason.CANCELLED,
+            wasLive = meta.wasLive,
+            seconds = meta.seconds,
+        )
+        _state.value = UiState.Error(
+            message = context.getString(R.string.dictate__transcription_stopped_audio_kept),
+            action = ErrorAction.RESEND,
+            neutral = true,
+        )
+        return true
+    }
+
+    /**
      * On keyboard open, restores the "recording interrupted — send it?" offer if an interrupted audio
      * file is waiting. Returns true when the offer is now shown, so the caller can skip instant-recording.
      * No-op unless idle. A stale marker without a usable file is cleared.
@@ -3436,7 +3565,7 @@ object DictateController {
     ) {
         if (!prefs.dictate.historyEnabled.get() || meta.sensitive) return
         if (!audioFile.exists() || audioFile.length() == 0L) return
-        DictateHistoryStore.record(
+        val id = DictateHistoryStore.record(
             context = appContext,
             prefs = prefs,
             text = appContext.getString(R.string.dictate__history_stopped_recoverable),
@@ -3451,6 +3580,14 @@ object DictateController {
             failed = true,
             forceAudio = true,
         )
+        // A Room row alone is not enough. Only mark staging disposable after the History-owned audio
+        // path exists and has bytes; otherwise a failed copy must remain recoverable on the next open.
+        val historyCopy = id?.let { DictateHistoryStore.getById(appContext, it) }
+            ?.audioPath
+            ?.let(::File)
+        if (historyCopy != null && historyCopy.exists() && historyCopy.length() > 0L) {
+            markRecoveryArchived(audioFile)
+        }
     }
 
     /** Exports a history entry's retained audio to Downloads/Dictate (issue #140), toasting the result. */

@@ -428,16 +428,20 @@ class FlorisImeService : LifecycleInputMethodService() {
         )
         val skipInstantForNumeric = isNumericField && prefs.dictate.instantRecordingSkipNumeric.get()
 
-        // Interrupted recording: if a recording was finalized because the keyboard closed mid-recording,
-        // offer to send it now. This recovery feature is mutually exclusive with instant recording: when
-        // instant recording is on we never offer (and never stash — see stashRecordingOnHide), so opening
-        // the keyboard always starts a fresh recording instead of being blocked (issue #120). The user is
-        // told about this trade-off when enabling instant recording.
-        val offeredInterrupted = !instantRecordingOn &&
+        // A manual Stop/watchdog rescue outranks instant-recording convenience: the user already spoke
+        // this audio and explicitly expects it to remain recoverable. Sensitive fields are filtered by
+        // DictateController and therefore never restore a prior recording into a password/PIN field.
+        val offeredStoppedRecovery =
+            dev.patrickgold.florisboard.dictate.DictateController.maybeOfferStoppedRecovery(this)
+
+        // Interrupted recording: the older mid-recording recovery remains mutually exclusive with instant
+        // recording (issue #120); unlike a completed stopped transcription, it may still be continued.
+        val offeredInterrupted = !offeredStoppedRecovery && !instantRecordingOn &&
             dev.patrickgold.florisboard.dictate.DictateController.maybeOfferInterruptedRecording(this)
 
         // Instant recording: optionally start dictation as soon as the keyboard opens on a field.
         if (!startedFileTranscription &&
+            !offeredStoppedRecovery &&
             !offeredInterrupted &&
             !restarting &&
             instantRecordingAllowedHere &&

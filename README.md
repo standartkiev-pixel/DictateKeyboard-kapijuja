@@ -194,7 +194,7 @@ Dictate Kapijuja treats captured speech as recoverable user data rather than dis
   only in RAM. Recording/segment filenames are never reused across sessions.
 - During `Transcribing…`, Kapijuja shows an explicit Stop control. Stopping cancels the in-flight
   provider request but keeps a private resend copy instead of deleting the recording.
-- After Stop, the Smartbar offers Send again and explicit discard. In addition to the transient resend
+- After Stop, the Smartbar offers Send again and explicit discard. For non-sensitive fields the rescue is staged under private persistent app storage, so an immediate process death can restore the Send again chip even if History had not finished its archive copy. Sensitive/password dictation stays transient and is never restored into another field. In addition to the resend
   copy, Stop/watchdog audio is force-archived as a recoverable History entry when History is enabled
   (never for incognito/password fields, and never duplicated for an existing History replay).
 - The in-keyboard History panel now has a recognizer chooser for retained audio. A single saved recording
