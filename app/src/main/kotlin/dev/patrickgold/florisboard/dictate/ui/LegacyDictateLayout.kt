@@ -583,6 +583,17 @@ private fun LegacyRecordRow(
     // Realtime streaming (#128): tapping the record button ends the live stream — hint that with a send glyph.
     val realtime = recording != null && DictateController.isRealtimeRecording()
 
+    // Legacy layout has only one narrow cancel slot, so it cannot show the full two-button confirmation
+    // used by the Smartbar. It still gets the same safety property: first tap merely arms deletion while
+    // recording continues; only a second tap within five seconds is destructive.
+    var cancelConfirm by remember(recording?.startedAtMs) { mutableStateOf(false) }
+    LaunchedEffect(cancelConfirm) {
+        if (cancelConfirm) {
+            kotlinx.coroutines.delay(5_000L)
+            cancelConfirm = false
+        }
+    }
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -592,11 +603,25 @@ private fun LegacyRecordRow(
             ThemedIconKey(
                 code = KeyCode.NOOP,
                 icon = Icons.Default.Delete,
-                contentDescription = stringRes(R.string.dictate__action_cancel),
+                contentDescription = stringRes(
+                    if (cancelConfirm) {
+                        R.string.dictate__cancel_confirm_delete
+                    } else {
+                        R.string.dictate__action_cancel
+                    }
+                ),
                 modifier = sideKey,
-                tint = Color(0xFFE53935),
-                // In long-form this drops only the current (uncut) segment and keeps recording (#183).
-                onClick = { DictateController.cancelOrDiscardSegment(context) },
+                tint = if (cancelConfirm) Color(0xFFB71C1C) else Color(0xFFE53935),
+                // In long-form the CONFIRMED action drops only the current (uncut) segment and keeps
+                // recording (#183). The first tap never reaches the controller.
+                onClick = {
+                    if (cancelConfirm) {
+                        cancelConfirm = false
+                        DictateController.cancelOrDiscardSegment(context)
+                    } else {
+                        cancelConfirm = true
+                    }
+                },
             )
         } else {
             ThemedIconKey(
