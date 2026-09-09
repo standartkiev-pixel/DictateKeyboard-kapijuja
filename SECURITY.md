@@ -1,6 +1,6 @@
-# Security Policy — Kapijuja Voice
+# Security Policy — Dictate Kapijuja
 
-Kapijuja Voice handles sensitive input such as typed text, microphone recordings, and user-supplied
+Dictate Kapijuja handles sensitive input such as typed text, microphone recordings, and user-supplied
 provider credentials. Security reports should avoid public disclosure of exploitable details before a
 fix is available.
 
@@ -14,7 +14,7 @@ fix is available.
 - local model download integrity
 - accessibility and floating-button input handling
 
-The upstream Dictate Cloud backend is not operated by Kapijuja Voice and is not part of this fork.
+The upstream Dictate Cloud backend is not operated by Dictate Kapijuja and is not part of this fork.
 
 Project issues:
 https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja/issues
