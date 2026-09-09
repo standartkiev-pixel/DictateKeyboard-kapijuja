@@ -2136,6 +2136,9 @@
     <string name="dictate__history_search" comment="Placeholder in the history search field">Search history</string>
     <string name="dictate__history_disk_usage" comment="Disk-usage line on the history screen. {size} is a file size like 12.3 MB">Retained audio: {size}</string>
     <string name="dictate__history_audio_missing" comment="Shown when a stored recording can no longer be played back">Recording is no longer available.</string>
+    <string name="dictate__history_choose_recognizer" comment="Title of the in-keyboard screen for choosing which provider re-transcribes retained audio">Choose recognizer</string>
+    <string name="dictate__history_recognizer_current" comment="Suffix shown beside the globally selected transcription provider in the one-shot history replay chooser">current</string>
+    <string name="dictate__history_recognizer_unconfigured" comment="Suffix shown for a replay provider that is visible but cannot be used until its key/model/endpoint is configured">not configured</string>
     <string name="dictate__history_copied" comment="Toast confirmation after copying a transcript">Copied to clipboard</string>
     <string name="dictate__history_play" comment="Accessibility description for the play/stop recording button">Play recording</string>
     <string name="dictate__history_copy" comment="Accessibility description for the copy transcript button">Copy transcript</string>
