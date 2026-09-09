@@ -194,6 +194,13 @@ object DictateController {
         /** A transcription/rewording failed; the kept audio can be retried (in-memory, cache file). */
         FAILED,
 
+        /**
+         * The user explicitly stopped an in-flight transcription. Kapijuja keeps a private cache copy
+         * instead of treating Stop as "discard": the network request ends immediately, but the spoken
+         * recording remains available for Send again or for choosing another recognizer afterwards.
+         */
+        CANCELLED,
+
         /** The keyboard closed mid-recording; the finalized audio was persisted to survive process death. */
         INTERRUPTED,
     }
@@ -489,6 +496,13 @@ object DictateController {
     /** Recorded seconds of [inFlightAudio], so a rescued dictation still counts for the right length. */
     private var inFlightSeconds = 0L
 
+    /**
+     * Whether [inFlightAudio] belongs to a live-prompt dictation. This is latched while the request is
+     * running so an explicit Stop can preserve the exact resend mode instead of silently turning a live
+     * prompt into an ordinary transcription.
+     */
+    private var inFlightWasLive = false
+
     /** Cache file name for the merged audio when a continued interrupted recording is stitched together. */
     private const val MERGED_AUDIO_NAME = "dictate_merged.wav"
     // Silence trimming (issue #232): cache file for the trimmed upload, plus the gap thresholds — a silence
@@ -526,6 +540,11 @@ object DictateController {
         wavBytes > PACK_ABOVE_BYTES || (limitBytes > 0L && wavBytes > limitBytes / 4 * 3)
     /** Cache file for a recording taken back from a hanging cloud request to finish on-device (#270). */
     private const val RESCUED_AUDIO_NAME = "dictate_rescued.wav"
+    /**
+     * Private cache copy made when the user presses Stop during Transcribing. The active request owns
+     * and deletes its original file in finally, so the copy deliberately has a different name/lifetime.
+     */
+    private const val CANCELLED_AUDIO_NAME = "dictate_cancelled.wav"
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
@@ -686,9 +705,10 @@ object DictateController {
         if (discardingBar) return
         when (_state.value) {
             is UiState.Recording -> stopAndTranscribe(context)
-            // Tapping the mic while transcribing or rewording aborts it (the button shows a stop icon,
-            // see the ComputingEvaluator) — e.g. after accidentally sending a prompt (issue #192).
-            is UiState.Transcribing -> cancelTranscription()
+            // Kapijuja changes upstream's old "abort == discard audio" behaviour here: stopping an
+            // in-flight transcription keeps a private resend copy, because a user trying to escape a
+            // hung provider should not have to dictate the same sentence again.
+            is UiState.Transcribing -> cancelTranscription(context)
             is UiState.Rewording -> cancelRewording()
             else -> {
                 outputTarget = target
@@ -1088,16 +1108,58 @@ object DictateController {
     }
 
     /**
-     * Aborts an in-flight transcription (stop button shown on the mic while transcribing). Cancels the
-     * network coroutine, drops the audio (handled in the job's finally) and returns to idle. No-op
-     * outside the transcribing state, so a tap can never interrupt a rewording request.
+     * Stops an in-flight transcription.
+     *
+     * Kapijuja intentionally differs from upstream Dictate here. The old behaviour cancelled the
+     * network coroutine and let its finally block delete the recording. That is hostile during a flaky
+     * connection: the user presses Stop because the request looks stuck and immediately loses the one
+     * thing needed for a safe retry.
+     *
+     * For a user-visible Stop we therefore copy [inFlightAudio] first, then cancel the provider job.
+     * The provider-owned original is still deleted by its normal finally block; our private cache copy
+     * becomes [retained] and the Smartbar offers Send again + explicit discard. Internal hand-off to the
+     * on-device model passes [keepForResend] = false because it already made its own rescue copy.
      */
-    fun cancelTranscription() {
+    fun cancelTranscription(context: Context, keepForResend: Boolean = true) {
         if (_state.value !is UiState.Transcribing) return
+
+        var resendReady = false
+        if (keepForResend) {
+            val source = inFlightAudio?.takeIf { it.exists() && it.length() > 0L }
+            if (source != null) {
+                // A previous transient/error resend is superseded by this explicit Stop. Delete it first
+                // so copying over the fixed cache name cannot accidentally delete the brand-new copy.
+                discardRetainedAudio()
+                val copy = File(context.applicationContext.cacheDir, CANCELLED_AUDIO_NAME)
+                resendReady = runCatching {
+                    source.copyTo(copy, overwrite = true)
+                    if (copy.length() <= 0L) error("empty cancelled-audio copy")
+                    retained = RetainedAudio(
+                        file = copy,
+                        reason = RetainReason.CANCELLED,
+                        wasLive = inFlightWasLive,
+                        seconds = inFlightSeconds,
+                    )
+                    true
+                }.getOrElse {
+                    runCatching { copy.delete() }
+                    false
+                }
+            }
+        }
+
         transcribeJob?.cancel()
         transcribeJob = null
         _pendingPrompts.value = emptyList()
-        _state.value = UiState.Idle
+        _state.value = if (resendReady) {
+            UiState.Error(
+                message = context.getString(R.string.dictate__transcription_stopped_audio_kept),
+                action = ErrorAction.RESEND,
+                neutral = true,
+            )
+        } else {
+            UiState.Idle
+        }
     }
 
     /**
@@ -1273,7 +1335,7 @@ object DictateController {
         val seconds = inFlightSeconds
         val rescued = File(context.applicationContext.cacheDir, RESCUED_AUDIO_NAME)
         runCatching { audio.copyTo(rescued, overwrite = true) }.getOrElse { return }
-        cancelTranscription()
+        cancelTranscription(context, keepForResend = false)
         // gate=false: this recording has already passed the silence gate once — running it again would
         // only spend the time twice, and a second opinion on the same audio is not the point here.
         transcribe(context, rescued, seconds, gate = false, forceLocal = true)
@@ -1465,6 +1527,7 @@ object DictateController {
         // Live prompt is consumed by this transcription only (the next recording is normal again).
         val live = livePromptArmed
         livePromptArmed = false
+        inFlightWasLive = live
         val coroutineScheduledNanos = SystemClock.elapsedRealtimeNanos()
         transcribeJob = scope.launch {
             var keepAudio = false
@@ -1707,8 +1770,9 @@ object DictateController {
                 logLatency(latencyTrace, "finalizeCompleted", finalizeStartedNanos)
                 outcome = "success"
             } catch (c: CancellationException) {
-                // User aborted via the stop button: discard quietly (state set by cancelTranscription),
-                // never show an error. The audio is dropped in the finally block.
+                // Cancellation itself stays quiet: cancelTranscription already chose the visible terminal
+                // state. For a user Stop that state offers the separate retained copy; internal cancellation
+                // (e.g. switching to the on-device model) supplies its own continuation.
                 outcome = "cancelled"
                 throw c
             } catch (e: DictateApiException) {
@@ -1747,6 +1811,7 @@ object DictateController {
             } finally {
                 // The request is over, however it ended: there is nothing left for a held button to rescue.
                 inFlightAudio = null
+                inFlightWasLive = false
                 if (!keepAudio) audioFile.delete()
                 // Drop the derived upload copies — trimmed (#232) and/or sped up (#272); the original
                 // audioFile is the one history keeps.
