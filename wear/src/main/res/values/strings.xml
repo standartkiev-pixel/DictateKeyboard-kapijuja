@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="wear_app_name">Dictate Kapijuja</string>
-    <string name="wear_ime_label">Dictate (Wear)</string>
+    <string name="wear_app_name" translatable="false">Dictate Kapijuja</string>
+    <string name="wear_ime_label" translatable="false">Dictate (Wear)</string>
 
     <!-- Pager tabs (content descriptions) -->
-    <string name="wear_tab_numbers">123</string>
+    <string name="wear_tab_numbers" translatable="false">123</string>
     <string name="wear_tab_voice">Voice</string>
     <string name="wear_tab_emoji">Emoji</string>
 
@@ -77,5 +77,5 @@
 
     <!-- Footer version line. Explicitly "Wear OS" so a self-built / GitHub release APK is clearly the
          watch build (its versionCode also lives in the +100000 band). Brand + numbers → not translated. -->
-    <string name="wear_version">Wear OS · v%1$s (%2$d)</string>
+    <string name="wear_version" translatable="false">Wear OS · v%1$s (%2$d)</string>
 </resources>
