@@ -1697,6 +1697,9 @@
     <string name="dictate__history_search">Поиск в истории</string>
     <string name="dictate__history_disk_usage">Сохранённое аудио: {size}</string>
     <string name="dictate__history_audio_missing">Запись больше недоступна.</string>
+    <string name="dictate__history_choose_recognizer">Выбрать распознаватель</string>
+    <string name="dictate__history_recognizer_current">текущий</string>
+    <string name="dictate__history_recognizer_unconfigured">не настроен</string>
     <string name="dictate__history_copied">Скопировано в буфер обмена</string>
     <string name="dictate__history_play">Воспроизвести запись</string>
     <string name="dictate__history_copy">Копировать текст</string>
