@@ -501,6 +501,23 @@ object DictateController {
     )
 
     /**
+     * Small immutable snapshot kept while a transcription is in flight. A manual Stop/watchdog runs
+     * outside the provider coroutine, so without this it would have to re-read the *current* provider and
+     * field after cancellation — wrong for one-shot History provider overrides and unsafe if focus moved.
+     */
+    private data class InFlightHistoryMeta(
+        val providerId: String,
+        val providerName: String,
+        val model: String,
+        val language: String,
+        val source: String,
+        val replayHistoryId: Long?,
+        val sensitive: Boolean,
+    )
+
+    private var inFlightHistoryMeta: InFlightHistoryMeta? = null
+
+    /**
      * A previously captured audio segment to prepend to the next finished recording, set when the user
      * chooses to *continue* an interrupted recording (see [continueInterruptedRecording]). The new
      * segment is recorded normally and the two are merged ([AudioConcat]) before transcription. Null
@@ -1194,6 +1211,23 @@ object DictateController {
             }
         }
 
+        if (resendReady) {
+            val rescue = retained?.file
+            val meta = inFlightHistoryMeta
+            if (rescue != null && meta != null && meta.replayHistoryId == null && !meta.sensitive) {
+                // Separate Supervisor scope: cancelling transcribeJob below must not cancel the archival
+                // copy. History.record() force-retains audio for this recoverable failed-style entry.
+                scope.launch {
+                    recordStoppedHistory(
+                        appContext = context.applicationContext,
+                        audioFile = rescue,
+                        meta = meta,
+                        recordedSeconds = inFlightSeconds,
+                    )
+                }
+            }
+        }
+
         transcribeJob?.cancel()
         transcribeJob = null
         _pendingPrompts.value = emptyList()
@@ -1638,6 +1672,15 @@ object DictateController {
         // "switch to local" while local transcription is already running.
         inFlightAudio = audioFile
         inFlightSeconds = recordedSeconds
+        inFlightHistoryMeta = InFlightHistoryMeta(
+            providerId = account.providerId,
+            providerName = historyProviderName,
+            model = model,
+            language = historyLanguage,
+            source = historySource,
+            replayHistoryId = replayHistoryId,
+            sensitive = isSensitiveDictationField(appContext),
+        )
         // Live prompt is consumed by this transcription only (the next recording is normal again).
         val live = livePromptArmed
         livePromptArmed = false
@@ -1930,6 +1973,7 @@ object DictateController {
                 // The request is over, however it ended: there is nothing left for a held button to rescue.
                 inFlightAudio = null
                 inFlightWasLive = false
+                inFlightHistoryMeta = null
                 if (!keepAudio) audioFile.delete()
                 // Drop the derived upload copies — trimmed (#232) and/or sped up (#272); the original
                 // audioFile is the one history keeps.
@@ -3210,6 +3254,37 @@ object DictateController {
             language = language,
             durationSecs = recordedSeconds,
             source = source,
+            reworded = false,
+            audioFile = audioFile,
+            failed = true,
+            forceAudio = true,
+        )
+    }
+
+    /**
+     * Persists audio rescued by manual Stop or the no-progress watchdog. It is intentionally a History
+     * entry, not only the transient resend cache: if Android kills the IME before the user taps Send again,
+     * the spoken material is still recoverable later. Replays are excluded by the caller because their
+     * source audio already belongs to an existing history row.
+     */
+    private suspend fun recordStoppedHistory(
+        appContext: Context,
+        audioFile: File,
+        meta: InFlightHistoryMeta,
+        recordedSeconds: Long,
+    ) {
+        if (!prefs.dictate.historyEnabled.get() || meta.sensitive) return
+        if (!audioFile.exists() || audioFile.length() == 0L) return
+        DictateHistoryStore.record(
+            context = appContext,
+            prefs = prefs,
+            text = appContext.getString(R.string.dictate__history_stopped_recoverable),
+            providerId = meta.providerId,
+            providerName = meta.providerName,
+            model = meta.model,
+            language = meta.language,
+            durationSecs = recordedSeconds,
+            source = meta.source,
             reworded = false,
             audioFile = audioFile,
             failed = true,
