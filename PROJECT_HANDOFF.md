@@ -2,9 +2,9 @@
 
 Date: 2026-09-09
 
-> **Current authoritative handoff:** read `FULL_PROJECT_HANDOFF_2026-09-09.txt` and
-> `DEVELOPER_GUIDE.md` before acting on older sections below. This file preserves chronology and may
-> contain descriptions of work that was still pending when first written.
+> **Current authoritative handoff:** read `DEVELOPER_HANDOFF.md` first, then
+> `FULL_PROJECT_HANDOFF_2026-09-09.txt` and `DEVELOPER_GUIDE.md`. This file preserves chronology and
+> intentionally contains descriptions of work that was still pending when first written.
 
 ## 0. Current status correction — 2026-09-09
 
