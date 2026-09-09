@@ -2134,6 +2134,7 @@
     <string name="dictate__history_age_days" comment="Retention value. {days} is a number of days">{days} days</string>
     <string name="dictate__history_age_never" comment="Retention value: keep entries forever">No limit</string>
     <string name="dictate__history_failed" comment="Placeholder text for a logged dictation whose transcription failed; its audio can be re-transcribed">Transcription failed — re-transcribe to retry</string>
+    <string name="dictate__history_stopped_recoverable" comment="Placeholder text for audio archived after manual Stop or watchdog cancellation; the recording can be re-transcribed later">Stopped — recording saved for recovery</string>
     <string name="dictate__history_search" comment="Placeholder in the history search field">Search history</string>
     <string name="dictate__history_disk_usage" comment="Disk-usage line on the history screen. {size} is a file size like 12.3 MB">Retained audio: {size}</string>
     <string name="dictate__history_audio_missing" comment="Shown when a stored recording can no longer be played back">Recording is no longer available.</string>
