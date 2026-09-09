@@ -175,8 +175,9 @@ Kapijuja Voice treats captured speech as recoverable user data rather than dispo
 - During recording, the Smartbar trash/cancel button is non-destructive on the first tap. It opens an
   in-keyboard confirmation for five seconds while microphone capture continues; only the explicit second
   Delete action discards the recording. The legacy layout also requires a second confirmation tap.
-- RecordingController streams PCM continuously into `cache/dictate_audio.wav` while the user speaks, so
-  the already-captured portion is physically on disk during that confirmation rather than living only in RAM.
+- RecordingController streams PCM continuously into a uniquely named private cache WAV while the user
+  speaks, so the already-captured portion is physically on disk during confirmation rather than living
+  only in RAM. Recording/segment filenames are never reused across sessions.
 - During `Transcribing…`, Kapijuja shows an explicit Stop control. Stopping cancels the in-flight
   provider request but keeps a private resend copy instead of deleting the recording.
 - After Stop, the Smartbar offers Send again and explicit discard. In addition to the transient resend
@@ -200,6 +201,9 @@ Kapijuja Voice treats captured speech as recoverable user data rather than dispo
 - Long-form keeps segment WAVs only in cache until the session reaches a terminal state. This temporary
   ownership is independent of permanent History retention and allows a Stop/watchdog to merge all
   segments back into one rescue WAV before cleanup.
+- Batch requests also carry a generation ownership token and request-scoped temp filenames. A cancelled
+  native/local job that returns late cannot clear the in-flight pointer, cancel the watchdog, or delete
+  cache files belonging to a newer dictation/import/replay.
 
 ## Unicode fix made during the fork
 
