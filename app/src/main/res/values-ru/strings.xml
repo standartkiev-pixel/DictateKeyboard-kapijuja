@@ -1695,6 +1695,7 @@
     <string name="dictate__history_age_days">{days} дн.</string>
     <string name="dictate__history_age_never">Без ограничения</string>
     <string name="dictate__history_failed">Ошибка транскрипции — повторите транскрипцию, чтобы попробовать снова</string>
+    <string name="dictate__history_stopped_recoverable">Остановлено — запись сохранена для восстановления</string>
     <string name="dictate__history_search">Поиск в истории</string>
     <string name="dictate__history_disk_usage">Сохранённое аудио: {size}</string>
     <string name="dictate__history_audio_missing">Запись больше недоступна.</string>
