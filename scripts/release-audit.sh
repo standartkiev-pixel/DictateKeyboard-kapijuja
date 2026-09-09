@@ -22,7 +22,8 @@ fail_if_tracked '(sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z
 fail_if_tracked '(api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_)' \
   ':!README.md' ':!PRIVACY_POLICY.md' ':!SECURITY.md' ':!PROJECT_HANDOFF.md' ':!NEXT_CHAT.md' \
   ':!FULL_PROJECT_HANDOFF_2026-09-09.txt' ':!KAPIJUJA_VOICE_PROJECT_HANDOFF_2026-09-09.txt' \
-  ':!DEVELOPER_HANDOFF.md' ':!DEVELOPER_GUIDE.md' ':!NOTICE' ':!.github/workflows/**'
+  ':!DEVELOPER_HANDOFF.md' ':!DEVELOPER_GUIDE.md' ':!NOTICE' ':!.github/workflows/**' \
+  ':!scripts/release-audit.sh'
 
 if git ls-files | grep -Eq '(^|/)(keystore\.properties|.*\.(jks|keystore))$'; then
   echo "Release audit rejected tracked signing material." >&2

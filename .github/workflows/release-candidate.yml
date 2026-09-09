@@ -14,6 +14,7 @@ concurrency:
 jobs:
   verify-and-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -35,7 +36,7 @@ jobs:
 
       - name: Run all JVM unit tests
         run: |
-          ./gradlew \
+          timeout 20m ./gradlew \
             :app:testDebugUnitTest \
             :lib:dictate-core:testDebugUnitTest \
             :wear:testDebugUnitTest \
@@ -45,8 +46,8 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             echo "Cancellation fault test attempt $attempt/3"
-            ./gradlew :lib:dictate-core:testDebugUnitTest \
-              --tests '*OpenAiCompatibleClientNetworkTest.cancelling a stalled transcription aborts the active call without replaying the audio' \
+            timeout 10m ./gradlew :lib:dictate-core:testDebugUnitTest \
+              --tests '*OpenAiCompatibleClientNetworkTest' \
               --rerun-tasks --stacktrace
           done
 
