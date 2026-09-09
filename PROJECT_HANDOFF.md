@@ -1,4 +1,4 @@
-# Kapijuja Voice — historical handoff / development notes
+# Dictate Kapijuja — historical handoff / development notes
 
 Date: 2026-09-09
 
@@ -69,10 +69,10 @@ https://github.com/DevEmperor/DictateKeyboard
 Dictate Keyboard is an Apache-2.0 open-source fork/rebuild based on FlorisBoard. We imported the current upstream source with Git history so future upstream changes can still be compared and selectively merged.
 
 Working product direction:
-- New installed product name: **Kapijuja Voice** (branding work is not finished yet).
-- Android application id already changed to **net.kapijuja.voice**.
-- Goal: official Dictate and Kapijuja Voice must be installable side-by-side.
-- Preserve upstream Apache-2.0 LICENSE and NOTICE attribution. Do not present Kapijuja Voice as the original Dictate product.
+- New installed product name: **Dictate Kapijuja** (branding work is not finished yet).
+- Android application id already changed to **net.kapijuja.dictate**.
+- Goal: official Dictate and Dictate Kapijuja must be installable side-by-side.
+- Preserve upstream Apache-2.0 LICENSE and NOTICE attribution. Do not present Dictate Kapijuja as the original Dictate product.
 
 At the time of this handoff, GitHub reports both `main` and `kapijuja-bootstrap` at commit:
 `cd23b55c2148e7e3a540ae993dccabda71a7dd7c`
@@ -119,15 +119,15 @@ Dictate Cloud was not a future placeholder. It is a real upstream paid-credit se
 - Cloud-specific error TOP_UP flow
 - tests and What's New marketing UI
 
-Important: Google Play Billing has no simple "API key" to replace. It is tied to the Android package/app in Play Console and product IDs. For Kapijuja Voice we decided to remove upstream Billing/Cloud completely for now. If monetization is ever added later, add Billing again using our own `net.kapijuja.voice` Play listing and our own product IDs.
+Important: Google Play Billing has no simple "API key" to replace. It is tied to the Android package/app in Play Console and product IDs. For Dictate Kapijuja we decided to remove upstream Billing/Cloud completely for now. If monetization is ever added later, add Billing again using our own `net.kapijuja.dictate` Play listing and our own product IDs.
 
 ### Already completed and committed
 
 Verified in repository at handoff time:
-- phone `applicationId = "net.kapijuja.voice"`
-- Wear app applicationId changed to `net.kapijuja.voice`
+- phone `applicationId = "net.kapijuja.dictate"`
+- Wear app applicationId changed to `net.kapijuja.dictate`
 - project version line reset to Kapijuja `0.1.0`, versionCode 1
-- root project renamed to `KapijujaVoice`
+- root project renamed to `DictateKapijuja`
 - Google Play Billing version/library removed from `gradle/libs.versions.toml`
 - `implementation(libs.android.billing.ktx)` removed from app Gradle
 - `com.android.vending.BILLING` permission removed from AndroidManifest
@@ -179,9 +179,9 @@ Do NOT remove generic uses of the word "cloud" where it simply means an online p
 ## 4. Branding and side-by-side installation — mostly complete
 
 Done:
-- package/application id: `net.kapijuja.voice`
-- app-visible name: **Kapijuja Voice**
-- full product wording: **Kapijuja Voice Keyboard**
+- package/application id: `net.kapijuja.dictate`
+- app-visible name: **Dictate Kapijuja**
+- full product wording: **Dictate Kapijuja Keyboard**
 - distinct dark + gold/yellow **K** adaptive launcher icon
 - project/About/Issues/Privacy/Changelog links rebased to Kapijuja where appropriate
 - upstream funding/store links removed/redirected
