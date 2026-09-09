@@ -6,9 +6,10 @@
 
 The goal of this fork is to keep the excellent full keyboard and voice/AI architecture while making
 the application independent from the upstream Dictate Cloud payment service and giving the fork its
-own Android identity, signing key and release line.
+own Android identity, release-signing configuration and release line.
 
-For the complete development handoff and current project state, read **[NEXT_CHAT.md](NEXT_CHAT.md)**.
+For the complete development handoff, read **[FULL_PROJECT_HANDOFF_2026-09-09.txt](FULL_PROJECT_HANDOFF_2026-09-09.txt)**.
+Developers should also read **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** and **[NEXT_CHAT.md](NEXT_CHAT.md)** before changing recovery/network code.
 
 ## Current status
 
@@ -21,10 +22,11 @@ The fork is functional and builds successfully in GitHub Actions.
 - Main development branch: `main`
 - Bootstrap/history branch retained: `kapijuja-bootstrap`
 - The official Dictate app and Kapijuja Voice can be installed side by side.
-- Kapijuja Voice has its own permanent release signing identity.
+- Release-signing configuration and the stable alias `kapijuja_voice_release` are prepared; the external JKS itself is not stored in Git and must be verified/recovered before the first signed release.
 - Dictate Cloud and Google Play Billing are intentionally removed.
 - BYOK online providers, custom/self-hosted endpoints and on-device STT remain available.
-- CI currently builds a debug APK, uploads it as an artifact and runs the unit test suite.
+- CI builds a debug APK, uploads it as an artifact and runs the unit test suite.
+- Recovery/watchdog source checkpoint `ba315c1b3ed7eb26a8b8f835287e51de91bb7eb1` passed GitHub Actions run `34337994539` completely.
 
 ## What was removed from upstream Dictate
 
@@ -123,11 +125,11 @@ It performs:
 
 ## Signing and updates
 
-Kapijuja Voice has its own permanent release key.
+The project has release-signing configuration for:
 
 - Package: `net.kapijuja.voice`
-- Key alias: `kapijuja_voice_release`
-- Key type: RSA-4096
+- Expected stable alias: `kapijuja_voice_release`
+- Intended key type: RSA-4096
 - The actual keystore and passwords are **not stored in Git**.
 
 The repository contains only:
@@ -136,11 +138,21 @@ The repository contains only:
 keystore.properties.template
 ```
 
-For local release signing, create an untracked `keystore.properties` and point it to the permanent
-Kapijuja Voice keystore.
+### Important verification rule
 
-**Never generate a new release key for normal future releases.** Android in-place updates require the
-same signing identity.
+Repository history contains conflicting handoff statements about whether the external permanent JKS
+was actually created and delivered. Git itself contains no JKS or certificate fingerprint, so the
+key's existence cannot be proven from this repository alone.
+
+Before the first signed release:
+
+1. recover/locate the owner's existing Kapijuja signing backup and certificate fingerprint;
+2. verify it with `keytool` / `apksigner`;
+3. only generate a new permanent key if the owner explicitly confirms that no earlier permanent key
+   exists and no distributed APK depends on it.
+
+**Never generate a replacement key merely because the JKS is absent from Git.** Android in-place updates
+require the same signing identity once a release has been distributed.
 
 The repository already ignores:
 
