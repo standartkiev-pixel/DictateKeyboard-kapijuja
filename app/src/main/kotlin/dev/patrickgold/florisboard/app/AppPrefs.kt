@@ -708,12 +708,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__history_enabled",
             default = true,
         )
-        // Additionally keep the source audio (WAV) of each logged dictation so a flaky transcription can be
-        // replayed and re-transcribed. Off by default (privacy + disk: ~1.9 MB per recorded minute); the
-        // audio lives in the app's private storage and is pruned by the byte budget below.
+        // Additionally keep the source audio of each logged dictation so a flaky transcription can be
+        // replayed and re-transcribed. Kapijuja enables this by default: recovering the exact spoken audio
+        // is a core reliability feature, not an afterthought. Files stay in private app storage and are
+        // bounded by entry-count, age and byte-budget pruning below. Users can still turn retention off.
         val historyAudioRetention = boolean(
             key = "dictate__history_audio_retention",
-            default = false,
+            default = true,
         )
         // Cap: how many entries to keep (oldest dropped first).
         val historyMaxEntries = int(
