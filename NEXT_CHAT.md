@@ -1,8 +1,12 @@
 # NEXT CHAT — Kapijuja Voice development handoff
 
-This file is the authoritative handoff for continuing development in a new ChatGPT conversation.
+This file is a continuing handoff for development.
 
-**Read this file before changing anything. The purpose is to avoid rediscovering work already done.**
+**First read `FULL_PROJECT_HANDOFF_2026-09-09.txt` and `DEVELOPER_GUIDE.md`.** They consolidate the
+latest verified recovery/watchdog architecture and correct several stale statements in older sections
+of this file. Then use the newest sections below for chronological detail.
+
+The purpose is to avoid rediscovering work already done.
 
 ---
 
@@ -78,39 +82,32 @@ identity.
 
 ## 4. Signing — CRITICAL
 
-A permanent Kapijuja Voice release key was created separately from the Git repository.
+The repository contains release-signing configuration but **does not contain or cryptographically prove
+the existence of the external permanent JKS**.
 
-Known signing identity:
+Expected identity/configuration:
 
 - alias: **`kapijuja_voice_release`**
-- key type: **RSA-4096**
-- certificate validity was checked with `keytool`
-- the keystore/passwords are intentionally NOT in Git
+- intended key type: **RSA-4096**
+- repository template: `keystore.properties.template`
+- `*.jks`, `*.keystore` and `keystore.properties` are intentionally gitignored
 
-A private backup ZIP was delivered to the user during the bootstrap conversation. It contains:
-
-- the Kapijuja Voice `.jks` release keystore;
-- a usable `keystore.properties`;
-- password/fingerprint backup information.
-
-Repository-safe template:
-
-`keystore.properties.template`
-
-Git ignore already covers:
-
-- `*.jks`
-- `*.keystore`
-- `keystore.properties`
+Historical handoff notes conflict: some said a private backup had been created/delivered, while an older
+handoff correctly recorded that no completed tool action/fingerprint was verified. Because Git contains
+no certificate fingerprint, treat actual key existence as **unverified until the owner supplies or
+locates the backup**.
 
 ### DO NOT DO THIS
 
 **Never generate a new signing key just because the old one is not immediately visible in a new chat.**
 
-Ask the user for the saved Kapijuja signing backup if release signing is required.
+For first release signing:
 
-Every future release intended to update the existing Kapijuja Voice installation must use the same
-release key.
+1. ask the owner for the saved Kapijuja JKS/fingerprint backup;
+2. verify it with `keytool` / `apksigner`;
+3. use the same key for every future update;
+4. only create a new permanent key if the owner explicitly confirms that no prior permanent key exists
+   and no distributed APK depends on one.
 
 ---
 
@@ -702,7 +699,7 @@ At this handoff:
 - application identity was changed to Kapijuja Voice / `net.kapijuja.voice`;
 - a separate gold-K app icon was created;
 - project links/docs were rebased to Kapijuja;
-- a permanent release signing key was created and backed up outside Git;
+- release-signing configuration and alias are prepared; existence of the external permanent JKS must be verified with the owner before first release signing;
 - CI was added;
 - Cloud regression audit passes;
 - native STT fetch passes;
@@ -710,8 +707,10 @@ At this handoff:
 - unit tests pass;
 - Unicode grapheme counting was fixed;
 - verified bootstrap was fast-forwarded to `main`;
-- the next major functional change is the stuck-`Transcribing…` watchdog;
-- the next packaging change is the first properly signed Kapijuja Voice release APK.
+- the stuck-`Transcribing…` no-progress watchdog, safe Stop/resend, History recovery, cross-provider replay,
+  retry cap, long-form rescue and request-ownership hardening are implemented and CI-green;
+- the next major functional stage is real-device/network fault injection;
+- after fault testing, resolve signing-key existence before the first properly signed release APK.
 
 **Start the next chat from this file. Do not rediscover the bootstrap from scratch.**
 
