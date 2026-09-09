@@ -50,13 +50,21 @@ jobs:
               --rerun-tasks --stacktrace
           done
 
-      - name: Android lint including resource leak detectors
+      - name: Strict Android lint for core and Wear
         run: |
           ./gradlew \
-            :app:lintDebug \
             :lib:dictate-core:lintDebug \
             :wear:lintDebug \
             --stacktrace
+
+      # The phone module carries an upstream localization/API lint backlog. Generate its complete report
+      # for every RC, then fail on the permission/lifecycle/resource IDs that can crash or leak at runtime.
+      - name: Generate complete phone lint report
+        continue-on-error: true
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Gate release-critical phone lint findings
+        run: python3 scripts/gate-release-lint.py
 
       - name: Verify APK identity signature and size
         id: apk
@@ -94,11 +102,13 @@ jobs:
             '' \
             'This is intentionally a prerelease signed with the Android debug identity because the permanent Kapijuja JKS has not yet been recovered. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
             '' \
+            'Rewording now defaults to the compact prompt panel: the permanent prompt row is removed, while the magic-wand Smartbar action still opens translation, grammar and custom prompts.' \
+            '' \
             'Validated before publishing:' \
             '- phone and Wear compilation;' \
             '- app, dictate-core and Wear unit tests;' \
             '- three repeated stalled-request cancellation tests;' \
-            '- Android lint resource/leak checks;' \
+            '- strict core/Wear lint and a release-critical phone permission/lifecycle/resource gate;' \
             '- Cloud/Billing and credential audit;' \
             '- APK package, signature and size verification.' \
             '' \

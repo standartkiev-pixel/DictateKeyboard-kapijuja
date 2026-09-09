@@ -825,11 +825,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__live_prompt_action_removed",
             default = false,
         )
-        // Guard for the one-time switch of existing users to the always-on prompt ROW layout (the new
-        // default). Fires once so users who were on PANEL land on ROW after the update; they can switch
-        // back any time. See DictateLegacyMigrator.migratePromptsLayoutToRowIfNeeded.
+        // Historical guard for the short-lived migration that forced the always-on prompt row. Keep it
+        // so the corrective migration can distinguish affected installations from fresh PANEL installs.
         val promptsLayoutRowMigrated = boolean(
             key = "dictate__prompts_layout_row_migrated",
+            default = false,
+        )
+        // One-time correction for installations that received the forced ROW migration. Returning those
+        // users to PANEL removes the permanent chip row while keeping rewording available from the
+        // magic-wand Smartbar action. See DictateLegacyMigrator.restorePromptsPanelIfNeeded.
+        val promptsLayoutPanelRestored = boolean(
+            key = "dictate__prompts_layout_panel_restored",
             default = false,
         )
         // Guard for the one-time re-engagement reset shipped with the 4.0.0 relaunch: existing users
@@ -863,11 +869,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         // How the rewording prompt chips are surfaced: a dedicated panel (PANEL) opened from the
         // Smartbar, or an always-on extra row pinned above the Smartbar (ROW). See DictatePromptsLayout.
-        // Defaults to ROW so the prompts are immediately visible; existing users are moved to ROW once via
-        // DictateLegacyMigrator.migratePromptsLayoutToRowIfNeeded.
+        // PANEL matches the compact legacy interaction: the keyboard stays one row shorter and the
+        // magic-wand Smartbar action opens every prompt on demand. ROW remains an explicit user option.
         val promptsLayout = enum(
             key = "dictate__prompts_layout",
-            default = DictatePromptsLayout.ROW,
+            default = DictatePromptsLayout.PANEL,
         )
         // Classic keyboard-less "legacy" dictation layout (issue #125): OFF = modern keyboard (default);
         // LOCKED = only the legacy record-first UI; SWIPE = legacy UI as home, horizontal swipe flips to

@@ -10,12 +10,14 @@
 
 package dev.patrickgold.florisboard.dictate.provider
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
@@ -55,8 +57,13 @@ class ModelDownloadService : Service() {
                     ServiceCompat.stopForeground(this@ModelDownloadService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 } else if (hasNotificationPermission()) {
-                    NotificationManagerCompat.from(this@ModelDownloadService)
-                        .notify(NOTIF_ID, buildNotification(states))
+                    try {
+                        NotificationManagerCompat.from(this@ModelDownloadService)
+                            .notify(NOTIF_ID, buildNotification(states))
+                    } catch (_: SecurityException) {
+                        // Permission can be revoked after the check; the foreground download remains
+                        // valid, but its optional progress update must not crash the service.
+                    }
                 }
             }
         }
@@ -147,8 +154,17 @@ class ModelDownloadService : Service() {
         )
     }
 
-    private fun hasNotificationPermission(): Boolean =
-        NotificationManagerCompat.from(this).areNotificationsEnabled()
+    /**
+     * Android 13 made notification delivery a runtime permission. `areNotificationsEnabled()` only
+     * reports the channel/app switch and does not prove POST_NOTIFICATIONS was granted, so checking both
+     * avoids a SecurityException when a background model download publishes progress after denial.
+     */
+    private fun hasNotificationPermission(): Boolean {
+        val runtimePermissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        return runtimePermissionGranted && NotificationManagerCompat.from(this).areNotificationsEnabled()
+    }
 
     companion object {
         private const val CHANNEL_ID = "dictate_model_downloads"

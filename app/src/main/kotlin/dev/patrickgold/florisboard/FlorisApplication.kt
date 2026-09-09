@@ -125,7 +125,9 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateProviderKeyringIfNeeded()
             DictateLegacyMigrator.removeLivePromptActionIfNeeded(this@FlorisApplication)
             DictateLegacyMigrator.migratePromptsActionIfNeeded(this@FlorisApplication)
-            DictateLegacyMigrator.migratePromptsLayoutToRowIfNeeded()
+            // Undo the earlier forced always-on row without disabling rewording; PANEL keeps the
+            // magic-wand prompt launcher available and restores the compact keyboard height.
+            DictateLegacyMigrator.restorePromptsPanelIfNeeded()
             DictateLegacyMigrator.migratePushToTalkDefaultIfNeeded()
             DictateLegacyMigrator.migrateHindiDefaultsIfNeeded()
             DictateLegacyMigrator.migrateFrenchPunctuationRuleIfNeeded()

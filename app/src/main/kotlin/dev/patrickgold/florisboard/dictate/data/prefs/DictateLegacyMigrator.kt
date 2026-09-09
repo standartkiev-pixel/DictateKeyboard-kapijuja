@@ -42,6 +42,15 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
  */
 object DictateLegacyMigrator {
 
+    /**
+     * Pure decision used by the corrective prompt-layout migration. Keeping this separate makes the
+     * provenance rule testable without constructing the process-wide preference store.
+     */
+    internal fun shouldRestorePromptsPanel(
+        rowMigrationApplied: Boolean,
+        currentLayout: DictatePromptsLayout,
+    ): Boolean = rowMigrationApplied && currentLayout == DictatePromptsLayout.ROW
+
     @Suppress("DEPRECATION") // writes the deprecated flat prefs that migrateProviderKeyringIfNeeded folds in
     suspend fun migrateIfNeeded(context: Context) {
         val prefs by FlorisPreferenceStore
@@ -327,16 +336,25 @@ object DictateLegacyMigrator {
     }
 
     /**
-     * One-time switch to the always-on prompt ROW layout, now the default. Existing users who were on the
-     * PANEL layout are moved to ROW once on update so the prompt chips are immediately visible; they can
-     * switch back in settings. A brand-new install is already on ROW (the new default), so this is a no-op
-     * for them. Idempotent via `prefs.dictate.promptsLayoutRowMigrated`.
+     * Repairs the short-lived migration that forced every existing installation onto the always-on ROW
+     * layout. PANEL keeps the keyboard compact and exposes the same prompts through the magic-wand action,
+     * matching the original Dictate interaction shown to users. Fresh installs already default to PANEL.
+     *
+     * The historical guard is deliberately retained as provenance: only installations actually touched
+     * by the old migration are rewritten. The new guard makes the correction idempotent and lets users
+     * explicitly choose ROW again afterwards without a future launch overriding their choice.
      */
-    suspend fun migratePromptsLayoutToRowIfNeeded() {
+    suspend fun restorePromptsPanelIfNeeded() {
         val prefs by FlorisPreferenceStore
-        if (prefs.dictate.promptsLayoutRowMigrated.get()) return
-        prefs.dictate.promptsLayout.set(DictatePromptsLayout.ROW)
-        prefs.dictate.promptsLayoutRowMigrated.set(true)
+        if (prefs.dictate.promptsLayoutPanelRestored.get()) return
+        if (shouldRestorePromptsPanel(
+                rowMigrationApplied = prefs.dictate.promptsLayoutRowMigrated.get(),
+                currentLayout = prefs.dictate.promptsLayout.get(),
+            )
+        ) {
+            prefs.dictate.promptsLayout.set(DictatePromptsLayout.PANEL)
+        }
+        prefs.dictate.promptsLayoutPanelRestored.set(true)
     }
 
     /**
