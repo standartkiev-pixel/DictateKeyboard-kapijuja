@@ -1,11 +1,11 @@
-# Privacy Policy — Kapijuja Voice
+# Privacy Policy — Dictate Kapijuja
 
-Kapijuja Voice is an open-source keyboard. It does not operate a Kapijuja transcription proxy,
+Dictate Kapijuja is an open-source keyboard. It does not operate a Kapijuja transcription proxy,
 account system, advertising system, analytics service, or payment backend.
 
 ## Keyboard text
 
-Ordinary typing is processed on the device. Kapijuja Voice does not send everything you type to a
+Ordinary typing is processed on the device. Dictate Kapijuja does not send everything you type to a
 Kapijuja server.
 
 ## Voice transcription and AI rewriting
@@ -35,7 +35,7 @@ release hosting. Those downloads do not contain dictated text.
 ## No Dictate Cloud
 
 The upstream Dictate Cloud credit service and its Google Play Billing purchase flow have been removed
-from Kapijuja Voice. Kapijuja Voice does not route speech or payment information through
+from Dictate Kapijuja. Dictate Kapijuja does not route speech or payment information through
 `api.dictatekeyboard.com`.
 
 ## Source
