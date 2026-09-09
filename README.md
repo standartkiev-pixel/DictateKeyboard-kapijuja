@@ -170,8 +170,8 @@ Kapijuja Voice treats captured speech as recoverable user data rather than dispo
 - Retained audio lives only in the app's private `filesDir/dictate_history/` directory.
 - Default pruning limits are 50 history entries, 30 days and 200 MB of retained audio.
 - The History panel is placed beside Clipboard in the default Smartbar actions.
-- A retained history recording can be transcribed again; the replay uses the currently selected
-  transcription provider, which already makes cross-provider "second opinion" recognition possible.
+- A retained history recording can be sent to a recognizer chosen for that one replay without changing
+  the global/default provider, enabling cross-provider "second opinion" recognition.
 - During recording, the Smartbar trash/cancel button is non-destructive on the first tap. It opens an
   in-keyboard confirmation for five seconds while microphone capture continues; only the explicit second
   Delete action discards the recording. The legacy layout also requires a second confirmation tap.
@@ -179,14 +179,27 @@ Kapijuja Voice treats captured speech as recoverable user data rather than dispo
   the already-captured portion is physically on disk during that confirmation rather than living only in RAM.
 - During `Transcribing…`, Kapijuja shows an explicit Stop control. Stopping cancels the in-flight
   provider request but keeps a private resend copy instead of deleting the recording.
-- After Stop, the Smartbar offers Send again and explicit discard. The user decides when the captured
-  audio is no longer needed.
+- After Stop, the Smartbar offers Send again and explicit discard. In addition to the transient resend
+  copy, Stop/watchdog audio is force-archived as a recoverable History entry when History is enabled
+  (never for incognito/password fields, and never duplicated for an existing History replay).
 - The in-keyboard History panel now has a recognizer chooser for retained audio. A single saved recording
   can be replayed through OpenAI, Groq, Gemini, Deepgram, other configured built-ins, a custom endpoint
   or the installed on-device model.
 - A History replay uses a one-shot provider override: it does **not** change the user's global/default
   transcription provider. After a successful replay, the entry's provider/model metadata is updated to
   describe the recognizer that actually produced the new text.
+- A provider-independent no-progress watchdog now guards batch and long-form final transcription.
+  Upload bytes, Soniox/AssemblyAI status polls and local sherpa-onnx decode steps refresh one heartbeat.
+  If no meaningful progress occurs for the configured Request timeout, Kapijuja automatically cancels
+  through the same retained-audio recovery path as manual Stop.
+- Realtime keeps its existing short finalize watchdog; if realtime fails/finishes empty it falls back to
+  batch transcription, which is then protected by the common no-progress watchdog.
+- Generic transcription POSTs are limited to one application-level retry; OpenRouter remains at zero.
+  Async status GET polling keeps its own safe retry budget because a GET does not re-upload audio or
+  create another billable transcription job.
+- Long-form keeps segment WAVs only in cache until the session reaches a terminal state. This temporary
+  ownership is independent of permanent History retention and allows a Stop/watchdog to merge all
+  segments back into one rescue WAV before cleanup.
 
 ## Unicode fix made during the fork
 
@@ -202,16 +215,13 @@ All unit tests passed after this change.
 
 The next development work should proceed roughly in this order:
 
-1. produce the first **release** APK signed with the permanent Kapijuja Voice key;
-2. verify side-by-side installation with official Dictate;
-3. test basic typing, microphone dictation, OpenAI/Groq/Gemini/custom provider paths and local STT;
-4. device-test safe recording cancellation, manual Stop/resend and the new per-recording recognizer chooser;
-5. fix the remaining case where transcription can stay indefinitely in the `Transcribing…` state after
-   a network/provider failure (manual Stop already preserves the recording);
-6. add a state-level no-progress watchdog that automatically reaches the same recoverable resend state;
-7. consider a future "recognition variants" model if side-by-side comparison of several AI transcripts
+1. device-test the new recovery path with a real network cut: ordinary batch, OpenAI/Groq/Gemini/
+   Deepgram, Soniox/AssemblyAI async, local STT, realtime fallback and long-form final drain;
+2. test manual Stop/resend, process-death recovery through History, and the per-recording recognizer chooser;
+3. produce the first **release** APK signed with the permanent Kapijuja Voice key;
+4. verify side-by-side installation with official Dictate;
+5. consider a future "recognition variants" model if side-by-side comparison of several AI transcripts
    for the same retained audio is desired, without duplicating the audio file;
-8. reduce or change automatic retries for billable/non-idempotent transcription POSTs;
-9. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
+6. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
 
 See **[NEXT_CHAT.md](NEXT_CHAT.md)** before modifying the project.
