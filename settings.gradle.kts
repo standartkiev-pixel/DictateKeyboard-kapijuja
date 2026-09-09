@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-rootProject.name = "KapijujaVoice"
+rootProject.name = "DictateKapijuja"
 
 pluginManagement {
     repositories {
