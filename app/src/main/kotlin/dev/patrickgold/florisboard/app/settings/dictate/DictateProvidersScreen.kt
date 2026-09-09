@@ -254,9 +254,9 @@ fun DictateProvidersScreen() = FlorisScreen {
                 },
                 onClick = { navController.navigate(Routes.Settings.DictateProxy) },
             )
-            // One number for both halves of the wait (issue #337). Two minutes is right for a cloud
-            // provider and this exists for the other end of the range: a model on one's own machine
-            // can think for longer than that before the first byte of the answer arrives.
+            // One user-facing "no progress" budget. It configures the network timeout and Kapijuja's
+            // controller-level heartbeat watchdog; slow self-hosted models can raise it without disabling
+            // recovery for genuinely stuck Transcribing states.
             DialogSliderPreference(
                 pref = prefs.dictate.requestTimeout,
                 icon = Icons.Default.Timer,
