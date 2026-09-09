@@ -23,6 +23,31 @@ Verified on current `main`:
 
 Immediate next work after this checkpoint compiles cleanly:
 
+### Recovery UX update — safe cancellation + per-recording AI
+
+Additional Kapijuja-specific behaviour now lives on `main`:
+
+- Smartbar recording cancel is two-stage. First tap only opens an in-keyboard confirmation for 5 seconds;
+  recording continues. The user can return to recording or explicitly delete.
+- Legacy dictation layout also requires a second cancel tap within 5 seconds.
+- `RecordingController` already streams PCM directly into `cache/dictate_audio.wav` while recording;
+  the confirmation does not suspend or destroy that file.
+- Saved History audio now opens an in-keyboard recognizer chooser instead of a focusable dropdown.
+- History replay accepts a one-shot provider id override and never changes
+  `prefs.dictate.transcriptionProviderId`.
+- Configured built-ins, custom endpoints and the installed local model can be selected. Unconfigured
+  providers remain visible but disabled.
+- A successful replay updates the history row's provider/model metadata to match the AI that actually
+  produced the replacement transcript.
+
+Do not replace the in-IME provider chooser with a normal Material `DropdownMenu`: focusable popups can
+steal editor focus and cause the keyboard itself to hide.
+
+The next large task remains the provider-independent no-progress watchdog for genuinely stuck
+`Transcribing…`. Reuse the manual Stop/resend preservation path rather than inventing another recovery
+mechanism.
+
+
 1. verify the Stop/resend/history changes in CI;
 2. add a provider chooser directly to a retained history recording, so the same audio can be sent to a
    different recognizer without globally changing provider first;
