@@ -83,6 +83,10 @@ data class QuickActionArrangement(
                 QuickAction.InsertKey(TextKeyData.TOGGLE_FLOATING_WINDOW),
                 QuickAction.InsertKey(TextKeyData.TOGGLE_RESIZE_MODE),
                 QuickAction.InsertKey(TextKeyData.IME_UI_MODE_CLIPBOARD),
+                // Kapijuja keeps captured speech as a first-class recovery surface. Put history directly
+                // beside Clipboard so saved recordings are one nearby tap away instead of buried at the
+                // end of the Smartbar action list.
+                QuickAction.InsertKey(TextKeyData.DICTATE_REINSERT),
                 QuickAction.InsertKey(TextKeyData.IME_UI_MODE_MEDIA),
                 // GIF search panel (KLIPY). Present in the action list so users can drag it into the bar
                 // for one-tap GIF access; it does nothing until a free KLIPY API key is added in settings.
@@ -110,9 +114,6 @@ data class QuickActionArrangement(
                 QuickAction.InsertKey(TextKeyData.SYSTEM_INPUT_METHOD_PICKER),
                 QuickAction.InsertKey(TextKeyData.FORWARD_DELETE),
                 QuickAction.InsertKey(TextKeyData.IME_HIDE_UI),
-                // Re-insert / re-send the last transcription safety net (issue #111). Placed at the end
-                // so it is present in the action list without taking a prominent spot at the top of the bar.
-                QuickAction.InsertKey(TextKeyData.DICTATE_REINSERT),
                 // Fold the digit row away and back without a trip through settings (issue #333). At the
                 // end for the same reason: worth having in the list, not worth a Smartbar slot for
                 // everyone who never turned the row on in the first place.
@@ -149,8 +150,26 @@ data class QuickActionArrangement(
             // keeps it in the stored arrangement.
             val missing = (listOfNotNull(Default.stickyAction) + Default.dynamicActions + Default.hiddenActions)
                 .filter { it !in stored }
-            return if (missing.isEmpty()) stored
+            var merged = if (missing.isEmpty()) stored
             else stored.copy(dynamicActions = stored.dynamicActions + missing).distinct()
+
+            // Kapijuja migration: older Dictate defaults parked History at the very end of the visible
+            // actions. Move it beside Clipboard only when it is still in that recognisable default tail
+            // position; a user who already moved or hid History keeps their personal arrangement.
+            val history = QuickAction.InsertKey(TextKeyData.DICTATE_REINSERT)
+            val clipboard = QuickAction.InsertKey(TextKeyData.IME_UI_MODE_CLIPBOARD)
+            val oldHistoryIndex = merged.dynamicActions.indexOf(history)
+            val clipboardIndex = merged.dynamicActions.indexOf(clipboard)
+            if (oldHistoryIndex >= 0 && clipboardIndex >= 0 &&
+                oldHistoryIndex >= merged.dynamicActions.size - 3
+            ) {
+                val reordered = merged.dynamicActions.toMutableList()
+                reordered.removeAt(oldHistoryIndex)
+                val insertAfterClipboard = reordered.indexOf(clipboard) + 1
+                reordered.add(insertAfterClipboard, history)
+                merged = merged.copy(dynamicActions = reordered)
+            }
+            return merged
         }
     }
 }
