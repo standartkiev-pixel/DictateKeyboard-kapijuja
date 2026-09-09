@@ -202,13 +202,71 @@ private fun RecordingContent(state: DictateController.UiState.Recording) {
     val rawCancelProgress by DictateController.cancelSlideProgress.collectFlowAsState()
     val cancelProgress = if (ptt.discarding) 1f else rawCancelProgress
 
-    // Cancel button (far left) – discards the recording. In long-form it drops only the current (uncut)
+    // A tap on the trash button is deliberately NOT destructive in Kapijuja. Long dictations are too
+    // valuable to lose to one nervous/accidental tap. The first tap only opens this in-Smartbar
+    // confirmation while RecordingController keeps capturing audio. It auto-dismisses after five seconds;
+    // only the explicit second Delete action reaches cancelOrDiscardSegment().
+    var cancelConfirm by remember(state.startedAtMs) { mutableStateOf(false) }
+    LaunchedEffect(cancelConfirm) {
+        if (cancelConfirm) {
+            delay(5_000L)
+            cancelConfirm = false
+        }
+    }
+    if (cancelConfirm && !holding) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            SnyggText(
+                text = stringRes(R.string.dictate__cancel_confirm_title),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+            )
+            SnyggIconButton(
+                elementName = FlorisImeUi.SmartbarActionKey.elementName,
+                onClick = { cancelConfirm = false },
+                modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+            ) {
+                SnyggIcon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringRes(R.string.dictate__cancel_confirm_continue),
+                )
+            }
+            SnyggIconButton(
+                elementName = FlorisImeUi.SmartbarActionKey.elementName,
+                onClick = {
+                    cancelConfirm = false
+                    DictateController.cancelOrDiscardSegment(context)
+                },
+                modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .size(FlorisImeSizing.smartbarHeight * 0.8f)
+                            .background(RecordingRed.copy(alpha = 0.28f), CircleShape),
+                    )
+                    SnyggIcon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringRes(R.string.dictate__cancel_confirm_delete),
+                    )
+                }
+            }
+        }
+        return
+    }
+
+    // Cancel button (far left) – FIRST TAP ONLY asks for confirmation. In long-form the confirmed
+    // action drops only the current (uncut) segment and keeps recording, preserving upstream #183.
     // segment and keeps recording, so you can scrap the last utterance without losing the transcript (#183).
     // While holding it is the discard target: it reddens as the finger approaches, and reaching it drops
     // the recording immediately (see DictateController.onPushToTalkSlide) rather than on release.
     SnyggIconButton(
         elementName = FlorisImeUi.SmartbarActionKey.elementName,
-        onClick = { DictateController.cancelOrDiscardSegment(context) },
+        onClick = { cancelConfirm = true },
         modifier = Modifier
             .fillMaxHeight()
             .aspectRatio(1f)
