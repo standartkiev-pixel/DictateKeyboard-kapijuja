@@ -322,10 +322,14 @@ object DictateController {
     private val segmentMutex = Mutex()        // orders index assignment + rotate + the commit drain
     private var segmentInFlightCount = 0      // segments cut but not yet committed
     private var segmentStopped = false        // stop requested; finish once the queue drains
+    private var segmentCancellationPending = false // manual Stop/watchdog is collecting a rescue WAV
     private var segmentRecordedSeconds = 0L
     private var segmentVad: LiveSpeechSplitter? = null  // live VAD auto-split, when enabled (Phase 2)
-    private val segmentAudioFiles = HashMap<Int, File>()  // kept segment WAVs (index -> file) for history merge
-    private var segmentKeepAudio = false                  // whether to keep + merge segment audio (retention on)
+    // Every segment WAV stays in cache until the long-form session ends. This is temporary ownership,
+    // independent of History retention: it lets Stop/watchdog reconstruct a rescue recording even when
+    // permanent audio history is disabled. [segmentKeepAudio] only decides whether success is copied to History.
+    private val segmentAudioFiles = HashMap<Int, File>()
+    private var segmentKeepAudio = false                  // whether successful session audio is retained in History
     private val _segmentFlushCount = MutableStateFlow(0)
     /** Monotonic count of segment cuts — the recording bar flashes the Next button on each change (#170). */
     val segmentFlushCount: StateFlow<Int> = _segmentFlushCount.asStateFlow()
@@ -2406,6 +2410,7 @@ object DictateController {
         segmentAudioFiles.clear()
         segmentInFlightCount = 0
         segmentStopped = false
+        segmentCancellationPending = false
         segmentRecordedSeconds = 0L
         _segmentFlushCount.value = 0
         // Keep + merge the segment audio only when the history feature would actually store it.
@@ -2426,6 +2431,7 @@ object DictateController {
         segmentAudioFiles.clear() // files themselves are deleted by finalize/cancel, not here
         segmentInFlightCount = 0
         segmentStopped = false
+        segmentCancellationPending = false
         segmentVad?.release()
         segmentVad = null
         _segmentsInFlight.value = 0
@@ -2452,7 +2458,7 @@ object DictateController {
                 if (!segmentedActive || _state.value !is UiState.Recording) return@withLock null
                 val i = segmentNextIndex++
                 val w = withContext(Dispatchers.IO) { recorder?.rotate() }
-                if (segmentKeepAudio && w != null && w.exists() && w.length() > 0L) segmentAudioFiles[i] = w
+                if (w != null && w.exists() && w.length() > 0L) segmentAudioFiles[i] = w
                 segmentInFlightCount++
                 _segmentsInFlight.value = segmentInFlightCount
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
@@ -2510,7 +2516,7 @@ object DictateController {
                 if (discardFinal) {
                     // Deleted chunk: drop its audio so it lands in neither the transcript nor the history WAV.
                     withContext(Dispatchers.IO) { runCatching { w?.delete() } }
-                } else if (segmentKeepAudio && w != null && w.exists() && w.length() > 0L) {
+                } else if (w != null && w.exists() && w.length() > 0L) {
                     segmentAudioFiles[i] = w
                 }
                 segmentStopped = true
@@ -2535,8 +2541,8 @@ object DictateController {
             // audio is preserved in the merged history WAV so nothing is truly lost.
             val text = transcribeSegmentRaw(appContext, wav, continuity)
                 ?: transcribeSegmentRaw(appContext, wav, continuity)
-            // Keep the WAV when it will be merged into the history audio; otherwise drop it now.
-            if (!segmentKeepAudio) withContext(Dispatchers.IO) { runCatching { wav.delete() } }
+            // The session owns every segment WAV until final success/cancel. Keeping it in cache here is
+            // what makes a later Stop recoverable even when permanent History audio retention is off.
             onSegmentResult(appContext, idx, text ?: "")
         }
         segmentJobs.add(job)
