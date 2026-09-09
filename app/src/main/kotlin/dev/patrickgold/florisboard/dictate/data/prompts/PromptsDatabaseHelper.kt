@@ -36,8 +36,11 @@ import dev.patrickgold.florisboard.dictate.DictateReasoningEffort
  * to use from multiple threads/coroutines; SQLite's own connection pool serialises access.
  */
 class PromptsDatabaseHelper private constructor(
-    private val context: Context,
-) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+    context: Context,
+) : SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
+    // Seeding needs localized strings, not a component. Retaining Resources avoids making the
+    // process-wide database helper a static owner of an Activity, service, or other Context.
+    private val resources = context.applicationContext.resources
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -51,8 +54,8 @@ class PromptsDatabaseHelper private constructor(
         defaultSeeds().forEachIndexed { index, seed ->
             val cv = ContentValues().apply {
                 put("POS", index)
-                put("NAME", context.getString(seed.nameRes))
-                put("PROMPT", context.getString(seed.promptRes))
+                put("NAME", resources.getString(seed.nameRes))
+                put("PROMPT", resources.getString(seed.promptRes))
                 put("REQUIRES_SELECTION", if (seed.requiresSelection) 1 else 0)
                 put("AUTO_APPLY", 0)
             }

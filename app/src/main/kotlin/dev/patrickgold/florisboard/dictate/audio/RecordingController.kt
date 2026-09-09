@@ -11,7 +11,6 @@
 package dev.patrickgold.florisboard.dictate.audio
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -30,7 +29,7 @@ import java.io.RandomAccessFile
  *
  * Requires the RECORD_AUDIO runtime permission; [start] throws if the microphone cannot be acquired.
  */
-class RecordingController(private val context: Context) {
+class RecordingController(private val cacheDir: File) {
 
     private var record: AudioRecord? = null
     private var thread: Thread? = null
@@ -254,7 +253,7 @@ class RecordingController(private val context: Context) {
 
     /** Returns a never-reused cache pathname for this recording session / segment. */
     private fun nextAudioFile(): File =
-        File(context.cacheDir, "dictate_audio_${fileSessionId}_${segmentSeq++}.wav")
+        File(cacheDir, "dictate_audio_${fileSessionId}_${segmentSeq++}.wav")
 
     companion object {
         /** Hard upper bound for waiting on a broken native AudioRecord reader during stop/cancel. */

@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.lang.ref.WeakReference
 
 /**
  * The whole press on the mic, from the moment it lands until it lifts (#235).
@@ -60,8 +61,10 @@ object DictateHoldTouch {
     private var lockSlidePx = 0f
     private var commitPx = 0f
     private var releasePx = 0f
-    private var context: Context? = null
-    private var feedback: InputFeedbackController? = null
+    // A press may outlive its Compose gesture coroutine. Weak handles let the window-level dispatcher
+    // finish that press without making this process-wide object retain the IME service or its Context.
+    private var context: WeakReference<Context>? = null
+    private var feedback: WeakReference<InputFeedbackController>? = null
     private var action: QuickAction? = null
 
     /** True while the hold in question is push-to-talk; false for a plain long-press shortcut. */
@@ -148,9 +151,9 @@ object DictateHoldTouch {
         if (lastDownId < 0 || !lastDownStillDown) return false
         cancel()
         pendingId = lastDownId
-        this.context = context
+        this.context = WeakReference(context)
         this.action = action
-        this.feedback = feedback
+        this.feedback = WeakReference(feedback)
         this.onEnd = onEnd
         _pressed.value = true
         return true
@@ -176,14 +179,14 @@ object DictateHoldTouch {
                 if (id == lastDownId) lastDownStillDown = false
                 when (id) {
                     trackedId -> {
-                        val ctx = context
+                        val ctx = context?.get()
                         cancel()
                         if (ctx != null) DictateController.onPushToTalkUp(ctx)
                     }
                     // Lifted before it ever became a hold: the ordinary tap, delivered as the key press
                     // the gesture layer opened and never closed.
                     pendingId -> {
-                        val ctx = context
+                        val ctx = context?.get()
                         val act = action
                         cancel()
                         if (ctx != null && act != null) act.onPointerUp(ctx)
@@ -196,7 +199,7 @@ object DictateHoldTouch {
                 lastDownStillDown = false
                 val wasHolding = trackedId >= 0
                 val act = action
-                val ctx = context
+                val ctx = context?.get()
                 cancel()
                 if (wasHolding) DictateController.lockPushToTalk() else if (ctx != null) act?.onPointerCancel(ctx)
             }
@@ -205,7 +208,7 @@ object DictateHoldTouch {
 
     /** The delay elapsed with the finger still down: this press is a hold, not a tap. */
     private fun startHold() {
-        val ctx = context ?: return
+        val ctx = context?.get() ?: return
         if (pendingId < 0 || !lastDownStillDown || lastDownId != pendingId) {
             cancel()
             return
@@ -216,7 +219,7 @@ object DictateHoldTouch {
         action?.onPointerCancel(ctx)
         // The one moment worth feeling: the press has become something other than a tap. The tick when the
         // finger landed is the ordinary key one and fires for a tap that records nothing.
-        feedback?.keyLongPress(TextKeyData.UNSPECIFIED)
+        feedback?.get()?.keyLongPress(TextKeyData.UNSPECIFIED)
         if (!pushToTalk) {
             // A one-shot shortcut: run it and let go of the finger. Whatever the window still sends for this
             // press belongs to nobody, which is exactly what swallowing the rest of the gesture means.
@@ -250,7 +253,7 @@ object DictateHoldTouch {
         val goingUp = axis == Axis.UP
         if (goingUp && upward > lockSlidePx) {
             DictateController.lockPushToTalk()
-            feedback?.gestureSwipe(TextKeyData.UNSPECIFIED)
+            feedback?.get()?.gestureSwipe(TextKeyData.UNSPECIFIED)
             cancel()
             return
         }
@@ -258,7 +261,7 @@ object DictateHoldTouch {
         // Crossing the cancel threshold discards there and then, rather than on release: waiting would
         // leave the user holding a recording they have already thrown away.
         if (DictateController.onPushToTalkSlide(if (axis == Axis.LEFT) left / cancelSlidePx else 0f)) {
-            feedback?.gestureSwipe(TextKeyData.UNSPECIFIED)
+            feedback?.get()?.gestureSwipe(TextKeyData.UNSPECIFIED)
             cancel()
         }
     }
