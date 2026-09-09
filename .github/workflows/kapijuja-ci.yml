@@ -16,31 +16,40 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
+
+      # Kapijuja intentionally removed the upstream Dictate Cloud product and
+      # Google Play Billing integration. Historical handoff/README documents
+      # may still name those components, so this guard scans executable/source
+      # wiring while excluding Markdown documentation and this workflow itself.
       - name: Audit removed Dictate Cloud wiring
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -nE 'api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_' --               ':!README.md' ':!PRIVACY_POLICY.md' ':!SECURITY.md' ':!NOTICE' ':!.github/workflows/kapijuja-ci.yml'; then
+          if git grep -nE 'api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_' --             ':(exclude)**/*.md'             ':(exclude).github/workflows/kapijuja-ci.yml'; then
             echo "Forbidden Dictate Cloud / Billing wiring is still present."
             exit 1
           fi
+
       - name: Fetch pinned native STT runtime
         run: |
           chmod +x tools/fetch-sherpa-onnx.sh
           ./tools/fetch-sherpa-onnx.sh
+
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: kapijuja-voice-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
       - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest --stacktrace
