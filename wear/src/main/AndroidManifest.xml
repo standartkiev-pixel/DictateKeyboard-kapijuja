@@ -20,6 +20,8 @@
 
     <!-- Microphone for on-wrist dictation. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Haptic confirmation for recording and transcription state changes. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Standalone (opt-in) mode reaches the transcription provider directly from the watch. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
