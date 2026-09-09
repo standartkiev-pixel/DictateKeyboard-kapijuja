@@ -67,6 +67,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.DropdownMenu
@@ -144,6 +145,7 @@ private val RecordingRed = Color(0xFFE53935)
 fun DictateSmartbarUi(state: DictateController.UiState, modifier: Modifier = Modifier) {
     val arrangement = when {
         state is DictateController.UiState.Recording -> Arrangement.SpaceBetween
+        state is DictateController.UiState.Transcribing -> Arrangement.SpaceBetween
         state is DictateController.UiState.Error &&
             state.action != DictateController.ErrorAction.NONE -> Arrangement.SpaceBetween
         // The interrupted-recording chip always carries send/dismiss buttons on the right.
@@ -475,7 +477,8 @@ private fun LanguageChip() {
 }
 
 @Composable
-private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
+private fun RowScope.TranscribingContent(state: DictateController.UiState.Transcribing) {
+    val context = LocalContext.current
     val transition = rememberInfiniteTransition(label = "transcribing")
     val rotation by transition.animateFloat(
         initialValue = 0f,
@@ -484,6 +487,10 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
         label = "spin",
     )
     val retrying = state.attempt > 1
+    Row(
+        modifier = Modifier.weight(1f),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
     SnyggIcon(
         imageVector = if (retrying) Icons.Default.CloudOff else Icons.Default.Sync,
         modifier = Modifier
@@ -508,6 +515,19 @@ private fun TranscribingContent(state: DictateController.UiState.Transcribing) {
             imageVector = Icons.Default.PhoneAndroid,
             modifier = Modifier.size(16.dp),
             contentDescription = stringRes(R.string.dictate__status_transcribing_local),
+        )
+    }
+    }
+    // Kapijuja exposes Stop directly in the status row instead of relying on the sticky mic changing
+    // meaning. Stopping ends the provider request immediately but DictateController preserves a resend copy.
+    SnyggIconButton(
+        elementName = FlorisImeUi.SmartbarActionKey.elementName,
+        onClick = { DictateController.cancelTranscription(context) },
+        modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+    ) {
+        SnyggIcon(
+            imageVector = Icons.Default.StopCircle,
+            contentDescription = stringRes(R.string.dictate__action_stop_transcription),
         )
     }
 }
