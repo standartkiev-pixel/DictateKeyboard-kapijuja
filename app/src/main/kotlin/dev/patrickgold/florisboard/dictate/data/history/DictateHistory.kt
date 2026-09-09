@@ -107,14 +107,23 @@ interface DictateHistoryDao {
     @Insert
     suspend fun insert(entry: DictateHistoryEntry): Long
 
-    // A successful re-transcribe also clears the failed flag (the recovery succeeded). [originalText] is
-    // rewritten in the same statement on purpose: the new run produced its own raw transcript, and leaving
-    // the previous one behind would pair a result with an "original" it never came from (issue #240).
+    // A successful re-transcribe also clears the failed flag (the recovery succeeded). Kapijuja also
+    // replaces provider/model metadata here: when one retained recording is deliberately sent to a
+    // different recognizer, leaving the old provider label beside the new transcript would be false.
     @Query(
-        "UPDATE $DICTATE_HISTORY_TABLE SET text = :text, originalText = :originalText, failed = 0 " +
+        "UPDATE $DICTATE_HISTORY_TABLE SET text = :text, originalText = :originalText, failed = 0, " +
+            "providerId = :providerId, providerName = :providerName, model = :model, language = :language " +
             "WHERE ${BaseColumns._ID} = :id"
     )
-    suspend fun updateText(id: Long, text: String, originalText: String)
+    suspend fun updateText(
+        id: Long,
+        text: String,
+        originalText: String,
+        providerId: String,
+        providerName: String,
+        model: String,
+        language: String,
+    )
 
     @Query("UPDATE $DICTATE_HISTORY_TABLE SET pinned = :pinned WHERE ${BaseColumns._ID} = :id")
     suspend fun setPinned(id: Long, pinned: Boolean)
@@ -267,10 +276,30 @@ object DictateHistoryStore {
         return id
     }
 
-    /** Overwrites an existing entry's transcript in place (used when re-transcribing its audio). */
-    suspend fun updateText(context: Context, id: Long, text: String, originalText: String = "") {
+    /**
+     * Overwrites an existing entry after re-transcribing its retained audio. Provider/model metadata
+     * belongs to the NEW result as well as the text, so cross-provider replay remains auditable.
+     */
+    suspend fun updateText(
+        context: Context,
+        id: Long,
+        text: String,
+        originalText: String = "",
+        providerId: String,
+        providerName: String,
+        model: String,
+        language: String,
+    ) {
         if (text.isBlank()) return
-        db(context).dao().updateText(id, text, originalText)
+        db(context).dao().updateText(
+            id = id,
+            text = text,
+            originalText = originalText,
+            providerId = providerId,
+            providerName = providerName,
+            model = model,
+            language = language,
+        )
     }
 
     /** Pins or unpins an entry; pinned entries survive pruning and are marked in the UI. */
