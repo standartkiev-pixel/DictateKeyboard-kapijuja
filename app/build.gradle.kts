@@ -68,7 +68,7 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "net.kapijuja.voice"
+        applicationId = "net.kapijuja.dictate"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
         versionCode = projectVersionCode.toInt()
@@ -117,7 +117,7 @@ configure<ApplicationExtension> {
     // is absent (e.g. on CI without secrets, or a contributor's machine) the release build simply has
     // no signing config attached and falls back to an unsigned build, exactly as before.
     //
-    // Kapijuja Voice uses its own release signing identity. Keep the keystore outside Git and
+    // Dictate Kapijuja uses its own release signing identity. Keep the keystore outside Git and
 // reuse the same key for every release so Android updates install in place.
     val keystorePropsFile = rootProject.file("keystore.properties")
     val keystoreProps = if (keystorePropsFile.exists()) {
