@@ -1,0 +1,816 @@
+KAPIJUJA VOICE — FULL PROJECT HANDOFF
+Date: 2026-09-09
+Repository: standartkiev-pixel/DictateKeyboard-kapijuja
+Main branch: main
+
+PURPOSE OF THIS FILE
+====================
+
+This is the comprehensive handoff for the next ChatGPT session and for human developers.
+Read this file BEFORE changing the project. It consolidates the history, architecture, safety
+invariants, UI decisions, CI status, known risks, and the exact next steps so work is not repeated.
+
+The project owner prefers step-by-step development. For large changes, finish one coherent stage,
+verify it, document it, then stop at a natural boundary before the next large stage.
+
+The owner explicitly wants extensive comments around fork-specific code. Comments should say:
+- what changed from upstream;
+- why it changed;
+- what bug/user scenario it protects;
+- what must not be "simplified" later;
+- whether a name/path/protocol is intentionally inherited from upstream.
+
+Do not remove upstream license/copyright attribution.
+
+
+1. PROJECT IDENTITY AND ORIGIN
+==============================
+
+Product:
+- Kapijuja Voice
+- Full product wording: Kapijuja Voice Keyboard
+
+Repository:
+- standartkiev-pixel/DictateKeyboard-kapijuja
+
+Upstream:
+- DevEmperor/DictateKeyboard
+- Dictate Keyboard itself is FlorisBoard-based.
+
+Android identity:
+- applicationId: net.kapijuja.voice
+- root project name: KapijujaVoice
+- current fork version line: versionCode 1 / versionName 0.1.0
+- internal FlorisBoard namespace/package names are intentionally still largely inherited.
+  DO NOT mass-rename dev.patrickgold.florisboard classes/packages unless a concrete technical
+  requirement exists.
+
+The official Dictate app and Kapijuja Voice are intended to install side by side.
+
+License:
+- Apache-2.0 upstream/fork licensing and attribution must remain intact.
+
+
+2. WHY THE FORK EXISTS
+======================
+
+The original Dictate keyboard has a strong full-keyboard + voice/AI architecture, but this fork
+must be independently usable and maintainable.
+
+Goals:
+- remove dependence on Dictate Cloud/payment infrastructure;
+- remove Google Play Billing wiring belonging to that product;
+- keep BYOK/direct provider access;
+- keep custom/self-hosted providers;
+- keep on-device STT;
+- make voice dictation robust against network loss;
+- never casually destroy long recorded speech;
+- make retained recordings easy to find and reuse;
+- allow the same saved audio to be re-recognized by another AI;
+- remain independently brandable, buildable, signable and releasable.
+
+
+3. VERIFIED SOURCE BASELINE
+===========================
+
+Verified functional source checkpoint before documentation-only consolidation commits:
+
+Commit:
+ba315c1b3ed7eb26a8b8f835287e51de91bb7eb1
+
+GitHub Actions run:
+34337994539
+
+Result:
+SUCCESS
+
+Passed steps:
+- checkout
+- Java 17 setup
+- removed Dictate Cloud/Billing audit
+- pinned sherpa-onnx runtime fetch
+- debug APK build
+- debug APK artifact upload
+- unit tests
+
+Artifact:
+- name: kapijuja-voice-debug
+- artifact id: 10098628219
+- reported artifact size: 73,307,833 bytes
+- digest: sha256:909b716cdccc34199617b48ff3704a8e514a6a542543de15d3705084e9d0aa0d
+
+This is the important compile/test baseline for the recovery/watchdog work.
+
+
+4. CI AND BUILD ARCHITECTURE
+============================
+
+Workflow:
+.github/workflows/kapijuja-ci.yml
+
+Important properties:
+- Java 17
+- actions/checkout@v5
+- actions/setup-java@v5
+- concurrency cancel-in-progress is enabled
+- therefore intermediate CI runs often show "cancelled" when a later commit supersedes them.
+  This is not a build failure.
+
+CI deliberately audits for removed Dictate Cloud/Billing wiring.
+Historical docs are excluded from the grep because they legitimately name removed components.
+
+Native STT:
+- sherpa-onnx 1.13.3
+- ONNX Runtime Android 1.24.3
+- heavy jars/native libraries are NOT committed
+- tools/fetch-sherpa-onnx.sh fetches the pinned runtime and verifies SHA-256
+- large models are not stored in Git
+- small Silero VAD asset is committed
+
+DO NOT replace this with large checked-in binaries.
+
+
+5. DICTATE CLOUD / BILLING REMOVAL — COMPLETE
+==============================================
+
+The old handoff originally described Cloud removal as unfinished. That is stale history.
+
+Current executable/source tree has no working Dictate Cloud or Google Play Billing integration.
+
+Repository-wide checks found no working-code references for:
+- DictateCloud
+- ProviderRegistry.CLOUD
+- DictateCloudApi
+- DictateCloudScreen
+- dictate__cloud_
+- LOW_CREDIT
+- TOP_UP
+- api.dictatekeyboard.com
+- com.android.vending.BILLING
+- billingclient
+
+The remaining AudioReactiveCloudOrbView is ONLY a visual microphone/cloud-like animation.
+It is NOT the removed Dictate Cloud service. Do not delete it as a "Cloud remnant".
+
+The CI guard exists specifically to prevent accidental reintroduction.
+
+
+6. BRANDING STATUS
+==================
+
+Already substantially rebranded:
+- product name Kapijuja Voice
+- full name Kapijuja Voice Keyboard
+- dark launcher background
+- gold K foreground
+- monochrome K adaptive icon
+- Kapijuja links in About/Issues/Privacy/Changelog
+- upstream Play/PayPal links removed or redirected where appropriate
+- NOTICE preserves derivative/upstream attribution
+
+Remaining branding cleanup:
+- some user-visible "Dictate" wording may still exist, especially Wear and legacy strings.
+- examples historically observed:
+  - wear_ime_label = "Dictate (Wear)"
+  - "Grant mic in Dictate app"
+  - share-to-Dictate wording
+
+RULE:
+Brand user-facing labels.
+Do NOT blindly rename internal classes such as DictateController, internal protocol paths,
+FlorisBoard namespaces, or phone/watch synchronization paths merely for cosmetic consistency.
+
+
+7. SIGNING — IMPORTANT AMBIGUITY, DO NOT GUESS
+==============================================
+
+The repo contains signing configuration and:
+keystore.properties.template
+
+Expected alias:
+kapijuja_voice_release
+
+The actual JKS/passwords are intentionally outside Git.
+
+IMPORTANT CONTRADICTION:
+- some README/NEXT_CHAT text historically said a permanent release signing key had already been created;
+- older PROJECT_HANDOFF correctly noted there was no verified tool evidence proving that an external
+  JKS was actually created and safely delivered;
+- the repository itself has no certificate fingerprint or JKS and therefore cannot prove existence.
+
+SAFE RULE FOR ALL FUTURE WORK:
+1. DO NOT generate a replacement release key just because the JKS is not visible in Git.
+2. Ask for / locate the owner's saved Kapijuja JKS backup and certificate fingerprint first.
+3. If a prior APK has ever been distributed with that key, the SAME key is mandatory for updates.
+4. Only generate a new key if the owner explicitly confirms no prior permanent key exists and no
+   release that must be updated was signed with one.
+5. Never commit JKS/passwords.
+6. If a key is recovered, verify it with apksigner and record the SHA-256 certificate fingerprint
+   in safe project documentation (not the password/private key).
+
+First signed release/device smoke test remains future work.
+
+
+8. UPSTREAM CORRECTNESS FIX ALREADY PRESENT
+===========================================
+
+SelectionMetrics grapheme counting was changed from java.text.BreakIterator to Java/Android regex \X.
+
+Reason:
+JDK 17 handling of ZWJ family emoji was inconsistent with expected grapheme semantics.
+
+Do not revert this merely to match upstream if tests still depend on the corrected behavior.
+
+
+9. ORIGINAL USER-FACING FAILURE THAT DROVE THIS WORK
+====================================================
+
+Observed problem:
+after a network drop/provider failure, the keyboard could remain in "Transcribing…" for many minutes
+or appear effectively stuck.
+
+Important root causes discovered:
+- OpenAI-compatible OkHttp request timeout around 120 s;
+- old executeForBody default allowed initial request + up to 3 retries;
+- in the worst case that could turn into many minutes of waiting;
+- ambiguous retries of billable/non-idempotent STT POSTs could re-upload/re-charge;
+- different provider types had different lifecycles:
+  ordinary HTTP;
+  Soniox/AssemblyAI async polling;
+  realtime WebSocket;
+  local sherpa-onnx;
+  long-form segmented parallel jobs.
+
+The solution was intentionally placed at the controller/state-machine level rather than adding
+provider-specific hacks.
+
+
+10. SAFE RECORDING CANCEL UX
+============================
+
+User requirement:
+a long recording must NEVER be destroyed by one nervous/accidental tap.
+
+Normal Smartbar:
+- first tap on Cancel/Trash is NON-DESTRUCTIVE;
+- recording continues;
+- in-keyboard confirmation appears for 5 seconds;
+- microphone/continue action leaves the recording intact;
+- explicit red delete action really discards;
+- if the user does nothing, confirmation disappears and recording continues.
+
+Legacy layout:
+- space is tighter;
+- first tap only arms deletion;
+- second tap within 5 seconds confirms deletion.
+
+Why no ordinary Material modal/dropdown:
+focusable popup UI inside an IME can steal editor focus and hide the keyboard.
+
+RecordingController writes microphone PCM continuously to disk while speech is being captured.
+The audio is not merely kept in RAM waiting for Stop.
+
+
+11. UNIQUE RECORDING FILE OWNERSHIP — CRITICAL RACE FIX
+=======================================================
+
+The old recorder reused:
+cache/dictate_audio.wav
+
+That was unsafe in this scenario:
+1. old transcription is cancelled;
+2. user immediately begins another recording;
+3. old native/local job returns late;
+4. old cleanup deletes a pathname now reused by the NEW recording.
+
+Fix:
+- every RecordingController session/segment now writes to a unique cache WAV;
+- filenames are never reused across sessions;
+- request-scoped temp files are also unique.
+
+Unique/request-scoped ownership now applies to:
+- microphone WAVs
+- long-form segments
+- history replay temp files
+- imported-audio handoff files
+- trimmed audio
+- speed-up copies
+- packed m4a upload copies
+- long-form merged rescue files
+
+Batch requests also use a generation ownership token.
+A late cancelled native/local job may clear only its own state/files; it cannot:
+- clear a newer inFlightAudio pointer;
+- cancel a newer watchdog;
+- delete a newer request's cache file.
+
+DO NOT reintroduce fixed request temp names such as dictate_audio.wav.
+
+
+12. STOP DURING "TRANSCRIBING…" — RECOVERABLE, NOT DESTRUCTIVE
+==============================================================
+
+Kapijuja intentionally differs from old upstream behavior.
+
+Old behavior:
+Stop cancelled the request and the request cleanup deleted the audio.
+
+Current behavior:
+- explicit Stop is visible in the Transcribing Smartbar;
+- Stop first makes a private rescue copy;
+- then cancels the provider coroutine / OkHttp Call;
+- audio remains available for Send again;
+- explicit discard remains a separate action;
+- imported MP3/Ogg/etc preserve their real container extension;
+- local STT is also stoppable/recoverable.
+
+The cancellation path is centralized.
+Do not create another provider-specific "stop" mechanism.
+
+
+13. AUDIO HISTORY / ARCHIVE
+===========================
+
+Existing upstream history machinery was discovered and promoted rather than rewritten.
+
+Permanent retained history directory:
+filesDir/dictate_history/
+
+For new Kapijuja installs:
+source-audio history retention defaults ON.
+
+Default pruning:
+- 50 entries
+- 30 days
+- 200 MB retained audio
+
+Existing History supports:
+- text history
+- retained audio
+- playback
+- export
+- pinning
+- deletion
+- re-transcription
+
+History is promoted beside Clipboard in the default Smartbar arrangement.
+
+Migration rule:
+only move History to the new nearby position when the stored layout still looks like the old default.
+Do NOT overwrite a user's intentional custom Smartbar arrangement.
+
+
+14. PROCESS-DEATH RECOVERY
+==========================
+
+Manual Stop or watchdog rescue is not only transient cache state.
+
+When History is enabled:
+- stopped/stalled audio is also force-archived as a recoverable History entry;
+- it survives the transient resend chip disappearing or the IME process being killed.
+
+Privacy rules:
+- never archive password/incognito sensitive dictation fields;
+- do not duplicate an existing History replay into another failed/stopped row;
+- History remains subject to user deletion/pruning controls.
+
+
+15. CROSS-PROVIDER RE-RECOGNITION
+=================================
+
+A retained recording can be sent to another recognizer directly from the in-keyboard History panel.
+
+UI:
+- History stays inside the IME;
+- the replay action opens an in-keyboard recognizer chooser;
+- do NOT replace it with a focusable Material DropdownMenu.
+
+The chooser can show configured transcription-capable providers such as:
+- OpenAI
+- Groq
+- Gemini
+- Deepgram
+- other built-ins
+- custom/self-hosted endpoint
+- installed on-device model
+
+Unconfigured providers may be visible but disabled so the architecture is discoverable.
+
+ONE-SHOT PROVIDER OVERRIDE:
+choosing Groq for one saved clip must NOT change the user's normal global transcription provider.
+
+After successful replay:
+- transcript text is replaced with the new result;
+- provider/model/language metadata is updated to describe the recognizer that actually produced it.
+
+Potential future enhancement:
+"recognition variants" linked to ONE physical audio asset, allowing OpenAI/Groq/Gemini results
+side-by-side without duplicating WAV files. This is NOT implemented yet.
+
+
+16. PROVIDER-INDEPENDENT NO-PROGRESS WATCHDOG
+=============================================
+
+Implemented in DictateController.
+
+The watchdog does NOT use a simplistic total-duration timeout.
+It watches meaningful forward progress.
+
+The existing Settings -> AI providers -> Network -> Request timeout setting is reused as the
+no-progress budget:
+- range 30–600 s
+- default 120 s
+
+Meaning:
+"How long can NOTHING meaningful happen before I want my recording back?"
+
+Progress heartbeat sources:
+- multipart/raw/base64 upload bytes;
+- successful Soniox async status polls;
+- successful AssemblyAI async status polls;
+- local sherpa-onnx decode/segmentation steps;
+- long-form segment provider/local progress.
+
+On watchdog timeout:
+- do NOT set UiState directly;
+- route through the SAME safe retained-audio cancel path as manual Stop;
+- underlying coroutine/OkHttp work is cancelled;
+- audio is preserved;
+- UI shows a recoverable "No progress · recording kept" state;
+- Send again remains available;
+- History archive is created when allowed.
+
+This shared terminal path is an important invariant.
+
+
+17. RETRY POLICY
+================
+
+Old generic executeForBody default could allow 3 application retries after the initial attempt.
+
+Current STT policy:
+- ordinary transcription network calls: initial attempt + at most ONE application-level retry;
+- OpenRouter transcription: ZERO application-level retries;
+- safe async status GET polls keep their explicit retry budget.
+
+Reason:
+audio upload/job-creation POSTs are billable and effectively non-idempotent.
+After an ambiguous timeout, the client cannot know whether the provider already received/charged
+the request.
+
+OkHttp may still retry failures it can prove safe at the transport layer.
+
+Long-form used to add another outer retry on top of provider retry.
+That retry multiplication was removed.
+
+Network tests now cover:
+- transcription heartbeat emission;
+- one-retry ceiling;
+- existing OpenRouter zero-retry behavior.
+
+
+18. REALTIME PATH
+=================
+
+Realtime has a separate existing finalization mechanism:
+- finish the stream;
+- wait briefly for final provider words;
+- approximately 1.2 s finalize watchdog;
+- cancel socket;
+- if realtime failed or transcript is empty, fall back to batch transcription of the retained WAV.
+
+Do not wrap realtime with another competing socket watchdog.
+Its batch fallback is already protected by the common no-progress watchdog.
+
+
+19. LONG-FORM SEGMENTED DICTATION
+=================================
+
+Long-form is special because multiple segment jobs may exist simultaneously.
+
+Safety work completed:
+- every cut segment WAV remains cache-owned until the session reaches a terminal state;
+- this temporary ownership exists even if permanent History audio retention is OFF;
+- permanent History preference still controls successful long-term retention;
+- final drain starts the common no-progress watchdog;
+- segment upload/poll/local-decode activity refreshes heartbeat;
+- Stop/watchdog cancels ALL tracked segment jobs as one operation;
+- active recorder tail is finalized if necessary;
+- retained segment WAVs are concatenated in speaking order into one rescue WAV;
+- provisional partial text is cleared before a future resend;
+- late cancelled segment results are blocked from re-appearing;
+- old outer retry multiplication was removed.
+
+Important privacy distinction:
+temporary cache ownership for recovery is NOT the same as permanent History retention.
+
+
+20. LOCAL STT
+=============
+
+LocalTranscriptionProvider uses sherpa-onnx.
+
+Progress heartbeat was added to:
+- initial decode-to-mono work;
+- streaming chunk processing;
+- offline decode boundaries;
+- VAD/segmented long-audio processing.
+
+This prevents a slow-but-alive local model from being mistaken for a dead request.
+
+Caution:
+some native decode calls cannot be instantaneously interrupted internally.
+Generation ownership is therefore necessary so a late return cannot corrupt a newer request.
+
+
+21. AUDIO IMPORT
+================
+
+Picked/shared audio has separate import machinery with visible progress.
+
+Import remains more generous than keyboard dictation because large media may legitimately take longer.
+
+Import temp handoff filenames are now unique to avoid cross-request cleanup races.
+
+Do not force the ordinary short-dictation timeout assumptions onto large imported files.
+
+
+22. PRIVACY / DATA FLOW
+=======================
+
+Kapijuja has:
+- no Kapijuja transcription proxy/account backend;
+- no upstream Dictate Cloud service;
+- no Google Play Billing;
+- no ads/analytics/payment backend in the removed Cloud architecture.
+
+Online provider audio goes directly to the selected endpoint.
+Local STT stays on device.
+
+History audio lives in private app storage unless the user explicitly exports it.
+
+Password/incognito history protection must remain.
+
+
+23. KNOWN INTENTIONAL UPSTREAM ASSETS
+=====================================
+
+Some model/dictionary downloads may still use original Dictate GitHub Release Assets.
+This is NOT Dictate Cloud and was intentionally left alone.
+
+Historically relevant code:
+- LocalModelCatalog.kt
+- BigramCatalog.kt
+- GlideDictionaryCatalog.kt
+- PinyinPackManager.kt
+
+Do not migrate/mirror these merely because the hostname/name contains upstream branding.
+If migrating later, preserve filenames, hashes and compatibility deliberately.
+
+
+24. USER-INTERFACE PRINCIPLES FOR THIS FORK
+==========================================
+
+The owner strongly values "cannot accidentally lose work" behavior.
+
+Rules:
+- destructive actions require meaningful confirmation;
+- while confirming recording deletion, capture should continue when technically safe;
+- Stop of network work should not imply Delete of recorded speech;
+- recovery actions should be close to where the problem happened;
+- History should remain near Clipboard, not buried several settings screens away;
+- avoid focusable popup UI that can hide the IME;
+- visible provider choice should not silently mutate unrelated global settings;
+- never make a user re-speak a long recording just because the network failed;
+- prefer one physical audio file with metadata/variants rather than unnecessary duplication.
+
+When uncertain, optimize for recoverability and explicit user intent.
+
+
+25. FILES MOST IMPORTANT FOR FUTURE RECOVERY WORK
+=================================================
+
+Controller/state machine:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/DictateController.kt
+
+Recorder:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/audio/RecordingController.kt
+
+Local STT:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider/LocalTranscriptionProvider.kt
+
+HTTP/provider STT:
+lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider/OpenAiCompatibleClient.kt
+
+Provider request model / heartbeat:
+lib/dictate-core/src/main/kotlin/dev/patrickgold/florisboard/dictate/provider/ProviderModels.kt
+
+History store:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/data/history/DictateHistory.kt
+
+In-keyboard History UI:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/ui/DictateHistoryLayout.kt
+
+Smartbar recording/transcribing UX:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/ui/DictateSmartbarUi.kt
+
+Legacy dictation UI:
+app/src/main/kotlin/dev/patrickgold/florisboard/dictate/ui/LegacyDictateLayout.kt
+
+Preferences:
+app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt
+
+Provider settings UI:
+app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictate/DictateProvidersScreen.kt
+
+CI:
+.github/workflows/kapijuja-ci.yml
+
+Tests:
+lib/dictate-core/src/test/kotlin/dev/patrickgold/florisboard/dictate/provider/OpenAiCompatibleClientNetworkTest.kt
+
+
+26. DO-NOT-BREAK INVARIANTS
+===========================
+
+1. One accidental tap must not destroy a long recording.
+2. Manual Stop during Transcribing must preserve audio.
+3. Watchdog timeout must reuse the same recovery path as manual Stop.
+4. CancellationException must propagate; never turn cancellation into a retry.
+5. Old native/local jobs may not touch newer request state/files.
+6. Request-scoped temp filenames must remain unique.
+7. Generic billable STT POST must not return to 3 retries.
+8. OpenRouter STT must remain zero application retries.
+9. Async status GET retries must not be confused with billable re-upload retries.
+10. History replay provider choice must remain one-shot, not mutate global provider preference.
+11. Sensitive password/incognito dictation must never be archived.
+12. Long-form segment audio must remain recoverable until terminal cleanup.
+13. Realtime fallback must retain its WAV and enter protected batch flow.
+14. Dictate Cloud/Billing must not be reintroduced.
+15. Upstream licenses/attribution must remain.
+
+
+27. TEST MATRIX FOR THE NEXT STAGE
+==================================
+
+NEXT MAJOR STAGE IS REAL DEVICE / FAULT-INJECTION TESTING.
+
+Do not start another large architectural refactor before testing the current APK.
+
+For each applicable provider:
+- OpenAI
+- Groq
+- Gemini
+- Deepgram
+- Mistral / OpenAI-compatible endpoint if configured
+- Soniox async
+- AssemblyAI async
+- ElevenLabs if configured
+- custom/self-hosted
+- on-device model
+- realtime path
+- long-form segmented path
+
+Test ordinary success:
+1. record;
+2. stop recording normally;
+3. transcription completes;
+4. text commits once;
+5. History/audio metadata is correct.
+
+Test manual Stop:
+1. record 20–60 s;
+2. send;
+3. while Transcribing, press Stop;
+4. network/provider work ends;
+5. audio is preserved;
+6. Send again is visible;
+7. History contains a recoverable recording when enabled;
+8. resend succeeds.
+
+Test network loss:
+1. record;
+2. send;
+3. disable Wi-Fi/mobile data during upload/wait;
+4. verify no endless Transcribing;
+5. verify watchdog eventually terminates at configured no-progress budget;
+6. audio survives;
+7. resend after restoring network succeeds.
+
+Test provider switch:
+1. preserve a recording in History;
+2. replay once with provider A;
+3. replay same physical audio with provider B;
+4. confirm global provider remains unchanged;
+5. confirm row metadata reflects the provider that produced the current text.
+
+Test accidental cancel:
+1. speak for a long time;
+2. tap recording Trash once;
+3. verify microphone continues;
+4. wait >5 s;
+5. verify recording still exists/continues;
+6. repeat and explicitly confirm delete.
+
+Test rapid Stop -> new recording:
+1. stop a local/native transcription;
+2. immediately begin another recording;
+3. ensure old cleanup cannot delete/corrupt the new WAV or cancel its watchdog.
+
+Test long-form:
+1. create multiple segments;
+2. stop while final segment jobs are still in flight;
+3. verify all jobs stop;
+4. verify one merged rescue WAV is available;
+5. resend it;
+6. verify no late old segment text reappears.
+
+Test process death:
+1. stop/watchdog a transcription;
+2. force-stop/kill IME/app process before using resend chip;
+3. reopen;
+4. verify recoverable History copy remains.
+
+
+28. NEXT DEVELOPMENT PRIORITIES AFTER DEVICE TESTING
+===================================================
+
+Priority A — fix only faults exposed by the above tests.
+
+Priority B — signing / first release:
+- determine whether the existing permanent Kapijuja JKS backup actually exists;
+- do NOT regenerate automatically;
+- if recovered, sign first release APK and verify certificate/package;
+- verify side-by-side install with official Dictate;
+- preserve same key for all future upgrades.
+
+Priority C — finish remaining user-visible branding leftovers, especially Wear/legacy strings.
+
+Priority D — optional "recognition variants":
+store several AI transcripts linked to one physical audio asset instead of overwriting the previous
+result. This is useful for comparing OpenAI/Groq/Gemini but is not required for core reliability.
+
+Priority E — later release/distribution work.
+
+
+29. DEVELOPMENT STYLE / WORKFLOW
+================================
+
+For substantial changes:
+1. inspect current main;
+2. identify the smallest coherent stage;
+3. make small reviewable commits;
+4. add explanatory comments;
+5. run CI;
+6. investigate every compile/test failure rather than disabling tests;
+7. update README + NEXT_CHAT + handoff;
+8. stop at a natural boundary before the next major subsystem.
+
+Do not ask the owner to repeat decisions already documented here.
+
+Do not "simplify" recovery code by deleting comments, generation ownership, unique filenames or
+history safety-net behavior without reproducing and understanding the race it prevents.
+
+
+30. DOCUMENTS TO READ
+=====================
+
+Primary comprehensive handoff:
+FULL_PROJECT_HANDOFF_2026-09-09.txt
+
+Developer invariants/checklist:
+DEVELOPER_GUIDE.md
+
+Existing project docs:
+README.md
+NEXT_CHAT.md
+PROJECT_HANDOFF.md
+PRIVACY_POLICY.md
+SECURITY.md
+NOTICE
+
+If these documents disagree, prefer:
+1. current source + passing CI;
+2. FULL_PROJECT_HANDOFF_2026-09-09.txt;
+3. DEVELOPER_GUIDE.md;
+4. newest sections of NEXT_CHAT.md;
+5. older historical sections of PROJECT_HANDOFF.md.
+
+
+31. CURRENT STOPPING POINT
+==========================
+
+Recovery/watchdog architecture is implemented and source CI is green at:
+ba315c1b3ed7eb26a8b8f835287e51de91bb7eb1
+run 34337994539
+
+The next chat should NOT redesign watchdog architecture from scratch.
+
+It should:
+1. read this file;
+2. inspect current main for documentation-only commits after the verified source baseline;
+3. perform or prepare real-device/network fault testing;
+4. fix concrete failures only;
+5. then resolve signing-key existence before first signed release.
+
+END OF HANDOFF
