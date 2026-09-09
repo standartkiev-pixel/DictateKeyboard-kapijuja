@@ -750,3 +750,29 @@ The chooser should live close to the in-keyboard History panel, not several sett
 
 After that, implement a provider-independent no-progress watchdog. Its terminal action should reuse the
 same preserved-audio resend state created by the manual Stop path.
+
+
+### Update after safe-cancel / cross-provider replay work
+
+Implemented after the first recovery phase:
+
+- The recording cancel/trash button no longer destroys a recording on one tap.
+- In the normal Smartbar, first tap opens a five-second in-keyboard confirmation while recording continues.
+  Mic = continue; explicit red trash = really discard.
+- In the cramped legacy layout, first tap arms deletion and only a second tap inside five seconds discards.
+- This is meaningful protection, not cosmetic: `RecordingController` streams the captured PCM directly
+  to `cache/dictate_audio.wav` as speech arrives.
+- Retained History audio now has an in-keyboard recognizer chooser.
+- The chooser deliberately stays inside the History panel instead of using Material `DropdownMenu`, because
+  a focusable popup can steal focus from the target editor and make the IME disappear.
+- History replay can select a one-shot provider without changing the global transcription provider.
+- The chooser shows transcription-capable built-ins plus custom endpoints; unconfigured options are disabled.
+- Successful replay updates the stored provider/model metadata to the recognizer that actually produced
+  the new transcript.
+
+Potential later enhancement: if the user wants side-by-side comparison of OpenAI vs Groq vs Gemini
+transcripts for the same audio, add recognition variants linked to one audio asset rather than duplicating
+the audio or overwriting the previous result.
+
+Next large engineering task: state-level no-progress watchdog for stuck `Transcribing…`, reusing the same
+preserved-audio terminal state as manual Stop.
