@@ -1,4 +1,4 @@
-# Kapijuja Voice — Developer Guide
+# Dictate Kapijuja — Developer Guide
 
 This guide is the compact engineering contract for continuing the fork.
 
@@ -11,7 +11,7 @@ Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
 
 Upstream: `DevEmperor/DictateKeyboard` (FlorisBoard-derived)
 
-Android application id: `net.kapijuja.voice`
+Android application id: `net.kapijuja.dictate`
 
 Verified recovery/watchdog source baseline:
 
@@ -278,7 +278,7 @@ Never commit JKS/passwords.
 
 ## 16. Branding
 
-Brand user-visible surfaces as Kapijuja Voice.
+Brand user-visible surfaces as Dictate Kapijuja.
 
 Do not rename internal classes/protocol paths merely to eliminate the word Dictate.
 

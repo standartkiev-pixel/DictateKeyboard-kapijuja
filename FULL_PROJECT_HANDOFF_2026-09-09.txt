@@ -27,8 +27,8 @@ Do not remove upstream license/copyright attribution.
 ==============================
 
 Product:
-- Kapijuja Voice
-- Full product wording: Kapijuja Voice Keyboard
+- Dictate Kapijuja
+- Full product wording: Dictate Kapijuja Keyboard
 
 Repository:
 - standartkiev-pixel/DictateKeyboard-kapijuja
@@ -38,14 +38,14 @@ Upstream:
 - Dictate Keyboard itself is FlorisBoard-based.
 
 Android identity:
-- applicationId: net.kapijuja.voice
-- root project name: KapijujaVoice
+- applicationId: net.kapijuja.dictate
+- root project name: DictateKapijuja
 - current fork version line: versionCode 1 / versionName 0.1.0
 - internal FlorisBoard namespace/package names are intentionally still largely inherited.
   DO NOT mass-rename dev.patrickgold.florisboard classes/packages unless a concrete technical
   requirement exists.
 
-The official Dictate app and Kapijuja Voice are intended to install side by side.
+The official Dictate app and Dictate Kapijuja are intended to install side by side.
 
 License:
 - Apache-2.0 upstream/fork licensing and attribution must remain intact.
@@ -159,8 +159,8 @@ The CI guard exists specifically to prevent accidental reintroduction.
 ==================
 
 Already substantially rebranded:
-- product name Kapijuja Voice
-- full name Kapijuja Voice Keyboard
+- product name Dictate Kapijuja
+- full name Dictate Kapijuja Keyboard
 - dark launcher background
 - gold K foreground
 - monochrome K adaptive icon

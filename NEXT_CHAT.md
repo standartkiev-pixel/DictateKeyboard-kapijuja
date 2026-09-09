@@ -1,4 +1,4 @@
-# NEXT CHAT — Kapijuja Voice development handoff
+# NEXT CHAT — Dictate Kapijuja development handoff
 
 This file is a continuing handoff for development.
 
@@ -61,20 +61,20 @@ The main reasons for this fork are:
 
 Current product identity:
 
-- visible app name: **Kapijuja Voice**
-- full product name: **Kapijuja Voice Keyboard**
-- Android application id: **`net.kapijuja.voice`**
-- root Gradle project name: **`KapijujaVoice`**
+- visible app name: **Dictate Kapijuja**
+- full product name: **Dictate Kapijuja Keyboard**
+- Android application id: **`net.kapijuja.dictate`**
+- root Gradle project name: **`DictateKapijuja`**
 - current fork version line started at **`0.1.0` / versionCode `1`**
 
-The new application id is critical because it allows official Dictate and Kapijuja Voice to be
+The new application id is critical because it allows official Dictate and Dictate Kapijuja to be
 installed simultaneously.
 
 Debug/beta builds have their own applicationId suffixes and therefore do not replace the release app.
 
 ### Important
 
-Do **not** change `net.kapijuja.voice` in routine development.
+Do **not** change `net.kapijuja.dictate` in routine development.
 
 A package-id change creates a different Android application and breaks the intended update/install
 identity.
@@ -173,10 +173,10 @@ Removed:
 - Android manifest permission:
   `com.android.vending.BILLING`.
 
-No Google Play Billing is currently required for Kapijuja Voice.
+No Google Play Billing is currently required for Dictate Kapijuja.
 
 If monetization is ever added later, implement it as a **new Kapijuja system** associated with
-`net.kapijuja.voice` and new product IDs. Do not revive upstream Dictate Cloud product IDs.
+`net.kapijuja.dictate` and new product IDs. Do not revive upstream Dictate Cloud product IDs.
 
 ---
 
@@ -184,7 +184,7 @@ If monetization is ever added later, implement it as a **new Kapijuja system** a
 
 The removal of Dictate Cloud was deliberately isolated from normal providers.
 
-Kapijuja Voice should retain:
+Dictate Kapijuja should retain:
 
 - complete FlorisBoard-derived typing keyboard;
 - suggestions/autocorrect/glide/etc. inherited from Dictate/FlorisBoard;
@@ -307,7 +307,7 @@ Current branding:
 - dark launcher background;
 - gold **K** foreground mark;
 - monochrome K adaptive icon;
-- Kapijuja Voice name;
+- Dictate Kapijuja name;
 - Kapijuja GitHub links in About/Issues/Privacy/Changelog.
 
 Old upstream Play Store/PayPal-style user-facing links were removed or redirected away from upstream
@@ -514,9 +514,9 @@ Preferred safe workflow:
 
 1. GitHub Actions may build an unsigned release artifact without receiving the private key;
 2. materialize/download that artifact;
-3. sign it using the user's permanent Kapijuja Voice JKS;
+3. sign it using the user's permanent Dictate Kapijuja JKS;
 4. verify with `apksigner verify --print-certs`;
-5. confirm package id is `net.kapijuja.voice`;
+5. confirm package id is `net.kapijuja.dictate`;
 6. install it alongside official Dictate;
 7. future releases must use the exact same key.
 
@@ -529,7 +529,7 @@ wants cloud CI signing. Do not upload the JKS to the public repository.
 
 Test at minimum:
 
-1. install official Dictate and Kapijuja Voice side by side;
+1. install official Dictate and Dictate Kapijuja side by side;
 2. Android keyboard enable/select flow;
 3. ordinary typing;
 4. suggestions/autocorrect;
@@ -577,11 +577,11 @@ its assumptions. Treat Cloud-related conflicts as intentional fork boundaries.
 
 ### Do not regenerate the release signing key
 
-Use the saved permanent Kapijuja Voice key.
+Use the saved permanent Dictate Kapijuja key.
 
 ### Do not change application id casually
 
-Keep `net.kapijuja.voice`.
+Keep `net.kapijuja.dictate`.
 
 ### Do not restore Dictate Cloud/Billing during upstream sync
 
@@ -697,7 +697,7 @@ At this handoff:
 - upstream Git history is preserved;
 - Dictate Cloud backend and Android client/payment path were removed;
 - Google Play Billing was removed;
-- application identity was changed to Kapijuja Voice / `net.kapijuja.voice`;
+- application identity was changed to Dictate Kapijuja / `net.kapijuja.dictate`;
 - a separate gold-K app icon was created;
 - project links/docs were rebased to Kapijuja;
 - release-signing configuration and alias are prepared; existence of the external permanent JKS must be verified with the owner before first release signing;

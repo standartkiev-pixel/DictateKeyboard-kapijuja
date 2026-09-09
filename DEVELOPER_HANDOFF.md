@@ -1,4 +1,4 @@
-# Kapijuja Voice — Developer / Next-Chat Handoff
+# Dictate Kapijuja — Developer / Next-Chat Handoff
 
 **Date:** 2026-09-09  
 **Repository:** `standartkiev-pixel/DictateKeyboard-kapijuja`  
@@ -8,7 +8,7 @@ This is the current authoritative handoff for the project. Read this document be
 
 ## 1. Purpose
 
-Kapijuja Voice is an Android voice keyboard forked from Dictate Keyboard, itself based on FlorisBoard.
+Dictate Kapijuja is an Android voice keyboard forked from Dictate Keyboard, itself based on FlorisBoard.
 
 Project goals:
 
@@ -21,9 +21,9 @@ Project goals:
 
 Current app identity:
 
-- Product: **Kapijuja Voice**
-- Full name: **Kapijuja Voice Keyboard**
-- applicationId: `net.kapijuja.voice`
+- Product: **Dictate Kapijuja**
+- Full name: **Dictate Kapijuja Keyboard**
+- applicationId: `net.kapijuja.dictate`
 - versionName: `0.1.0`
 - versionCode: `1`
 - main development branch: `main`
@@ -99,9 +99,9 @@ CI includes a regression grep to catch accidental Cloud/Billing reintroduction. 
 
 Already changed substantially:
 
-- Kapijuja Voice product identity;
+- Dictate Kapijuja product identity;
 - own applicationId;
-- root project name `KapijujaVoice`;
+- root project name `DictateKapijuja`;
 - dark launcher background;
 - gold K foreground;
 - monochrome adaptive icon;
