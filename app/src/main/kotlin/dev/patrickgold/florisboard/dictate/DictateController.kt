@@ -1174,6 +1174,10 @@ object DictateController {
         stalled: Boolean = false,
     ) {
         if (_state.value !is UiState.Transcribing) return
+        if (segmentedActive || segmentCancellationPending) {
+            cancelSegmentedTranscription(context, stalled)
+            return
+        }
         stopTranscriptionWatchdog()
 
         var resendReady = false
@@ -2464,7 +2468,7 @@ object DictateController {
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
                 i to w
             } ?: return@launch
-            val (idx, wav) = assigned
+            val (idx, wav) = assigned ?: return@launch
             if (wav != null && wav.exists() && wav.length() > 0L) {
                 launchSegmentTranscription(appContext, idx, wav)
             } else {
@@ -2506,8 +2510,10 @@ object DictateController {
         segmentRecordedSeconds = recordedSecondsOf(_state.value)
         _segmentedRecording.value = false
         _state.value = UiState.Transcribing()
+        startTranscriptionWatchdog(appContext)
         scope.launch {
             val assigned = segmentMutex.withLock {
+                if (segmentCancellationPending) return@withLock null
                 val i = segmentNextIndex++
                 val activeRecorder = recorder
                 recorder = null
@@ -2533,6 +2539,117 @@ object DictateController {
         }
     }
 
+    /**
+     * Cancels a long-form final drain as one operation. Unlike ordinary batch transcription there may be
+     * several provider/local jobs plus a not-yet-finalized recorder tail, so cancelling only
+     * [transcribeJob] would lie to the UI while work continued in the background.
+     *
+     * Every segment is still owned in cache until this point. We cancel the jobs, finalize any tail,
+     * concatenate the pieces in speaking order, and expose that merged WAV through the same retained
+     * Send-again UI used by ordinary Stop/watchdog. Permanent History retention remains a separate choice;
+     * a stopped session is force-archived only as a recovery entry when History itself is enabled.
+     */
+    private fun cancelSegmentedTranscription(context: Context, stalled: Boolean) {
+        if (segmentCancellationPending) return
+        segmentCancellationPending = true
+        stopTranscriptionWatchdog()
+
+        val appContext = context.applicationContext
+        val account = transcriptionAccount()
+        val preset = presetFor(account)
+        val model = transcriptionModelFor(appContext, account, preset, "gpt-4o-mini-transcribe")
+        val meta = InFlightHistoryMeta(
+            providerId = account.providerId,
+            providerName = account.displayName.ifBlank { preset.displayName },
+            model = model,
+            language = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT } ?: "",
+            source = DictateHistorySource.KEYBOARD,
+            replayHistoryId = null,
+            sensitive = isSensitiveDictationField(appContext),
+        )
+        val seconds = segmentRecordedSeconds
+
+        // Stop every tracked segment first. Network calls are cancellable through OkHttp; native local
+        // decode may finish its current native call, but cancellation prevents its late text from landing.
+        segmentJobs.toList().forEach { it.cancel() }
+        segmentJobs.clear()
+
+        scope.launch {
+            val files = segmentMutex.withLock {
+                // If Stop arrived before stopSegmentedAndFinalize's setup coroutine finalized the recorder,
+                // claim that tail here so even this tiny race cannot drop the last spoken words.
+                val activeRecorder = recorder
+                recorder = null
+                val tail = withContext(Dispatchers.IO) { activeRecorder?.stop() }
+                cleanupAudioRouting()
+                if (tail != null && tail.exists() && tail.length() > 0L &&
+                    segmentAudioFiles.values.none { it == tail }
+                ) {
+                    segmentAudioFiles[segmentNextIndex++] = tail
+                }
+                val snapshot = segmentAudioFiles.toSortedMap().values
+                    .filter { it.exists() && it.length() > 0L }
+                    .toList()
+                resetSegmentedState()
+                snapshot
+            }
+
+            // Remove provisional partial text before a future resend can commit the full recording.
+            val preview = realtimeShown.toString()
+            if (preview.isNotEmpty()) runCatching { sink(appContext).clearDictationPreview(preview) }
+            realtimeShown.setLength(0)
+
+            val rescue = if (files.isNotEmpty()) {
+                val dest = File(
+                    appContext.cacheDir,
+                    "${CANCELLED_AUDIO_STEM}_long_${SystemClock.elapsedRealtime()}.wav",
+                )
+                val ok = withContext(Dispatchers.IO) {
+                    dest.delete()
+                    AudioConcat.concat(files, dest)
+                }
+                if (ok && dest.exists() && dest.length() > 0L) dest else null
+            } else {
+                null
+            }
+            withContext(Dispatchers.IO) { files.forEach { runCatching { it.delete() } } }
+
+            if (rescue != null) {
+                val previous = retained
+                previous?.file?.takeIf { it != rescue && it.exists() }?.let { runCatching { it.delete() } }
+                if (previous?.reason == RetainReason.INTERRUPTED) {
+                    scope.launch { clearInterruptedAudioPref() }
+                }
+                retained = RetainedAudio(
+                    file = rescue,
+                    reason = RetainReason.CANCELLED,
+                    wasLive = false,
+                    seconds = seconds,
+                )
+                _state.value = UiState.Error(
+                    message = appContext.getString(
+                        if (stalled) {
+                            R.string.dictate__transcription_stalled_audio_kept
+                        } else {
+                            R.string.dictate__transcription_stopped_audio_kept
+                        }
+                    ),
+                    action = ErrorAction.RESEND,
+                    neutral = true,
+                )
+                if (!meta.sensitive) {
+                    recordStoppedHistory(appContext, rescue, meta, seconds)
+                }
+            } else {
+                _state.value = UiState.Error(
+                    message = appContext.getString(R.string.dictate__error_no_audio),
+                    action = ErrorAction.NONE,
+                    neutral = true,
+                )
+            }
+        }
+    }
+
     private fun launchSegmentTranscription(appContext: Context, idx: Int, wav: File) {
         val job = scope.launch {
             // Best-effort cross-segment continuity: bias the recognizer with what's committed so far.
@@ -2554,6 +2671,8 @@ object DictateController {
      * segment to the field's live preview. When the last segment lands after a stop, runs the end finalize.
      */
     private suspend fun onSegmentResult(appContext: Context, idx: Int, text: String) {
+        if (segmentCancellationPending) return
+        markTranscriptionProgress()
         val shouldFinish = segmentMutex.withLock {
             segmentResults[idx] = text
             while (segmentResults.containsKey(segmentCommitIndex)) {
@@ -2579,6 +2698,8 @@ object DictateController {
      * post-processing once and replace the preview with the finished (formatted/reworded) text.
      */
     private suspend fun finalizeSegmentedEnd(appContext: Context) {
+        if (segmentCancellationPending) return
+        stopTranscriptionWatchdog()
         val account = transcriptionAccount()
         val preset = presetFor(account)
         val model = transcriptionModelFor(appContext, account, preset)
@@ -2659,6 +2780,7 @@ object DictateController {
         val request = TranscriptionRequest(
             audioFile = packed ?: toUpload, model = model, language = language, prompt = prompt,
             expectedLanguages = expectedLanguages(),
+            onProgress = ::markTranscriptionProgress,
         )
         return try {
             val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
