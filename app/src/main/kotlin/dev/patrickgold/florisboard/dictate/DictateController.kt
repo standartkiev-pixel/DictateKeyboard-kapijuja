@@ -1181,7 +1181,10 @@ object DictateController {
                 // Keep the actual container extension too: imported MP3/Ogg audio must never be renamed
                 // to .wav merely because it passed through the Stop path (#322 applies here as well).
                 val extension = source.extension.ifEmpty { "wav" }
-                val copy = File(context.applicationContext.cacheDir, "$CANCELLED_AUDIO_STEM.$extension")
+                val copy = File(
+                    context.applicationContext.cacheDir,
+                    "${CANCELLED_AUDIO_STEM}_${SystemClock.elapsedRealtime()}.$extension",
+                )
                 val previous = retained
                 resendReady = runCatching {
                     source.copyTo(copy, overwrite = true)
@@ -1215,6 +1218,9 @@ object DictateController {
             val rescue = retained?.file
             val meta = inFlightHistoryMeta
             if (rescue != null && meta != null && meta.replayHistoryId == null && !meta.sensitive) {
+                // Snapshot duration now too: a second dictation may begin before Room/file archival gets
+                // CPU time, and its inFlightSeconds must never relabel this recording.
+                val rescuedSeconds = inFlightSeconds
                 // Separate Supervisor scope: cancelling transcribeJob below must not cancel the archival
                 // copy. History.record() force-retains audio for this recoverable failed-style entry.
                 scope.launch {
@@ -1222,7 +1228,7 @@ object DictateController {
                         appContext = context.applicationContext,
                         audioFile = rescue,
                         meta = meta,
-                        recordedSeconds = inFlightSeconds,
+                        recordedSeconds = rescuedSeconds,
                     )
                 }
             }
