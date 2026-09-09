@@ -559,12 +559,12 @@ object DictateController {
     // Silence trimming (issue #232): cache file for the trimmed upload, plus the gap thresholds — a silence
     // gap longer than TRIM_MAX_SILENCE_MS is collapsed down to TRIM_KEEP_SILENCE_MS (a short pad on each
     // side of the cut); shorter, natural pauses are left untouched.
-    private const val TRIMMED_AUDIO_NAME = "dictate_trimmed.wav"
+    private const val TRIMMED_AUDIO_STEM = "dictate_trimmed"
     private const val TRIM_MAX_SILENCE_MS = 2_000
     private const val TRIM_KEEP_SILENCE_MS = 400
     /** Cache file for the sped-up upload copy (issue #272); the recording itself is never overwritten. */
-    private const val SPED_UP_AUDIO_NAME = "dictate_speedup.wav"
-    private const val PACKED_AUDIO_NAME = "dictate_upload.m4a"
+    private const val SPED_UP_AUDIO_STEM = "dictate_speedup"
+    private const val PACKED_AUDIO_STEM = "dictate_upload"
 
     /**
      * From which recording size on the upload is packed into AAC (#281). 16 MiB of 16 kHz mono WAV is
@@ -1754,7 +1754,7 @@ object DictateController {
                         if (analysis != null && analysis.hasSpeech) {
                             SpeechGate.writeTrimmedWav(
                                 analysis,
-                                File(appContext.cacheDir, TRIMMED_AUDIO_NAME),
+                                File(appContext.cacheDir, "${TRIMMED_AUDIO_STEM}_$requestGeneration.wav"),
                                 TRIM_MAX_SILENCE_MS,
                                 TRIM_KEEP_SILENCE_MS,
                             )?.let { uploadFile = it }
@@ -1788,7 +1788,7 @@ object DictateController {
                 ) {
                     val spedUp = AudioSpeedUp.process(
                         uploadFile,
-                        File(appContext.cacheDir, SPED_UP_AUDIO_NAME),
+                        File(appContext.cacheDir, "${SPED_UP_AUDIO_STEM}_$requestGeneration.wav"),
                         speedPercent / 100f,
                     )
                     if (spedUp != null) {
@@ -1813,7 +1813,10 @@ object DictateController {
                     source != DictateHistorySource.IMPORT &&
                     shouldPack(uploadFile.length(), ProviderRegistry.maxUploadBytes(preset.id))
                 ) {
-                    val packed = AudioEncode.toM4a(uploadFile, File(appContext.cacheDir, PACKED_AUDIO_NAME))
+                    val packed = AudioEncode.toM4a(
+                        uploadFile,
+                        File(appContext.cacheDir, "${PACKED_AUDIO_STEM}_$requestGeneration.m4a"),
+                    )
                     if (packed != null) {
                         packedFrom = uploadFile
                         // The on-device fallback below wants PCM, not a re-decode of what we just encoded.
@@ -3553,7 +3556,10 @@ object DictateController {
         val path = entry.audioPath ?: return
         val src = File(path)
         if (!src.exists() || src.length() == 0L) return
-        val temp = File(context.cacheDir, "dictate_history_replay.${src.extension.ifEmpty { "wav" }}")
+        val temp = File(
+            context.cacheDir,
+            "dictate_history_replay_${entry.id}_${SystemClock.elapsedRealtime()}.${src.extension.ifEmpty { "wav" }}",
+        )
         runCatching { src.copyTo(temp, overwrite = true) }.getOrElse { return }
         outputTarget = OutputTarget.IME
         clearError()
