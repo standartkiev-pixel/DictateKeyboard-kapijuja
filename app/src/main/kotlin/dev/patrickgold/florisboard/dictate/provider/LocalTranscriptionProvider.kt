@@ -72,7 +72,7 @@ class LocalTranscriptionProvider(
             val streaming = LocalModelCatalog.isStreaming(modelDir.name)
 
             val samples = try {
-                AudioDecode.decodeToMono16k(request.audioFile)
+                AudioDecode.decodeToMono16k(request.audioFile).also { request.onProgress?.invoke() }
             } catch (t: Throwable) {
                 throw DictateApiException(
                     DictateApiException.Kind.FORMAT_NOT_SUPPORTED,
@@ -86,7 +86,9 @@ class LocalTranscriptionProvider(
             val language = request.language?.substringBefore('-')?.takeIf { it.isNotBlank() }.orEmpty()
 
             if (streaming) {
-                return@withContext TranscriptionResult(transcribeStreaming(samples).trim())
+                return@withContext TranscriptionResult(
+                    transcribeStreaming(samples, request.onProgress).trim()
+                )
             }
 
             val text = try {
@@ -98,9 +100,9 @@ class LocalTranscriptionProvider(
                     // Whisper handles ~30 s per pass; segment longer audio at speech pauses (VAD) so the
                     // tail isn't dropped. Short clips take the simple single-pass path (no VAD overhead).
                     if (vadFile.exists() && samples.size > VAD_MIN_SAMPLES) {
-                        transcribeSegmented(recognizer, vadFile, samples)
+                        transcribeSegmented(recognizer, vadFile, samples, request.onProgress)
                     } else {
-                        decodeOnce(recognizer, samples)
+                        decodeOnce(recognizer, samples, request.onProgress)
                     }
                 } finally {
                     RecognizerCache.endUse()
@@ -124,7 +126,7 @@ class LocalTranscriptionProvider(
      * 30 s window to work around here, so this needs neither the VAD nor a length cap — the recognizer
      * consumes audio incrementally by construction.
      */
-    private fun transcribeStreaming(samples: FloatArray): String {
+    private fun transcribeStreaming(samples: FloatArray, onProgress: (() -> Unit)?): String {
         val recognizer = OnlineRecognizerCache.acquire(modelDir, numThreads)
         try {
             val stream = recognizer.createStream()
@@ -143,6 +145,7 @@ class LocalTranscriptionProvider(
                     stream.acceptWaveform(samples.copyOfRange(offset, end), AudioDecode.TARGET_SAMPLE_RATE)
                     offset = end
                     while (recognizer.isReady(stream)) recognizer.decode(stream)
+                    onProgress?.invoke()
                     if (recognizer.isEndpoint(stream)) {
                         collect()
                         recognizer.reset(stream)
@@ -153,6 +156,7 @@ class LocalTranscriptionProvider(
                 stream.acceptWaveform(FloatArray(TAIL_PAD_SAMPLES), AudioDecode.TARGET_SAMPLE_RATE)
                 stream.inputFinished()
                 while (recognizer.isReady(stream)) recognizer.decode(stream)
+                onProgress?.invoke()
                 collect()
             } finally {
                 stream.release()
@@ -164,11 +168,17 @@ class LocalTranscriptionProvider(
     }
 
     /** Single whole-buffer Whisper pass (fine for clips up to ~30 s). */
-    private fun decodeOnce(recognizer: OfflineRecognizer, samples: FloatArray): String {
+    private fun decodeOnce(
+        recognizer: OfflineRecognizer,
+        samples: FloatArray,
+        onProgress: (() -> Unit)? = null,
+    ): String {
         val stream = recognizer.createStream()
         return try {
             stream.acceptWaveform(samples, AudioDecode.TARGET_SAMPLE_RATE)
+            onProgress?.invoke()
             recognizer.decode(stream)
+            onProgress?.invoke()
             recognizer.getResult(stream).text
         } finally {
             stream.release()
@@ -184,6 +194,7 @@ class LocalTranscriptionProvider(
         recognizer: OfflineRecognizer,
         vadFile: File,
         samples: FloatArray,
+        onProgress: (() -> Unit)?,
     ): String {
         val vad = Vad(
             config = VadModelConfig().apply {
@@ -213,20 +224,28 @@ class LocalTranscriptionProvider(
                 }
                 vad.acceptWaveform(chunk)
                 i = end
-                drainSegments(vad, recognizer, parts)
+                onProgress?.invoke()
+                drainSegments(vad, recognizer, parts, onProgress)
             }
             vad.flush()
-            drainSegments(vad, recognizer, parts)
+            onProgress?.invoke()
+            drainSegments(vad, recognizer, parts, onProgress)
         } finally {
             vad.release()
         }
-        return parts.toString().trim().ifBlank { decodeOnce(recognizer, samples) }
+        return parts.toString().trim().ifBlank { decodeOnce(recognizer, samples, onProgress) }
     }
 
-    private fun drainSegments(vad: Vad, recognizer: OfflineRecognizer, out: StringBuilder) {
+    private fun drainSegments(
+        vad: Vad,
+        recognizer: OfflineRecognizer,
+        out: StringBuilder,
+        onProgress: (() -> Unit)?,
+    ) {
         while (!vad.empty()) {
-            appendDecoded(recognizer, vad.front().samples, out)
+            appendDecoded(recognizer, vad.front().samples, out, onProgress)
             vad.pop()
+            onProgress?.invoke()
         }
     }
 
@@ -235,12 +254,17 @@ class LocalTranscriptionProvider(
      * short, but on gap-less continuous speech a segment can still exceed 30 s — without this cap Whisper
      * would silently drop everything past 30 s (the original bug).
      */
-    private fun appendDecoded(recognizer: OfflineRecognizer, samples: FloatArray, out: StringBuilder) {
+    private fun appendDecoded(
+        recognizer: OfflineRecognizer,
+        samples: FloatArray,
+        out: StringBuilder,
+        onProgress: (() -> Unit)?,
+    ) {
         var offset = 0
         while (offset < samples.size) {
             val end = minOf(offset + MAX_SEGMENT_SAMPLES, samples.size)
             val piece = if (offset == 0 && end == samples.size) samples else samples.copyOfRange(offset, end)
-            val text = decodeOnce(recognizer, piece).trim()
+            val text = decodeOnce(recognizer, piece, onProgress).trim()
             if (text.isNotEmpty()) {
                 if (out.isNotEmpty()) out.append(' ')
                 out.append(text)
