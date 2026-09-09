@@ -17,9 +17,14 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import okhttp3.Dns
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.createTempFile
 
 class OpenAiCompatibleClientNetworkTest : FunSpec({
@@ -337,6 +342,99 @@ class OpenAiCompatibleClientNetworkTest : FunSpec({
                 error.kind shouldBe DictateApiException.Kind.SERVER_ERROR
                 OpenAiCompatibleClient.TRANSCRIPTION_NETWORK_MAX_RETRIES shouldBe 1
                 server.requestCount shouldBe 2
+            }
+        } finally {
+            audio.delete()
+        }
+    }
+
+    // Kapijuja recovery fault injection: a Stop/watchdog cancellation must tear down the actual
+    // OkHttp call, not merely detach the UI coroutine. The delayed body makes this test fail fast if
+    // executeOnce ever stops wiring coroutine cancellation to Call.cancel().
+    test("cancelling a stalled transcription aborts the active call without replaying the audio") {
+        val audio = createTempFile(suffix = ".wav").toFile().apply { writeBytes(ByteArray(64)) }
+        try {
+            MockWebServer().use { server ->
+                server.enqueue(
+                    MockResponse()
+                        .setResponseCode(200)
+                        .setBody("""{"text":"arrived too late"}""")
+                        .setBodyDelay(30, TimeUnit.SECONDS),
+                )
+                // A second response is intentionally present: if cancellation is swallowed and the old
+                // retry policy replays the upload, requestCount will become 2 and the test catches it.
+                server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"duplicate"}"""))
+
+                val client = OpenAiCompatibleClient(
+                    ProviderConfig(baseUrl = server.url("/").toString(), apiKey = "test"),
+                )
+
+                coroutineScope {
+                    val job = launch {
+                        client.transcribe(TranscriptionRequest(audio, "gpt-4o-mini-transcribe"))
+                    }
+                    val started = server.takeRequest(5, TimeUnit.SECONDS)
+                    (started != null) shouldBe true
+
+                    // If Call.cancel() is disconnected, this waits for the 30-second delayed body instead.
+                    withTimeout(2_000) {
+                        job.cancelAndJoin()
+                    }
+                }
+
+                server.requestCount shouldBe 1
+            }
+        } finally {
+            audio.delete()
+        }
+    }
+
+    test("invalid API key is terminal and never replays the audio") {
+        val audio = createTempFile(suffix = ".wav").toFile().apply { writeBytes(ByteArray(32)) }
+        try {
+            MockWebServer().use { server ->
+                server.enqueue(
+                    MockResponse().setResponseCode(401)
+                        .setBody("""{"error":{"message":"invalid api key","code":"invalid_api_key"}}"""),
+                )
+                server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"must not happen"}"""))
+
+                val client = OpenAiCompatibleClient(
+                    ProviderConfig(baseUrl = server.url("/").toString(), apiKey = "wrong"),
+                )
+
+                val error = shouldThrow<DictateApiException> {
+                    client.transcribe(TranscriptionRequest(audio, "gpt-4o-mini-transcribe"))
+                }
+
+                error.kind shouldBe DictateApiException.Kind.INVALID_API_KEY
+                server.requestCount shouldBe 1
+            }
+        } finally {
+            audio.delete()
+        }
+    }
+
+    test("quota or rate-limit error is terminal and never replays the audio") {
+        val audio = createTempFile(suffix = ".wav").toFile().apply { writeBytes(ByteArray(32)) }
+        try {
+            MockWebServer().use { server ->
+                server.enqueue(
+                    MockResponse().setResponseCode(429)
+                        .setBody("""{"error":{"message":"quota exceeded","code":"insufficient_quota"}}"""),
+                )
+                server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"must not happen"}"""))
+
+                val client = OpenAiCompatibleClient(
+                    ProviderConfig(baseUrl = server.url("/").toString(), apiKey = "test"),
+                )
+
+                val error = shouldThrow<DictateApiException> {
+                    client.transcribe(TranscriptionRequest(audio, "gpt-4o-mini-transcribe"))
+                }
+
+                error.kind shouldBe DictateApiException.Kind.QUOTA_EXCEEDED
+                server.requestCount shouldBe 1
             }
         } finally {
             audio.delete()

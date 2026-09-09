@@ -210,6 +210,7 @@ Dictate Kapijuja treats captured speech as recoverable user data rather than dis
 - Realtime keeps its existing short finalize watchdog; if realtime fails/finishes empty it falls back to
   batch transcription, which is then protected by the common no-progress watchdog.
 - Generic transcription POSTs are limited to one application-level retry; OpenRouter remains at zero.
+- Fault-injection unit tests now verify that cancelling a stalled HTTP transcription aborts the active OkHttp call without replaying the audio, and that invalid-key / quota responses are terminal rather than retried.
   Async status GET polling keeps its own safe retry budget because a GET does not re-upload audio or
   create another billable transcription job.
 - Long-form keeps segment WAVs only in cache until the session reaches a terminal state. This temporary

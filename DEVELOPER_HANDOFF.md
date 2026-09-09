@@ -648,3 +648,16 @@ Digest:
 `sha256:909b716cdccc34199617b48ff3704a8e514a6a542543de15d3705084e9d0aa0d`
 
 End of handoff.
+
+
+## Update — automated fault-injection coverage after identity correction
+
+Automated network fault tests now cover three recovery-critical invariants:
+
+- cancelling a stalled transcription must cancel the underlying OkHttp call quickly and must not replay the audio;
+- HTTP 401/403 invalid-key failures are terminal and must not resend the recording;
+- HTTP 429/402 quota/billing/rate-limit failures are terminal and must not resend the recording.
+
+These tests complement the existing heartbeat, generic one-retry cap and OpenRouter zero-retry tests.
+They do **not** replace the real-device fault matrix (airplane mode, Wi-Fi/mobile switch, process death,
+local/native late cancellation, realtime fallback and long-form rescue), which remains the next manual stage.

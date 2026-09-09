@@ -802,3 +802,16 @@ fixed History replay temp. A late-cancelled local/native job must never be able 
 
 The next task should be real-device/network fault testing and any fixes it exposes, not another timeout
 refactor. Also verify process-death recovery/history after manual Stop and watchdog cancellation.
+
+
+### Update — network cancellation/auth/quota fault tests
+
+Automated fault-injection coverage now also checks:
+
+- a delayed/stalled HTTP response is aborted promptly when the transcription coroutine is cancelled;
+- cancellation never turns into an automatic second audio upload;
+- invalid API-key responses are terminal and are not retried;
+- quota/rate-limit responses are terminal and are not retried.
+
+Continue with real-device/network-cut testing after CI is green; do not use these unit tests as a substitute
+for process-death, local native, realtime fallback or long-form rescue tests on an actual Android device.
