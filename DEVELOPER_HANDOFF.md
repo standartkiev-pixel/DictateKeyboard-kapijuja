@@ -682,3 +682,23 @@ Key rules:
 Long-form merged Stop/watchdog rescue is also written to this persistent staging area when non-sensitive.
 The remaining real-device test should still force-kill during/just after long-form cancellation, because
 segment merge itself is asynchronous.
+
+
+## Audit hardening — finite microphone and RecognitionService termination
+
+A full terminal-state review found and fixed several paths that could otherwise wait without a guaranteed
+resolution:
+
+- phone RecordingController and WearAudioRecorder no longer use unbounded Thread.join(); AudioRecord.stop()
+  is followed by two short bounded join windows with forced native release, and capture loops refuse to
+  write a late frame after stop;
+- cancelling while recording startup is still acquiring Bluetooth/realtime resources is treated as normal
+  cancellation, not a false "recording failed" error;
+- Android RecognitionService now rejects a busy shared controller immediately with ERROR_RECOGNIZER_BUSY;
+- onStopListening received during startup is latched and completes as soon as the recorder exists;
+- missing API key, missing local model and no-audio early exits now send a terminal recognition callback;
+- RecognitionService cancellation during Transcribing/Rewording cancels the actual active job;
+- a transcription no-progress watchdog firing under RecognitionService reports ERROR_NETWORK_TIMEOUT,
+  instead of an internal "cancelled" outcome that delivered neither results nor an error.
+
+These changes preserve ordinary keyboard behavior; they close contracts used by external Android callers.

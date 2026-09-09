@@ -244,3 +244,11 @@ The next development work should proceed roughly in this order:
 6. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
 
 See **[NEXT_CHAT.md](NEXT_CHAT.md)** before modifying the project.
+
+
+### Finite-state hardening
+
+Dictate Kapijuja treats every asynchronous user operation as requiring a terminal state. Microphone stop
+on both phone and Wear is bounded even if a vendor AudioRecord driver misbehaves, and Android
+RecognitionService now has explicit terminal handling for busy, startup failure, missing credentials/model,
+no audio, provider timeout, user cancellation, success and provider errors.

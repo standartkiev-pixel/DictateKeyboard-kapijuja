@@ -61,7 +61,10 @@ class RecognitionSession(
 
     fun start() {
         RecognitionBridge.register(this)
-        DictateController.startRecognition(appContext)
+        if (!DictateController.startRecognition(appContext)) {
+            completeErrorWithoutControllerCancel(SpeechRecognizer.ERROR_RECOGNIZER_BUSY)
+            return
+        }
         watchdog = scope.launch {
             val startedMs = System.currentTimeMillis()
             var speechStarted = false
@@ -110,7 +113,7 @@ class RecognitionSession(
         watchdog?.cancel()
         scope.cancel()
         RecognitionBridge.unregister(this)
-        DictateController.cancelRecognition()
+        DictateController.cancelRecognition(appContext)
     }
 
     // --- RecognitionBridge callbacks -------------------------------------------------------------
@@ -138,6 +141,8 @@ class RecognitionSession(
             }
             "noSpeech", "promptEcho" -> host.onError(SpeechRecognizer.ERROR_NO_MATCH)
             "apiError" -> host.onError(SpeechRecognizer.ERROR_NETWORK)
+            "timeout" -> host.onError(SpeechRecognizer.ERROR_NETWORK_TIMEOUT)
+            "recordingError" -> host.onError(SpeechRecognizer.ERROR_CLIENT)
             "cancelled" -> Unit // the caller aborted; nothing to deliver
             else -> host.onError(SpeechRecognizer.ERROR_CLIENT)
         }
@@ -156,7 +161,20 @@ class RecognitionSession(
         watchdog?.cancel()
         scope.cancel()
         RecognitionBridge.unregister(this)
-        DictateController.cancelRecognition()
+        DictateController.cancelRecognition(appContext)
+        host.onError(code)
+    }
+
+    /**
+     * Finishes a request the shared controller never accepted (busy). Calling cancelRecognition() here
+     * would be dangerous: the controller is busy precisely because somebody else's dictation owns it.
+     */
+    private fun completeErrorWithoutControllerCancel(code: Int) {
+        if (completed) return
+        completed = true
+        watchdog?.cancel()
+        scope.cancel()
+        RecognitionBridge.unregister(this)
         host.onError(code)
     }
 

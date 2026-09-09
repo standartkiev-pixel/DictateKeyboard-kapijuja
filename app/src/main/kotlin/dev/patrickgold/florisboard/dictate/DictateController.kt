@@ -1113,24 +1113,39 @@ object DictateController {
      * to the calling app through the recognition callback instead of being written into a field. Always
      * plain batch (no realtime/segmented) — see [openRealtimeSession] / [isSegmentedMode].
      */
-    fun startRecognition(context: Context) {
-        // Busy with another dictation → ignore; the service will time out and report an error.
+    fun startRecognition(context: Context): Boolean {
+        // The RecognitionService must never "just wait" behind another Dictate operation. Returning false
+        // lets RecognitionSession emit ERROR_RECOGNIZER_BUSY immediately instead of entering a stopping
+        // state with no controller work that could ever produce a callback.
         if (_state.value is UiState.Recording ||
             _state.value is UiState.Transcribing ||
-            _state.value is UiState.Rewording
-        ) return
+            _state.value is UiState.Rewording ||
+            startJob?.isActive == true
+        ) return false
         outputTarget = OutputTarget.RECOGNITION_SERVICE
         startRecording(context)
+        return true
     }
 
     /** Stops the recognition recording and transcribes it; the result flows to the recognition callback. */
     fun stopRecognition(context: Context) {
-        if (_state.value is UiState.Recording) stopAndTranscribe(context)
+        when {
+            _state.value is UiState.Recording -> stopAndTranscribe(context)
+            // onStopListening can arrive while Bluetooth/realtime setup is still starting. Reuse the
+            // existing "stop as soon as the recorder exists" latch rather than cancelling the start and
+            // leaving RecognitionSession with no terminal path.
+            startJob?.isActive == true -> pttStopPending = true
+            else -> dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("recordingError")
+        }
     }
 
-    /** Aborts a recognition recording without transcribing (the caller cancelled). */
-    fun cancelRecognition() {
-        cancelRecording()
+    /** Aborts recognition at any stage, including a provider request already in flight. */
+    fun cancelRecognition(context: Context) {
+        when (_state.value) {
+            is UiState.Transcribing -> cancelTranscription(context, keepForResend = false, stalled = false)
+            is UiState.Rewording -> cancelRewording()
+            else -> cancelRecording()
+        }
     }
 
     /** Aborts an in-progress recording and returns to idle (cancel button / leaving the keyboard). */
@@ -1338,6 +1353,13 @@ object DictateController {
             }
         }
 
+        if (stalled && outputTarget == OutputTarget.RECOGNITION_SERVICE) {
+            // RecognitionSession's caller cannot see the keyboard error chip. Complete the Android
+            // RecognitionService contract now; the cancelled transcription's later "cancelled" finally
+            // callback is harmless because RecognitionSession unregisters after this terminal timeout.
+            dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("timeout")
+        }
+
         transcribeJob?.cancel()
         transcribeJob = null
         _pendingPrompts.value = emptyList()
@@ -1493,6 +1515,15 @@ object DictateController {
                     pttStopPending = false
                     stopAndTranscribe(appContext)
                 }
+            } catch (c: CancellationException) {
+                // User/system cancellation while audio focus, Bluetooth or realtime setup is in flight is
+                // not an error. cancelRecording()/cancelRecognition() already chose the visible/host state.
+                recorder = null
+                segmentVad?.release()
+                segmentVad = null
+                _livePromptActive.value = false
+                cleanupAudioRouting()
+                throw c
             } catch (t: Throwable) {
                 recorder = null
                 segmentVad?.release()
@@ -1503,6 +1534,9 @@ object DictateController {
                     // Most common cause is the missing RECORD_AUDIO permission (granted in onboarding).
                     appContext.getString(R.string.dictate__error_recording_failed, t.message ?: ""),
                 )
+                if (outputTarget == OutputTarget.RECOGNITION_SERVICE) {
+                    dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("recordingError")
+                }
             }
         }
     }
@@ -1627,6 +1661,9 @@ object DictateController {
             } else {
                 carry?.delete()
                 _state.value = UiState.Error(context.getString(R.string.dictate__error_no_audio))
+                if (outputTarget == OutputTarget.RECOGNITION_SERVICE) {
+                    dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("noSpeech")
+                }
             }
             return
         }
@@ -1759,6 +1796,9 @@ object DictateController {
         if (apiKey.isBlank() && requiresKey(account)) {
             _state.value = missingCredentialError(context, account)
             logFailureAndDrop()
+            if (outputTarget == OutputTarget.RECOGNITION_SERVICE) {
+                dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("apiError")
+            }
             return
         }
 
@@ -1772,6 +1812,9 @@ object DictateController {
                 action = ErrorAction.OPEN_SETTINGS,
             )
             logFailureAndDrop()
+            if (outputTarget == OutputTarget.RECOGNITION_SERVICE) {
+                dev.patrickgold.florisboard.dictate.recognition.RecognitionBridge.completeOutcome("recordingError")
+            }
             return
         }
 

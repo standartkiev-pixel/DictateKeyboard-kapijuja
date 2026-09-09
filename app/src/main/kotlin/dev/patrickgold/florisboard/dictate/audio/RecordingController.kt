@@ -106,6 +106,10 @@ class RecordingController(private val context: Context) {
             val buf = ByteArray(bufferSize)
             while (recording) {
                 val n = rec.read(buf, 0, buf.size)
+                // stop() may flip [recording] while a native read is blocked. Once that read returns,
+                // leave immediately instead of writing one late frame into a WAV the caller may already
+                // be finalizing.
+                if (!recording) break
                 // Keep reading while paused (so the mic buffer never overflows) but drop the samples.
                 if (n > 0 && !paused) {
                     // Write under the lock so a concurrent rotate() sees a consistent raf/pcmBytes and the
@@ -178,7 +182,18 @@ class RecordingController(private val context: Context) {
         record = null
         val stopped = rec != null && runCatching { rec.stop() }.isSuccess
         if (!stopped) runCatching { rec?.release() }
-        runCatching { thread?.join() }
+
+        // Never wait forever on a vendor AudioRecord.read() implementation. The normal path exits in a
+        // few milliseconds after stop(); if it does not, release the native recorder, interrupt the Java
+        // thread and give it one final short grace period. The capture loop checks [recording] immediately
+        // after read(), so a thread that somehow outlives both joins cannot touch [raf] when it wakes later.
+        val captureThread = thread
+        runCatching { captureThread?.join(STOP_JOIN_GRACE_MS) }
+        if (captureThread?.isAlive == true) {
+            runCatching { rec?.release() }
+            runCatching { captureThread.interrupt() }
+            runCatching { captureThread.join(STOP_JOIN_FORCE_MS) }
+        }
         thread = null
         if (stopped) runCatching { rec?.release() }
         return synchronized(fileLock) {
@@ -242,6 +257,10 @@ class RecordingController(private val context: Context) {
         File(context.cacheDir, "dictate_audio_${fileSessionId}_${segmentSeq++}.wav")
 
     companion object {
+        /** Hard upper bound for waiting on a broken native AudioRecord reader during stop/cancel. */
+        private const val STOP_JOIN_GRACE_MS = 500L
+        private const val STOP_JOIN_FORCE_MS = 250L
+
         private const val SAMPLE_RATE = 16_000
         private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT

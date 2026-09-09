@@ -88,6 +88,9 @@ class WearAudioRecorder(private val context: Context) {
             val buf = ByteArray(bufferSize)
             while (recording) {
                 val read = recorder.read(buf, 0, buf.size)
+                // stop/cancel may flip [recording] while the native read is blocked. Do not write a late
+                // frame after the caller has started finalizing/deleting the WAV.
+                if (!recording) break
                 // Keep draining the mic while paused (so the buffer never overflows) but drop the audio,
                 // so paused time contributes no samples — matching the phone's pause behavior.
                 if (read > 0 && !paused) {
@@ -120,10 +123,7 @@ class WearAudioRecorder(private val context: Context) {
     /** Stops capture, releases the recorder and returns the recorded audio as a `.wav` file. */
     fun stop(): File {
         recording = false
-        thread?.join()
-        thread = null
-        record?.run { stop(); release() }
-        record = null
+        stopNativeAndJoin()
 
         val out = checkNotNull(raf) { "Recorder was not started" }
         raf = null
@@ -145,15 +145,34 @@ class WearAudioRecorder(private val context: Context) {
 
     fun cancel() {
         recording = false
-        thread?.join()
-        thread = null
-        record?.run { stop(); release() }
-        record = null
+        stopNativeAndJoin()
         runCatching { raf?.close() }
         raf = null
         outputFile?.delete()
         outputFile = null
         pcmBytes = 0L
+    }
+
+    /**
+     * Stops the native recorder before joining the capture thread, with a finite upper bound. Some watch
+     * vendor AudioRecord implementations have been observed to keep read() blocked after the logical
+     * recording flag changes; waiting unbounded here would freeze the whole IME on Stop/Cancel.
+     */
+    private fun stopNativeAndJoin() {
+        val rec = record
+        record = null
+        val stopped = rec != null && runCatching { rec.stop() }.isSuccess
+        if (!stopped) runCatching { rec?.release() }
+
+        val captureThread = thread
+        runCatching { captureThread?.join(STOP_JOIN_GRACE_MS) }
+        if (captureThread?.isAlive == true) {
+            runCatching { rec?.release() }
+            runCatching { captureThread.interrupt() }
+            runCatching { captureThread.join(STOP_JOIN_FORCE_MS) }
+        }
+        thread = null
+        if (stopped) runCatching { rec?.release() }
     }
 
     private fun wavHeader(dataLen: Long): ByteArray {
@@ -176,6 +195,9 @@ class WearAudioRecorder(private val context: Context) {
     }
 
     private companion object {
+        private const val STOP_JOIN_GRACE_MS = 500L
+        private const val STOP_JOIN_FORCE_MS = 250L
+
         const val SAMPLE_RATE = 16_000
         const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
