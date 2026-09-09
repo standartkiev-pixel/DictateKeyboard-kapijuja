@@ -1767,6 +1767,7 @@
     <string name="dictate__status_recording" comment="Status shown while recording audio">Recording – tap to stop</string>
     <string name="dictate__status_transcribing" comment="Status shown while the audio is being transcribed">Transcribing…</string>
     <string name="dictate__transcription_stopped_audio_kept" comment="Shown after the user stops an in-flight transcription; the captured audio remains available for resend">Stopped · recording kept</string>
+    <string name="dictate__transcription_stalled_audio_kept" comment="Shown when the no-progress watchdog stops a stuck transcription while preserving its audio">No progress · recording kept</string>
     <string name="dictate__action_stop_transcription" comment="Content description for the explicit Smartbar button that cancels the current transcription but preserves its audio">Stop transcription</string>
     <string name="dictate__status_transcribing_local" comment="Status shown while the on-device model is transcribing, instead of a cloud provider (issues #228/#270)">Transcribing on device…</string>
     <string name="dictate__back_to_keyboard" comment="Content description for the button that returns from the Dictate panel to the typing keyboard">Back to keyboard</string>
