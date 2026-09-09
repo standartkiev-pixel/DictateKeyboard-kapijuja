@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,9 +32,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -91,6 +95,10 @@ fun DictateHistoryLayout(
     }.collectAsState(initial = null)
 
     val listState = rememberLazyListState()
+    // null = ordinary History list. A row's ↻ button selects an entry and temporarily turns the same
+    // panel into a provider chooser. This stays inside the IME window: a Material DropdownMenu creates
+    // a focusable popup, which can steal focus from the editor and hide the keyboard.
+    var replayChooserEntryId by remember { mutableStateOf<Long?>(null) }
 
     SnyggColumn(
         elementName = FlorisImeUi.Media.elementName,
@@ -110,7 +118,13 @@ fun DictateHistoryLayout(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PanelHeaderButton(
-                onClick = { keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT },
+                onClick = {
+                    if (replayChooserEntryId != null) {
+                        replayChooserEntryId = null
+                    } else {
+                        keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                    }
+                },
                 modifier = Modifier.size(FlorisImeSizing.smartbarHeight),
             ) {
                 SnyggIcon(
@@ -123,7 +137,13 @@ fun DictateHistoryLayout(
                 // bold and carries a margin — so of the three panel titles no two matched (#317).
                 elementName = FlorisImeUi.ClipboardHeaderText.elementName,
                 modifier = Modifier.weight(1f),
-                text = stringRes(R.string.dictate__history_title),
+                text = stringRes(
+                    if (replayChooserEntryId != null) {
+                        R.string.dictate__history_choose_recognizer
+                    } else {
+                        R.string.dictate__history_title
+                    }
+                ),
             )
             // Jump straight to the full history management screen in the settings app.
             PanelHeaderButton(
@@ -139,7 +159,18 @@ fun DictateHistoryLayout(
         }
 
         val loadedEntries = entries
-        if (loadedEntries == null || loadedEntries.isEmpty()) {
+        val replayEntry = replayChooserEntryId?.let { id -> loadedEntries?.firstOrNull { it.id == id } }
+        if (replayChooserEntryId != null && replayEntry != null) {
+            HistoryRecognizerChooser(
+                providers = DictateController.historyReplayProviders(context),
+                accent = accent,
+                onSelect = { provider ->
+                    DictateController.retranscribeHistoryEntry(context, replayEntry, provider.id)
+                    replayChooserEntryId = null
+                    keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                },
+            )
+        } else if (loadedEntries == null || loadedEntries.isEmpty()) {
             SnyggBox(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -183,9 +214,8 @@ fun DictateHistoryLayout(
                             DictateController.insertHistoryText(context, entry.originalText)
                             keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
                         },
-                        onRetranscribe = {
-                            DictateController.retranscribeHistoryEntry(context, entry)
-                            keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                        onChooseRecognizer = {
+                            replayChooserEntryId = entry.id
                         },
                     )
                 }
@@ -200,7 +230,7 @@ private fun HistoryPanelRow(
     accent: Color,
     onInsert: () -> Unit,
     onInsertOriginal: () -> Unit,
-    onRetranscribe: () -> Unit,
+    onChooseRecognizer: () -> Unit,
 ) {
     val inputFeedbackController = LocalInputFeedbackController.current
     // Both versions exist only when a prompt actually rewrote the dictation (issue #240).
@@ -269,7 +299,7 @@ private fun HistoryPanelRow(
         if (entry.audioPath != null) {
             SnyggIconButton(
                 elementName = FlorisImeUi.MediaBottomRowButton.elementName,
-                onClick = onRetranscribe,
+                onClick = onChooseRecognizer,
                 modifier = Modifier.size(buttonSize),
             ) {
                 Icon(
@@ -290,6 +320,76 @@ private fun HistoryPanelRow(
                 contentDescription = null,
                 modifier = Modifier.size(iconSize),
             )
+        }
+    }
+}
+
+/**
+ * Provider picker for one retained recording. It intentionally reuses the keyboard panel rather than a
+ * focusable popup, so choosing another AI never knocks focus out of the app the user is typing into.
+ * Disabled providers stay visible with a "not configured" suffix: that makes the available architecture
+ * discoverable without sending a doomed request.
+ */
+@Composable
+private fun HistoryRecognizerChooser(
+    providers: List<DictateController.HistoryReplayProvider>,
+    accent: Color,
+    onSelect: (DictateController.HistoryReplayProvider) -> Unit,
+) {
+    val listState = rememberLazyListState()
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .dictateLazyPanelScrollbar(listState, accent),
+    ) {
+        items(providers, key = { it.id }) { provider ->
+            SnyggRow(
+                elementName = FlorisImeUi.MediaBottomRow.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(if (provider.enabled) 1f else 0.45f)
+                    .padding(vertical = 2.dp),
+                clickAndSemanticsModifier = Modifier.combinedClickable(
+                    enabled = provider.enabled,
+                    onClick = { onSelect(provider) },
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (provider.active) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier
+                            .padding(start = 10.dp)
+                            .size(20.dp),
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    SnyggText(
+                        elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
+                        text = provider.label,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    val suffix = when {
+                        !provider.enabled -> stringRes(R.string.dictate__history_recognizer_unconfigured)
+                        provider.active -> stringRes(R.string.dictate__history_recognizer_current)
+                        else -> ""
+                    }
+                    if (suffix.isNotEmpty()) {
+                        SnyggText(
+                            elementName = FlorisImeUi.KeyHint.elementName,
+                            text = suffix,
+                        )
+                    }
+                }
+            }
         }
     }
 }
