@@ -1891,7 +1891,7 @@
          bytes and for the whole call: telling those two apart takes knowing how the HTTP client works,
          and the person waiting only has one question. -->
     <string name="dictate__request_timeout_title" comment="Title of the slider setting how long a request to the AI provider may take before it counts as failed">Request timeout</string>
-    <string name="dictate__request_timeout_summary" comment="Summary under the request timeout slider; {v} is the chosen number of seconds">{v} s · raise this for a slow server of your own</string>
+    <string name="dictate__request_timeout_summary" comment="Summary under the request/no-progress timeout slider; {v} is the chosen number of seconds">{v} s without progress · raise for a slow server of your own</string>
 
     <string name="dictate__wear_title" comment="Title of the Wear OS companion settings screen">Wear OS</string>
     <string name="dictate__wear_summary" comment="Summary of the Wear OS settings entry on the main Dictate screen">Options for dictating from a paired watch</string>
