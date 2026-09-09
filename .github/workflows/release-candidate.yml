@@ -45,9 +45,8 @@ jobs:
       - name: Repeat cancellation fault test
         run: |
           for attempt in 1 2 3; do
-            echo "Cancellation fault test attempt $attempt/3"
+            echo "Network fault suite attempt $attempt/3"
             timeout 10m ./gradlew :lib:dictate-core:testDebugUnitTest \
-              --tests '*OpenAiCompatibleClientNetworkTest' \
               --rerun-tasks --stacktrace
           done
 
