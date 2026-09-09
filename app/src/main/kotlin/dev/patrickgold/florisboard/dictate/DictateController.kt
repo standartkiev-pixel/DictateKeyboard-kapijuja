@@ -1599,7 +1599,10 @@ object DictateController {
         val pending = pendingTranscriptionDir(context).listFiles()?.firstOrNull { it.isFile && it.length() > 0L }
             ?: return false
         // Claim it: move out of the pending dir so it cannot be picked up twice, then clean the dir.
-        val claimed = File(context.cacheDir, "dictate_import_${pending.name}")
+        val claimed = File(
+            context.cacheDir,
+            "dictate_import_${SystemClock.elapsedRealtime()}_${pending.name}",
+        )
         claimed.delete()
         if (!pending.renameTo(claimed)) {
             pending.copyTo(claimed, overwrite = true)
@@ -2732,7 +2735,10 @@ object DictateController {
         val audioFiles = segmentAudioFiles.toSortedMap().values.filter { it.exists() && it.length() > 0L }
         resetSegmentedState()
         val mergedWav = if (keepAudio && audioFiles.isNotEmpty()) {
-            val merged = File(appContext.cacheDir, "dictate_seg_merged.wav")
+            val merged = File(
+                appContext.cacheDir,
+                "dictate_seg_merged_${SystemClock.elapsedRealtime()}.wav",
+            )
             merged.delete()
             if (withContext(Dispatchers.IO) { AudioConcat.concat(audioFiles, merged) } && merged.exists() && merged.length() > 0L) merged else null
         } else null
