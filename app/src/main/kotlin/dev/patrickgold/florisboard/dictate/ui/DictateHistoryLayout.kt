@@ -164,6 +164,7 @@ fun DictateHistoryLayout(
             HistoryRecognizerChooser(
                 providers = DictateController.historyReplayProviders(context),
                 accent = accent,
+                modifier = Modifier.weight(1f),
                 onSelect = { provider ->
                     DictateController.retranscribeHistoryEntry(context, replayEntry, provider.id)
                     replayChooserEntryId = null
@@ -334,14 +335,14 @@ private fun HistoryPanelRow(
 private fun HistoryRecognizerChooser(
     providers: List<DictateController.HistoryReplayProvider>,
     accent: Color,
+    modifier: Modifier = Modifier,
     onSelect: (DictateController.HistoryReplayProvider) -> Unit,
 ) {
     val listState = rememberLazyListState()
     LazyColumn(
         state = listState,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .weight(1f)
             .dictateLazyPanelScrollbar(listState, accent),
     ) {
         items(providers, key = { it.id }) { provider ->
