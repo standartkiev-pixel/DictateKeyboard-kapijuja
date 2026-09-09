@@ -315,3 +315,36 @@ When changing upstream code, keep attribution headers unless the file is entirel
 ## Immediate next action
 
 Start by finishing the remaining Dictate Cloud client/UI removal, then run a full build. Do not begin the Transcribing watchdog patch until the Cloud-removal branch compiles cleanly; otherwise two unrelated classes of errors will be mixed together.
+
+
+### No-progress watchdog + retry safety — 2026-09-09
+
+The original "Transcribing…" hang is now addressed at the controller/state-machine level.
+
+Implemented on `main`:
+
+- `DictateController` owns one no-progress watchdog for ordinary batch transcription.
+- The existing `Settings → AI providers → Network → Request timeout` value is reused as the heartbeat
+  budget (30–600 s, default 120 s); there is intentionally no second timeout slider.
+- `TranscriptionRequest.onProgress` is a lightweight liveness hook:
+  - multipart/raw/base64 upload bytes refresh it;
+  - Soniox and AssemblyAI refresh it after successful async status polls;
+  - local sherpa-onnx refreshes it while decoding/segmenting;
+  - long-form raw segments pass the same heartbeat.
+- On timeout, the watchdog calls the same retained-audio path as manual Stop instead of setting UiState
+  directly. Underlying coroutine/OkHttp work is cancelled and Send again remains available.
+- Manual Stop/watchdog rescue audio is also force-archived into History when History is enabled. Sensitive
+  password/incognito fields are never archived; an existing History replay is not duplicated.
+- Generic transcription network calls now allow at most one application-level retry (initial + one).
+  OpenRouter stays at zero retries. Async status GET polls keep their explicit safe retry budget.
+- Long-form no longer multiplies retries outside the provider client.
+- Long-form segment WAVs remain temporary cache-owned files until terminal success/cancel, even if permanent
+  History audio retention is off. This lets Stop/watchdog reconstruct one merged rescue WAV.
+- Long-form final drain starts the same heartbeat watchdog and cancels all segment jobs as one operation.
+- Realtime keeps its existing ~1.2 s finalize watchdog; failed/empty realtime falls back to the protected
+  batch path.
+- Network tests cover heartbeat emission and the one-retry ceiling.
+
+Next validation is device-level fault injection: disconnect Wi-Fi/mobile data while each provider path is
+in flight, verify the terminal resend state, then verify the archived recording can be replayed through a
+different recognizer.
