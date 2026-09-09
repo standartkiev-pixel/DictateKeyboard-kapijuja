@@ -1249,6 +1249,8 @@
     <string name="dictate__status_idle">Нажмите, чтобы диктовать</string>
     <string name="dictate__status_recording">Запись — нажмите, чтобы остановить</string>
     <string name="dictate__status_transcribing">Транскрибирование…</string>
+    <string name="dictate__transcription_stopped_audio_kept">Остановлено · запись сохранена</string>
+    <string name="dictate__action_stop_transcription">Прервать распознавание</string>
     <string name="dictate__status_transcribing_local">Транскрибирование на устройстве…</string>
     <string name="dictate__back_to_keyboard">Назад к клавиатуре</string>
     <string name="dictate__error_recording_failed">Не удалось записать — предоставьте разрешение на доступ к микрофону. (%s)</string>
