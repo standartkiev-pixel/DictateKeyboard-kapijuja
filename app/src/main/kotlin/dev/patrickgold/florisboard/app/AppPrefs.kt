@@ -361,17 +361,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = false,
         )
         /**
-         * Seconds a request may go without a byte before it counts as failed (issue #337).
+         * Seconds a transcription may make no meaningful progress before it counts as stalled (#337 +
+         * Kapijuja recovery watchdog).
          *
-         * One number for both halves of the wait — the gap between bytes and the budget for the whole
-         * call — because they are the same question to the person waiting, and telling the two apart
-         * takes knowing how OkHttp works. Two minutes is right for a cloud provider; the reason this is
-         * adjustable at all is the self-hosted end of the range, where a model on a slow machine can
-         * think for longer than that before it answers. Uploads are not capped by this: while bytes are
-         * moving, every one of them starts the clock again.
+         * The same value still configures OkHttp's request/read/write limits, but DictateController now
+         * also uses it as an upper-level heartbeat timeout: upload bytes, async Soniox/AssemblyAI polls
+         * and local sherpa-onnx decode steps refresh the clock. This is deliberately one user-facing
+         * number — "how long can nothing happen before I want my recording back?" — rather than separate
+         * networking and state-machine sliders.
          *
-         * The file import ignores anything lower than its own, more generous limits — a screen with a
-         * cancel button on it is not the place to give up early.
+         * The file-import screen keeps its own more generous minimum limits because large picked media is
+         * expected to take longer and already has visible progress/cancel UI.
          */
         val requestTimeout = int(
             key = "dictate__request_timeout",
