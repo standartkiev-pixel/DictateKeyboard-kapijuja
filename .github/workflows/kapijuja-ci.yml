@@ -42,15 +42,27 @@ jobs:
           chmod +x tools/fetch-sherpa-onnx.sh
           ./tools/fetch-sherpa-onnx.sh
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      # Compile BOTH distributable Android surfaces. The Wear module is a separate application module;
+      # building only :app can leave watch-only Kotlin errors completely invisible.
+      - name: Build phone and Wear debug APKs
+        run: ./gradlew :app:assembleDebug :wear:assembleDebug --stacktrace
 
-      - name: Upload debug APK
+      - name: Upload phone debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: dictate-kapijuja-debug
+          name: dictate-kapijuja-phone-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Run unit tests
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Upload Wear debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dictate-kapijuja-wear-debug
+          path: wear/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # :lib:dictate-core owns the provider/network fault tests; :app alone does not execute them.
+      # Keep Wear in the test graph too so a future watch-side unit test cannot silently be omitted.
+      - name: Run app, core and Wear unit tests
+        run: |
+          ./gradlew             :app:testDebugUnitTest             :lib:dictate-core:testDebugUnitTest             :wear:testDebugUnitTest             --stacktrace

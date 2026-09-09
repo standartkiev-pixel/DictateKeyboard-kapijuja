@@ -252,3 +252,10 @@ Dictate Kapijuja treats every asynchronous user operation as requiring a termina
 on both phone and Wear is bounded even if a vendor AudioRecord driver misbehaves, and Android
 RecognitionService now has explicit terminal handling for busy, startup failure, missing credentials/model,
 no audio, provider timeout, user cancellation, success and provider errors.
+
+
+### CI coverage
+
+CI builds both the phone and Wear OS applications and runs unit tests for the app, shared
+`dictate-core` provider/network layer, and Wear module. Provider cancellation/retry fault tests live in
+`dictate-core`, so an app-only green build is not treated as full verification.

@@ -702,3 +702,22 @@ resolution:
   instead of an internal "cancelled" outcome that delivered neither results nor an error.
 
 These changes preserve ordinary keyboard behavior; they close contracts used by external Android callers.
+
+
+## Audit update — CI now proves the whole product
+
+The previous workflow only built `:app` and ran `:app:testDebugUnitTest`. That was insufficient:
+the Wear OS application is a separate Gradle module, and the provider/network fault tests live in
+`:lib:dictate-core`.
+
+CI is therefore required to:
+
+- build `:app:assembleDebug`;
+- build `:wear:assembleDebug`;
+- upload phone and Wear APK artifacts separately;
+- run `:app:testDebugUnitTest`;
+- run `:lib:dictate-core:testDebugUnitTest`;
+- run `:wear:testDebugUnitTest`.
+
+Do not call a commit fully verified unless this expanded CI is green. In particular, network retry /
+cancellation tests are not proven by app-only tests.
