@@ -22,4 +22,16 @@ class RestorePackageCompatibilityTest : FunSpec({
         Restore.isCompatiblePackage("org.example.keyboard") shouldBe false
         Restore.isCompatiblePackage("") shouldBe false
     }
+
+    test("the reset Kapijuja version line still restores its own backups") {
+        Restore.isSupportedBackupVersion("net.kapijuja.dictate", 1) shouldBe true
+        Restore.isSupportedBackupVersion("net.kapijuja.dictate.debug", 1) shouldBe true
+        Restore.isSupportedBackupVersion("net.kapijuja.dictate", 0) shouldBe false
+    }
+
+    test("legacy and third party backups keep the established schema floor") {
+        Restore.isSupportedBackupVersion("net.devemperor.dictate", 64) shouldBe true
+        Restore.isSupportedBackupVersion("net.devemperor.dictate", 63) shouldBe false
+        Restore.isSupportedBackupVersion("org.example.keyboard", 63) shouldBe false
+    }
 })

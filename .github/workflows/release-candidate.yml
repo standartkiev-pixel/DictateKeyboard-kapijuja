@@ -1,0 +1,114 @@
+name: Dictate Kapijuja RC release
+
+on:
+  push:
+    branches: [release-v0.1.0-rc.1]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dictate-kapijuja-v0.1.0-rc.1
+  cancel-in-progress: false
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Audit release source and credentials
+        run: bash scripts/release-audit.sh
+
+      - name: Fetch checksum-pinned native STT runtime
+        run: |
+          chmod +x tools/fetch-sherpa-onnx.sh
+          ./tools/fetch-sherpa-onnx.sh
+
+      - name: Compile phone and Wear
+        run: ./gradlew :app:assembleDebug :wear:assembleDebug --stacktrace
+
+      - name: Run all JVM unit tests
+        run: |
+          ./gradlew \
+            :app:testDebugUnitTest \
+            :lib:dictate-core:testDebugUnitTest \
+            :wear:testDebugUnitTest \
+            --stacktrace
+
+      - name: Repeat cancellation fault test
+        run: |
+          for attempt in 1 2 3; do
+            echo "Cancellation fault test attempt $attempt/3"
+            ./gradlew :lib:dictate-core:testDebugUnitTest \
+              --tests '*OpenAiCompatibleClientNetworkTest.cancelling a stalled transcription aborts the active call without replaying the audio' \
+              --rerun-tasks --stacktrace
+          done
+
+      - name: Android lint including resource leak detectors
+        run: |
+          ./gradlew \
+            :app:lintDebug \
+            :lib:dictate-core:lintDebug \
+            :wear:lintDebug \
+            --stacktrace
+
+      - name: Verify APK identity signature and size
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_apk="app/build/outputs/apk/debug/app-debug.apk"
+          release_apk="dictate-kapijuja-v0.1.0-rc.1-test.apk"
+          test -f "$source_apk"
+          cp "$source_apk" "$release_apk"
+
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$build_tools/apksigner" verify --verbose --print-certs "$release_apk"
+          "$build_tools/aapt" dump badging "$release_apk" | tee apk-badging.txt
+          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='1'" apk-badging.txt
+
+          size="$(stat -c '%s' "$release_apk")"
+          test "$size" -lt 157286400
+          sha="$(sha256sum "$release_apk" | cut -d' ' -f1)"
+          echo "file=$release_apk" >> "$GITHUB_OUTPUT"
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Publish minimal tested prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_FILE: ${{ steps.apk.outputs.file }}
+          APK_SIZE: ${{ steps.apk.outputs.size }}
+          APK_SHA: ${{ steps.apk.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'First public test candidate of Dictate Kapijuja Keyboard.' \
+            '' \
+            'This is intentionally a prerelease signed with the Android debug identity because the permanent Kapijuja JKS has not yet been recovered. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
+            '' \
+            'Validated before publishing:' \
+            '- phone and Wear compilation;' \
+            '- app, dictate-core and Wear unit tests;' \
+            '- three repeated stalled-request cancellation tests;' \
+            '- Android lint resource/leak checks;' \
+            '- Cloud/Billing and credential audit;' \
+            '- APK package, signature and size verification.' \
+            '' \
+            "APK size: $APK_SIZE bytes" \
+            "SHA-256: $APK_SHA" \
+            > release-notes.txt
+
+          gh release create v0.1.0-rc.1 "$APK_FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title 'Dictate Kapijuja 0.1.0 RC1 — test build' \
+            --notes-file release-notes.txt \
+            --prerelease

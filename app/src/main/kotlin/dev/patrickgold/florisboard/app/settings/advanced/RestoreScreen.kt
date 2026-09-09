@@ -93,7 +93,8 @@ import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.lib.FlorisLocale
 
 object Restore {
-    const val MIN_VERSION_CODE = 64
+    private const val UPSTREAM_MIN_VERSION_CODE = 64
+    private const val KAPIJUJA_MIN_VERSION_CODE = 1
     // Accept Kapijuja backups and the upstream Dictate backups this fork is intentionally able to import.
     // Variant suffixes (.debug/.beta) are accepted by startsWith; unrelated applications still warn.
     private val COMPATIBLE_PACKAGE_PREFIXES = listOf("net.kapijuja.dictate", "net.devemperor.dictate")
@@ -101,6 +102,13 @@ object Restore {
 
     fun isCompatiblePackage(packageName: String): Boolean =
         COMPATIBLE_PACKAGE_PREFIXES.any(packageName::startsWith)
+
+    fun isSupportedBackupVersion(packageName: String, versionCode: Int): Boolean =
+        versionCode >= if (packageName.startsWith("net.kapijuja.dictate")) {
+            KAPIJUJA_MIN_VERSION_CODE
+        } else {
+            UPSTREAM_MIN_VERSION_CODE
+        }
 }
 
 @Composable
@@ -148,7 +156,11 @@ fun RestoreScreen() = FlorisScreen {
                     else -> null
                 }
                 workspace.restoreErrorId = when {
-                    workspace.metadata.packageName.isBlank() || workspace.metadata.versionCode < Restore.MIN_VERSION_CODE -> {
+                    workspace.metadata.packageName.isBlank() ||
+                        !Restore.isSupportedBackupVersion(
+                            workspace.metadata.packageName,
+                            workspace.metadata.versionCode,
+                        ) -> {
                         R.string.backup_and_restore__restore__metadata_error_invalid_metadata
                     }
                     else -> null
