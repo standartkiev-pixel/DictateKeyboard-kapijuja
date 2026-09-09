@@ -1341,7 +1341,7 @@
     <string name="dictate__providers_test_failed">Не удалось подключиться</string>
     <string name="dictate__providers_network_group">Сеть</string>
     <string name="dictate__request_timeout_title">Тайм-аут запроса</string>
-    <string name="dictate__request_timeout_summary">{v} с · увеличьте для медленного своего сервера</string>
+    <string name="dictate__request_timeout_summary">{v} с без прогресса · увеличьте для медленного своего сервера</string>
     <string name="dictate__proxy_title">Прокси</string>
     <string name="dictate__proxy_summary_off">Выключено · прямое подключение</string>
     <string name="dictate__proxy_enabled_title">Использовать прокси</string>
