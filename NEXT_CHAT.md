@@ -796,5 +796,9 @@ Important invariants:
 7. Realtime already has its own short finalize watchdog and falls back to ordinary batch when needed.
 8. The Request timeout slider is now explicitly the user's "seconds without progress" control.
 
+Race-safety note: request/cache filenames are now unique and batch jobs use generation ownership.
+Do not reintroduce fixed request temp names such as `dictate_audio.wav`, `dictate_speedup.wav` or a
+fixed History replay temp. A late-cancelled local/native job must never be able to delete a newer request.
+
 The next task should be real-device/network fault testing and any fixes it exposes, not another timeout
 refactor. Also verify process-death recovery/history after manual Stop and watchdog cancellation.
