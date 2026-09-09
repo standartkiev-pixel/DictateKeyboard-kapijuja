@@ -714,3 +714,39 @@ At this handoff:
 - the next packaging change is the first properly signed Kapijuja Voice release APK.
 
 **Start the next chat from this file. Do not rediscover the bootstrap from scratch.**
+
+
+---
+
+## 21. Kapijuja recovery UX phase — 2026-09-09
+
+The project owner explicitly wants captured speech to remain recoverable when a provider hangs or fails.
+
+Work now in progress / committed on `main`:
+
+- explicit Stop button in the Smartbar while `Transcribing…`;
+- Stop cancels the in-flight provider job but keeps a private resend copy instead of deleting the audio;
+- the resend state offers Send again and explicit discard;
+- stopped-audio rescue preserves the original container extension and is safe even when Stop is pressed
+  during a resend of an already-retained file;
+- source-audio history retention defaults ON for new Kapijuja installs;
+- existing retention limits remain 50 entries / 30 days / 200 MB;
+- History is promoted beside Clipboard in the default Smartbar action order;
+- README and PROJECT_HANDOFF describe the new recovery model.
+
+Important existing architecture discovered during this work:
+
+- `DictateHistoryStore` already stores retained audio in `filesDir/dictate_history/`;
+- history entries already support playback/export/pinning and re-transcription;
+- `DictateController.retranscribeHistoryEntry()` replays a saved recording through the CURRENT active
+  transcription provider. Therefore cross-provider re-recognition already works if the user changes the
+  active provider first.
+
+Next planned product step:
+
+Add an explicit provider chooser directly on a retained history recording. The user should be able to
+select OpenAI/Groq/Gemini/custom/on-device for that one replay without changing the global default first.
+The chooser should live close to the in-keyboard History panel, not several settings screens away.
+
+After that, implement a provider-independent no-progress watchdog. Its terminal action should reuse the
+same preserved-audio resend state created by the manual Stop path.
