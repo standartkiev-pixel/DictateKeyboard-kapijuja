@@ -32,6 +32,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,6 +69,8 @@ import java.text.DateFormat
 import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.android.showLongToast
@@ -91,11 +94,13 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 
 object Restore {
     const val MIN_VERSION_CODE = 64
-    // Dictate's own application id (base, without the .debug/.beta variant suffixes) — a backup whose
-    // metadata package starts with this is a genuine Dictate backup, not a "third-party" one. Was still
-    // the upstream FlorisBoard id after the fork, which made every Dictate backup falsely warn.
-    const val PACKAGE_NAME = "net.devemperor.dictate"
+    // Accept Kapijuja backups and the upstream Dictate backups this fork is intentionally able to import.
+    // Variant suffixes (.debug/.beta) are accepted by startsWith; unrelated applications still warn.
+    private val COMPATIBLE_PACKAGE_PREFIXES = listOf("net.kapijuja.dictate", "net.devemperor.dictate")
     const val BACKUP_ARCHIVE_FILE_NAME = "backup.zip"
+
+    fun isCompatiblePackage(packageName: String): Boolean =
+        COMPATIBLE_PACKAGE_PREFIXES.any(packageName::startsWith)
 }
 
 @Composable
@@ -109,9 +114,10 @@ fun RestoreScreen() = FlorisScreen {
 
     val restoreFilesSelector = remember { Backup.FilesSelector() }
     var importStrategy by remember { mutableStateOf(ImportStrategy.Merge) }
-    // TODO: rememberCoroutineScope() is unusable because it provides the scope in a cancelled state, which does
-    //  not make sense at all. I suspect that this is a bug and once it is resolved we can use it here again.
-    val restoreScope = remember { CoroutineScope(Dispatchers.Main) }
+    val restoreScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate) }
+    DisposableEffect(restoreScope) {
+        onDispose { restoreScope.cancel() }
+    }
     var restoreWorkspace by remember {
         mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
     }
@@ -136,7 +142,7 @@ fun RestoreScreen() = FlorisScreen {
                     workspace.metadata.versionCode != BuildConfig.VERSION_CODE -> {
                         R.string.backup_and_restore__restore__metadata_warn_different_version
                     }
-                    !workspace.metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
+                    !Restore.isCompatiblePackage(workspace.metadata.packageName) -> {
                         R.string.backup_and_restore__restore__metadata_warn_different_vendor
                     }
                     else -> null

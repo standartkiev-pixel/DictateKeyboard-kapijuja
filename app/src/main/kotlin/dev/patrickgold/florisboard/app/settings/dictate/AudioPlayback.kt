@@ -92,12 +92,18 @@ class AudioPlayerState internal constructor(
     private fun prepare(): Boolean {
         player?.let { return true }
         val source = path ?: return false
+        val candidate = MediaPlayer()
         val opened = runCatching {
-            MediaPlayer().apply {
+            candidate.apply {
                 setDataSource(source)
                 prepare()
             }
-        }.getOrNull() ?: return false
+        }.getOrElse {
+            // A constructor that succeeded still owns native decoder resources even when setDataSource
+            // or prepare failed. Do not wait for finalization to release them after a corrupt/pruned file.
+            runCatching { candidate.release() }
+            return false
+        }
         opened.setOnCompletionListener {
             playing = false
             // Back to the start, the way every audio player behaves at the end of a track.

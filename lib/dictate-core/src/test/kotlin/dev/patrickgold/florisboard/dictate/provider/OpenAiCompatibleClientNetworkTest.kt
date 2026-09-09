@@ -19,6 +19,7 @@ import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import okhttp3.Dns
@@ -370,7 +371,10 @@ class OpenAiCompatibleClientNetworkTest : FunSpec({
                 )
 
                 coroutineScope {
-                    val job = launch {
+                    // Start inline until the first suspension so a heavily loaded CI dispatcher cannot
+                    // spend the entire request-start assertion budget before this coroutine is scheduled.
+                    // This keeps the test about Call.cancel(), not about unrelated worker availability.
+                    val job = launch(start = CoroutineStart.UNDISPATCHED) {
                         client.transcribe(TranscriptionRequest(audio, "gpt-4o-mini-transcribe"))
                     }
                     val started = server.takeRequest(5, TimeUnit.SECONDS)

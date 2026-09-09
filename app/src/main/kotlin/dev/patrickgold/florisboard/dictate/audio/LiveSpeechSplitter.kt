@@ -15,7 +15,7 @@ import com.k2fsa.sherpa.onnx.SileroVadModelConfig
 import com.k2fsa.sherpa.onnx.Vad
 import com.k2fsa.sherpa.onnx.VadModelConfig
 import java.util.concurrent.Executors
-import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
 
 /**
@@ -40,7 +40,11 @@ class LiveSpeechSplitter(
     private val onPause: () -> Unit,
 ) {
     private val appContext = context.applicationContext
-    private val queue = LinkedBlockingQueue<Event>()
+    // Audio capture must never be able to allocate an unbounded backlog when VAD/Smart Turn inference is
+    // slower than realtime on a low-memory phone. Dropping analysis frames only delays an automatic cut;
+    // it never drops samples from the request-owned WAV, so manual cutting and final transcription remain
+    // lossless. Control events make room so a reset/prediction cannot be starved behind stale audio.
+    private val queue = ArrayBlockingQueue<Event>(MAX_QUEUED_EVENTS)
     private val inferenceExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "dictate-smart-turn").apply { isDaemon = true }
     }
@@ -71,7 +75,7 @@ class LiveSpeechSplitter(
 
     /** After a cut (manual or auto), require fresh speech before the next auto-cut can fire. */
     fun notifyCut() {
-        queue.offer(Event.Reset)
+        offerControl(Event.Reset)
     }
 
     fun release() {
@@ -132,16 +136,16 @@ class LiveSpeechSplitter(
                     if (!useSmartTurn) {
                         // Smart Turn disabled/undownloaded → behave as the pure VAD silence timer: report no
                         // semantic signal so the policy cuts only via the maximum-pause fallback.
-                        queue.offer(Event.Prediction(action.epoch, null))
+                        offerControl(Event.Prediction(action.epoch, null))
                     } else {
                         val audio = turnBuffer.snapshotNormalizedLeftPadded()
                         runCatching {
                             inferenceExecutor.execute {
                                 val complete = if (running) SmartTurnModel.predictsComplete(appContext, audio) else null
-                                if (running) queue.offer(Event.Prediction(action.epoch, complete))
+                                if (running) offerControl(Event.Prediction(action.epoch, complete))
                             }
                         }.onFailure {
-                            queue.offer(Event.Prediction(action.epoch, null))
+                            offerControl(Event.Prediction(action.epoch, null))
                         }
                     }
                 }
@@ -190,6 +194,11 @@ class LiveSpeechSplitter(
         }
     }
 
+    /** Control state must get through even when the bounded audio backlog is full. */
+    private fun offerControl(event: Event) {
+        while (running && !queue.offer(event)) queue.poll()
+    }
+
     private sealed interface Event {
         data class Audio(val samples: ShortArray) : Event
         data class Prediction(val epoch: Long, val complete: Boolean?) : Event
@@ -200,5 +209,7 @@ class LiveSpeechSplitter(
         const val SMART_TURN_VAD_STOP_MS = 200
         const val PRE_SPEECH_MS = 500 + 200
         const val PRE_SPEECH_SAMPLES = AudioDecode.TARGET_SAMPLE_RATE * PRE_SPEECH_MS / 1000
+        /** Roughly twelve seconds of ordinary capture frames; hard cap is the important property. */
+        const val MAX_QUEUED_EVENTS = 120
     }
 }
