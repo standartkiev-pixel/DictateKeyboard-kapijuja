@@ -776,3 +776,25 @@ the audio or overwriting the previous result.
 
 Next large engineering task: state-level no-progress watchdog for stuck `Transcribing…`, reusing the same
 preserved-audio terminal state as manual Stop.
+
+
+### Update — no-progress watchdog implemented
+
+The state-level watchdog work is now implemented.
+
+Important invariants:
+
+1. Entering ordinary batch `UiState.Transcribing` starts a provider-independent heartbeat watchdog.
+2. Upload bytes, async provider polls and local decode work refresh the heartbeat.
+3. Silence for the configured Request timeout cancels through `cancelTranscription(... stalled=true)`,
+   preserving audio and offering Send again.
+4. Stopped/stalled audio is additionally archived into History when allowed by privacy/history settings.
+5. General STT is initial attempt + max one application retry; OpenRouter is zero. Do not restore the old
+   three-retry default for transcription POSTs.
+6. Long-form owns all segment WAVs in cache until terminal cleanup, has the same watchdog during final
+   drain, and merges a rescue WAV when cancelled/stalled.
+7. Realtime already has its own short finalize watchdog and falls back to ordinary batch when needed.
+8. The Request timeout slider is now explicitly the user's "seconds without progress" control.
+
+The next task should be real-device/network fault testing and any fixes it exposes, not another timeout
+refactor. Also verify process-death recovery/history after manual Stop and watchdog cancellation.
