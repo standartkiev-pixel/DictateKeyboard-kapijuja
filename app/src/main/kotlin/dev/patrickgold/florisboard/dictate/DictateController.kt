@@ -238,6 +238,18 @@ object DictateController {
     enum class OutputTarget { IME, OVERLAY, RECOGNITION_SERVICE }
 
     /**
+     * One recognizer offered for a single History replay. [active] marks the user's normal provider;
+     * choosing another option does NOT rewrite that global preference. Disabled entries remain visible
+     * so the chooser explains what is configured and what still needs a key/model.
+     */
+    data class HistoryReplayProvider(
+        val id: String,
+        val label: String,
+        val enabled: Boolean,
+        val active: Boolean,
+    )
+
+    /**
      * Temporary debug switch to preview the "Dictate was updated" Smartbar nudge. When true, the nudge
      * is offered on every keyboard open (the real version gate never triggers on debug builds, whose
      * version name carries an unparseable suffix). MUST be false for any committed/shipped build.
@@ -1481,6 +1493,9 @@ object DictateController {
         // Long-press "send with local model" (#228): force this one transcription onto the on-device
         // provider regardless of the configured active provider.
         forceLocal: Boolean = false,
+        // One-shot History override: replay this audio through another configured recognizer without
+        // changing the user's normal transcriptionProviderId preference.
+        providerIdOverride: String? = null,
         // History (issue #140): [isReplay] re-transcribes already-counted audio (skip stats),
         // [replayHistoryId] updates that stored entry's text in place, [source] tags the origin.
         isReplay: Boolean = false,
@@ -1489,7 +1504,11 @@ object DictateController {
         latencyTrace: BatchLatencyTrace = BatchLatencyTrace(),
     ) {
         logLatency(latencyTrace, "transcribeEntered")
-        val account = if (forceLocal) localTranscriptionAccount() else transcriptionAccount()
+        val account = when {
+            forceLocal -> localTranscriptionAccount()
+            providerIdOverride != null -> transcriptionAccount(providerIdOverride)
+            else -> transcriptionAccount()
+        }
         val apiKey = account.apiKey
         val preset = presetFor(account)
         val appContext = context.applicationContext
@@ -3050,7 +3069,16 @@ object DictateController {
         if (!prefs.dictate.historyEnabled.get()) return
         if (isSensitiveDictationField(appContext)) return
         capture.replayHistoryId?.let { id ->
-            DictateHistoryStore.updateText(appContext, id, text, originalText)
+            DictateHistoryStore.updateText(
+                context = appContext,
+                id = id,
+                text = text,
+                originalText = originalText,
+                providerId = capture.providerId,
+                providerName = capture.providerName,
+                model = capture.model,
+                language = capture.language,
+            )
             return
         }
         DictateHistoryStore.record(
@@ -3153,6 +3181,50 @@ object DictateController {
     }
 
     /**
+     * Builds the recognizer list for a single History replay. All transcription-capable built-ins are
+     * shown, plus every custom endpoint; unconfigured entries are disabled rather than silently hidden.
+     * This keeps the choice understandable while still preventing a dead request.
+     */
+    fun historyReplayProviders(context: Context): List<HistoryReplayProvider> {
+        val appContext = context.applicationContext
+        val keyring = prefs.dictate.providerAccounts.get()
+        val activeId = prefs.dictate.transcriptionProviderId.get()
+        val out = ArrayList<HistoryReplayProvider>()
+
+        ProviderRegistry.presets
+            .filter { it.capabilities.transcription }
+            .sortedByDescending { it.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE }
+            .forEach { preset ->
+                val account = keyring.getOrEmpty(preset.id)
+                val enabled = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
+                    val model = transcriptionModelFor(appContext, account, preset)
+                    model.isNotBlank() && LocalModelManager.isInstalled(appContext, model)
+                } else {
+                    !account.requiresCredential || account.apiKey.isNotBlank()
+                }
+                out += HistoryReplayProvider(
+                    id = preset.id,
+                    label = preset.displayName,
+                    enabled = enabled,
+                    active = preset.id == activeId,
+                )
+            }
+
+        keyring.accounts.values
+            .filter { it.isCustom }
+            .sortedBy { it.displayName.lowercase() }
+            .forEach { account ->
+                out += HistoryReplayProvider(
+                    id = account.providerId,
+                    label = account.displayName.ifBlank { "Custom server" },
+                    enabled = account.customBaseUrl.isNotBlank(),
+                    active = account.providerId == activeId,
+                )
+            }
+        return out
+    }
+
+    /**
      * Re-transcribes a stored entry's retained audio (issue #140) and commits the fresh result into the
      * field, then overwrites the entry's text in place. The history-owned file is copied to a cache temp
      * first so the shared transcribe path's finally-delete can't remove it. Marked as a replay so stats
@@ -3161,7 +3233,11 @@ object DictateController {
      * The temp copy keeps the stored extension (#322). It used to be `.wav` unconditionally, which for
      * an imported voice note renamed Ogg bytes into a WAV and told the provider so.
      */
-    fun retranscribeHistoryEntry(context: Context, entry: DictateHistoryEntry) {
+    fun retranscribeHistoryEntry(
+        context: Context,
+        entry: DictateHistoryEntry,
+        providerId: String? = null,
+    ) {
         if (_state.value is UiState.Recording || _state.value is UiState.Transcribing ||
             _state.value is UiState.Rewording
         ) return
@@ -3174,8 +3250,11 @@ object DictateController {
         clearError()
         // A failed entry's first successful re-transcribe SHOULD count stats (it was never counted); an
         // already-successful entry's re-transcribe must not double-count → isReplay only when not failed.
+        // providerIdOverride is deliberately one-shot: selecting Groq here must not change the next normal
+        // dictation from the user's globally selected OpenAI (or vice versa).
         transcribe(
             context, temp, entry.durationSecs, gate = false,
+            providerIdOverride = providerId,
             isReplay = !entry.failed, source = entry.source, replayHistoryId = entry.id,
         )
     }
@@ -3753,9 +3832,8 @@ object DictateController {
     }
 
     /** The active transcription provider's stored credentials (keyring). */
-    private fun transcriptionAccount(): ProviderAccount {
-        val id = prefs.dictate.transcriptionProviderId.get()
-        return prefs.dictate.providerAccounts.get().getOrEmpty(id)
+    private fun transcriptionAccount(providerId: String = prefs.dictate.transcriptionProviderId.get()): ProviderAccount {
+        return prefs.dictate.providerAccounts.get().getOrEmpty(providerId)
     }
 
     /**
