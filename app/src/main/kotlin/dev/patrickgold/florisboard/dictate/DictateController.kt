@@ -393,6 +393,19 @@ object DictateController {
     /** The in-flight transcription coroutine, cancellable via the stop button (see [cancelTranscription]). */
     private var transcribeJob: Job? = null
 
+    /**
+     * Provider-independent no-progress watchdog for the ordinary batch transcription path.
+     *
+     * OkHttp has read/write/call timeouts, async providers have polling budgets, and the local engine has
+     * no socket at all. None of those individually proves the UI state machine will eventually leave
+     * Transcribing. This watchdog sits one level higher: every meaningful provider/local-engine progress
+     * event refreshes [lastTranscriptionProgressAtMs]; silence longer than the user's request timeout
+     * cancels the job through the SAME retained-audio recovery path as the explicit Stop button.
+     */
+    private var transcriptionWatchdogJob: Job? = null
+    private var transcriptionWatchdogGeneration = 0L
+    @Volatile private var lastTranscriptionProgressAtMs = 0L
+
     // The in-flight manual rewording coroutine (a prompt chip / "Send"), so the stop button can abort it
     // mid-generation (issue #192). The post-transcription rewording chain instead runs inside
     // [transcribeJob]; [cancelRewording] cancels whichever is active.
@@ -560,6 +573,8 @@ object DictateController {
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
+    /** Polling the heartbeat every second is cheap and still makes a timeout feel immediate. */
+    private const val TRANSCRIPTION_WATCHDOG_POLL_MS = 1_000L
 
     /** 20 Hz is responsive for a voice indicator while avoiding a display-rate UI loop. */
     private const val AUDIO_LEVEL_SAMPLE_MS = 50L
@@ -1132,8 +1147,13 @@ object DictateController {
      * becomes [retained] and the Smartbar offers Send again + explicit discard. Internal hand-off to the
      * on-device model passes [keepForResend] = false because it already made its own rescue copy.
      */
-    fun cancelTranscription(context: Context, keepForResend: Boolean = true) {
+    fun cancelTranscription(
+        context: Context,
+        keepForResend: Boolean = true,
+        stalled: Boolean = false,
+    ) {
         if (_state.value !is UiState.Transcribing) return
+        stopTranscriptionWatchdog()
 
         var resendReady = false
         if (keepForResend) {
@@ -1179,13 +1199,71 @@ object DictateController {
         _pendingPrompts.value = emptyList()
         _state.value = if (resendReady) {
             UiState.Error(
-                message = context.getString(R.string.dictate__transcription_stopped_audio_kept),
+                message = context.getString(
+                    if (stalled) {
+                        R.string.dictate__transcription_stalled_audio_kept
+                    } else {
+                        R.string.dictate__transcription_stopped_audio_kept
+                    }
+                ),
                 action = ErrorAction.RESEND,
                 neutral = true,
             )
         } else {
             UiState.Idle
         }
+    }
+
+    /**
+     * Refreshes the batch-transcription liveness timestamp. This can be called from OkHttp writer threads,
+     * async-poll coroutines or sherpa-onnx worker threads, so the timestamp is volatile and the operation
+     * deliberately does not touch Compose/StateFlow state.
+     */
+    private fun markTranscriptionProgress() {
+        lastTranscriptionProgressAtMs = SystemClock.elapsedRealtime()
+    }
+
+    /**
+     * Starts one watchdog for the current batch request. The existing Request timeout setting already
+     * means "how long may this operation make no progress"; reusing it avoids presenting two subtly
+     * different timeout sliders to the user.
+     *
+     * A generation token prevents an old watchdog's finally block from clearing a newer one when a
+     * realtime fallback or resend starts another transcription immediately after the first finishes.
+     */
+    private fun startTranscriptionWatchdog(context: Context) {
+        stopTranscriptionWatchdog()
+        val timeoutMs = prefs.dictate.requestTimeout.get().coerceIn(30, 600) * 1_000L
+        markTranscriptionProgress()
+        val generation = ++transcriptionWatchdogGeneration
+        val appContext = context.applicationContext
+        transcriptionWatchdogJob = scope.launch {
+            try {
+                while (true) {
+                    delay(TRANSCRIPTION_WATCHDOG_POLL_MS)
+                    if (_state.value !is UiState.Transcribing) return@launch
+                    val idleForMs = SystemClock.elapsedRealtime() - lastTranscriptionProgressAtMs
+                    if (idleForMs >= timeoutMs) {
+                        // Important: route through cancelTranscription rather than directly changing
+                        // UiState. That first copies the active audio, cancels the underlying coroutine /
+                        // OkHttp call, and leaves Send again available.
+                        cancelTranscription(appContext, keepForResend = true, stalled = true)
+                        return@launch
+                    }
+                }
+            } finally {
+                if (transcriptionWatchdogGeneration == generation) {
+                    transcriptionWatchdogJob = null
+                }
+            }
+        }
+    }
+
+    /** Stops the current watchdog without affecting the transcription itself. */
+    private fun stopTranscriptionWatchdog() {
+        transcriptionWatchdogGeneration++
+        transcriptionWatchdogJob?.cancel()
+        transcriptionWatchdogJob = null
     }
 
     /**
@@ -1566,6 +1644,7 @@ object DictateController {
         inFlightWasLive = live
         val coroutineScheduledNanos = SystemClock.elapsedRealtimeNanos()
         transcribeJob = scope.launch {
+            startTranscriptionWatchdog(appContext)
             var keepAudio = false
             var outcome = "failed"
             // The file actually uploaded. Normally the original recording; the silence trimmer (#232) may
@@ -1709,6 +1788,7 @@ object DictateController {
                     // Non-chat: style/punctuation prompt biases recognition (roadmap 2.4 / 4.11).
                     // Chat-audio: the full instruction (language + style + all auto-formatting) in one go.
                     prompt = if (chatAudio) buildChatAudioInstruction(appContext) else transcriptionStylePrompt(),
+                    onProgress = ::markTranscriptionProgress,
                 )
                 val providerStartedNanos = SystemClock.elapsedRealtimeNanos()
                 val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
@@ -1766,6 +1846,7 @@ object DictateController {
                         }
                     }
                 }
+                markTranscriptionProgress()
                 logLatency(latencyTrace, "providerCompleted", providerStartedNanos)
                 // Prompt-echo guard (issue #77): on silent/unclear audio, Whisper-style models echo the
                 // transcription style prompt back verbatim (the old default was infamously returned as
@@ -1845,6 +1926,7 @@ object DictateController {
                     detail = t.message?.takeIf { it.isNotBlank() },
                 )
             } finally {
+                stopTranscriptionWatchdog()
                 // The request is over, however it ended: there is nothing left for a held button to rescue.
                 inFlightAudio = null
                 inFlightWasLive = false
