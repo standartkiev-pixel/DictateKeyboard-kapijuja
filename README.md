@@ -161,6 +161,26 @@ Kapijuja Voice is intentionally visually distinct from Dictate.
 
 The fork remains Apache-2.0.
 
+## Recording recovery and audio history
+
+Kapijuja Voice treats captured speech as recoverable user data rather than disposable request input.
+
+- Dictation history is enabled by default.
+- Source audio retention is enabled by default for new installs.
+- Retained audio lives only in the app's private `filesDir/dictate_history/` directory.
+- Default pruning limits are 50 history entries, 30 days and 200 MB of retained audio.
+- The History panel is placed beside Clipboard in the default Smartbar actions.
+- A retained history recording can be transcribed again; the replay uses the currently selected
+  transcription provider, which already makes cross-provider "second opinion" recognition possible.
+- During `Transcribing…`, Kapijuja shows an explicit Stop control. Stopping cancels the in-flight
+  provider request but keeps a private resend copy instead of deleting the recording.
+- After Stop, the Smartbar offers Send again and explicit discard. The user decides when the captured
+  audio is no longer needed.
+
+The next recovery milestone is a provider chooser directly on a saved recording, so the same clip can
+be sent to OpenAI, Groq, Gemini, a custom endpoint or an on-device model without first leaving History
+to change the global provider.
+
 ## Unicode fix made during the fork
 
 The upstream `SelectionMetrics` test exposed inconsistent JDK 17 handling of ZWJ emoji via
@@ -178,10 +198,11 @@ The next development work should proceed roughly in this order:
 1. produce the first **release** APK signed with the permanent Kapijuja Voice key;
 2. verify side-by-side installation with official Dictate;
 3. test basic typing, microphone dictation, OpenAI/Groq/Gemini/custom provider paths and local STT;
-4. fix the original user-facing problem that started this fork: transcription can sometimes remain
-   indefinitely in the `Transcribing…` state after a network/provider failure;
-5. add a state-level transcription watchdog while preserving the recorded audio for retry;
-6. consider reducing or changing automatic retries for billable/non-idempotent transcription POSTs;
-7. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
+4. add a provider chooser directly to saved History audio for one-tap cross-provider re-transcription;
+5. fix the remaining case where transcription can stay indefinitely in the `Transcribing…` state after
+   a network/provider failure (manual Stop already preserves the recording);
+6. add a state-level no-progress watchdog that automatically reaches the same recoverable resend state;
+7. reduce or change automatic retries for billable/non-idempotent transcription POSTs;
+8. later decide whether to mirror upstream model/dictionary release assets under Kapijuja.
 
 See **[NEXT_CHAT.md](NEXT_CHAT.md)** before modifying the project.
