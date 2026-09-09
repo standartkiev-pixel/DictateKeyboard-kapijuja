@@ -25,13 +25,14 @@ jobs:
 
       # Kapijuja intentionally removed the upstream Dictate Cloud product and
       # Google Play Billing integration. Historical project documents retain
-      # names of removed components for auditability, so they are excluded here.
+      # names of removed components for auditability, so they are excluded here. The full handoff and
+      # developer guide are documentation too and deliberately name those deleted symbols.
       # The guard still scans all executable/source/config files in the repo.
       - name: Audit removed Dictate Cloud wiring
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -nE 'api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_' -- ':!README.md' ':!PRIVACY_POLICY.md' ':!SECURITY.md' ':!PROJECT_HANDOFF.md' ':!NEXT_CHAT.md' ':!NOTICE' ':!.github/workflows/kapijuja-ci.yml'; then
+          if git grep -nE 'api\.dictatekeyboard\.com|com\.android\.vending\.BILLING|billing-ktx|DictateCloud|dictate__cloud_' -- ':!README.md' ':!PRIVACY_POLICY.md' ':!SECURITY.md' ':!PROJECT_HANDOFF.md' ':!NEXT_CHAT.md' ':!FULL_PROJECT_HANDOFF_2026-09-09.txt' ':!DEVELOPER_GUIDE.md' ':!NOTICE' ':!.github/workflows/kapijuja-ci.yml'; then
             echo "Forbidden Dictate Cloud / Billing wiring is still present."
             exit 1
           fi
