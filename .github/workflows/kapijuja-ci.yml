@@ -37,6 +37,9 @@ jobs:
             > "$HOME/.android/debug.keystore"
           echo "100a4ef0a4d5d2c702e5b9828f6fd71acb051fd61fc85c98ba14379cfd4700d2  $HOME/.android/debug.keystore" \
             | sha256sum --check --strict
+          # Pass the verified path explicitly because Android runners may redirect their default
+          # preferences directory away from HOME.
+          echo "KAPIJUJA_PRERELEASE_DEBUG_KEYSTORE=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
 
       - name: Fetch pinned native STT runtime
         run: |
