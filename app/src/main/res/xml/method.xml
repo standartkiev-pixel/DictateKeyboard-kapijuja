@@ -2,8 +2,9 @@
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:settingsActivity="dev.patrickgold.florisboard.SettingsLauncherAlias"
-    android:supportsInlineSuggestions="true"
+    android:supportsInlineSuggestions="false"
     android:supportsSwitchingToNextInputMethod="true"
+    android:suppressesSpellChecker="true"
     tools:targetApi="r">
 
     <!-- Add default system subtype so we can properly set the icon and label -->

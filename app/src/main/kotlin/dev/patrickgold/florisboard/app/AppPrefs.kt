@@ -98,7 +98,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Clipboard {
         val useInternalClipboard = boolean(
             key = "clipboard__use_internal_clipboard",
-            default = false,
+            default = true,
         )
         val syncToFloris = enum(
             key = "clipboard__sync_to_floris",
@@ -106,7 +106,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val syncToSystem = enum(
             key = "clipboard__sync_to_system",
-            default = ClipboardSyncBehavior.NO_EVENTS,
+            default = ClipboardSyncBehavior.ALL_EVENTS,
         )
         // Opt-in on purpose (issue #329): this quietly changes what the user pastes, and that is only
         // ever acceptable because they asked for it.
@@ -128,11 +128,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val suggestionTimeout = int(
             key = "clipboard__suggestion_timeout",
-            default = 60,
+            default = 300,
         )
         val historyEnabled = boolean(
             key = "clipboard__history_enabled",
-            default = false,
+            default = true,
         )
         val historyNumGridColumnsPortrait = int(
             key = "clipboard__history_num_grid_columns_portrait",
@@ -173,7 +173,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val historySizeLimit = int(
             key = "clipboard__history_size_limit",
-            default = 20,
+            default = 90,
         )
         val historyHideOnPaste = boolean(
             key = "clipboard__history_hide_on_paste",
@@ -193,7 +193,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Correction {
         val autoCapitalization = boolean(
             key = "correction__auto_capitalization",
-            default = true,
+            default = false,
         )
         // How much tap evidence autocorrect wants before replacing a word on its own (issue #295). Only
         // the silent swap is affected — every level shows the same suggestions in the strip.
@@ -214,7 +214,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val doubleSpacePeriod = boolean(
             key = "correction__double_space_period",
-            default = true,
+            default = false,
         )
         // What that second tap writes (issue #333). Kept apart from the switch above rather than folded
         // into it as an "off" value, so nobody's existing on/off choice has to be migrated to keep
@@ -968,11 +968,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Dictionary {
         val enableSystemUserDictionary = boolean(
             key = "suggestion__enable_system_user_dictionary",
-            default = true,
+            default = false,
         )
         val enableFlorisUserDictionary = boolean(
             key = "suggestion__enable_floris_user_dictionary",
-            default = true,
+            default = false,
         )
     }
 
@@ -1024,7 +1024,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val suggestionEnabled = boolean(
             key = "emoji__suggestion_enabled",
-            default = true,
+            default = false,
         )
         val suggestionType = enum(
             key = "emoji__suggestion_type",
@@ -1125,19 +1125,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Gestures {
         val swipeUp = enum(
             key = "gestures__swipe_up",
-            default = SwipeAction.SHIFT,
+            default = SwipeAction.NO_ACTION,
         )
         val swipeDown = enum(
             key = "gestures__swipe_down",
-            default = SwipeAction.HIDE_KEYBOARD,
+            default = SwipeAction.NO_ACTION,
         )
         val swipeLeft = enum(
             key = "gestures__swipe_left",
-            default = SwipeAction.SWITCH_TO_NEXT_SUBTYPE,
+            default = SwipeAction.NO_ACTION,
         )
         val swipeRight = enum(
             key = "gestures__swipe_right",
-            default = SwipeAction.SWITCH_TO_PREV_SUBTYPE,
+            default = SwipeAction.NO_ACTION,
         )
         val spaceBarSwipeUp = enum(
             key = "gestures__space_bar_swipe_up",
@@ -1145,11 +1145,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val spaceBarSwipeLeft = enum(
             key = "gestures__space_bar_swipe_left",
-            default = SwipeAction.MOVE_CURSOR_LEFT,
+            default = SwipeAction.NO_ACTION,
         )
         val spaceBarSwipeRight = enum(
             key = "gestures__space_bar_swipe_right",
-            default = SwipeAction.MOVE_CURSOR_RIGHT,
+            default = SwipeAction.NO_ACTION,
         )
         val spaceBarLongPress = enum(
             key = "gestures__space_bar_long_press",
@@ -1157,7 +1157,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val deleteKeySwipeLeft = enum(
             key = "gestures__delete_key_swipe_left",
-            default = SwipeAction.DELETE_CHARACTERS_PRECISELY,
+            default = SwipeAction.NO_ACTION,
         )
         val deleteKeyLongPress = enum(
             key = "gestures__delete_key_long_press",
@@ -1181,7 +1181,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val showTrail = boolean(
             key = "glide__show_trail",
-            default = true,
+            default = false,
         )
         val trailDuration = int(
             key = "glide__trail_fade_duration",
@@ -1189,7 +1189,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val showPreview = boolean(
             key = "glide__show_preview",
-            default = true,
+            default = false,
         )
         val previewRefreshDelay = int(
             key = "glide__preview_refresh_delay",
@@ -1197,7 +1197,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val immediateBackspaceDeletesWord = boolean(
             key = "glide__immediate_backspace_deletes_word",
-            default = true,
+            default = false,
         )
     }
 
@@ -1549,11 +1549,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val useContacts = boolean(
             key = "spelling__use_contacts",
-            default = true,
+            default = false,
         )
         val useUdmEntries = boolean(
             key = "spelling__use_udm_entries",
-            default = true,
+            default = false,
         )
     }
 
@@ -1561,18 +1561,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Suggestion {
         val api30InlineSuggestionsEnabled = boolean(
             key = "suggestion__api30_inline_suggestions_enabled",
-            default = true,
+            default = false,
         )
         val enabled = boolean(
             key = "suggestion__enabled",
-            default = true,
+            default = false,
         )
         // Autocorrect the typed word on space/punctuation when it looks like a typo (issue #127). Gated by
         // [enabled]; on by default like other keyboards, with its own switch so suggestions can stay on
         // without autocorrect.
         val autoCorrect = boolean(
             key = "suggestion__auto_correct",
-            default = true,
+            default = false,
         )
         // Multilingual typing (issue #190): accept words from every configured keyboard language, not just
         // the active one, so a bilingual's second-language words aren't flagged as typos or autocorrected
@@ -1585,7 +1585,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // word exists — never on an empty field, so opening the keyboard still shows the quick actions.
         val nextWordPrediction = boolean(
             key = "suggestion__next_word_prediction",
-            default = true,
+            default = false,
         )
         // Build a personal vocabulary out of what is typed (issue #318): a word no dictionary knows is
         // remembered, offered from the second sighting and added to the personal dictionary at the third.
@@ -1603,7 +1603,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         // equals sign. Tapping it is the only way anything reaches the field.
         val mathSuggestions = boolean(
             key = "suggestion__math_suggestions",
-            default = true,
+            default = false,
         )
         // Some apps set TYPE_TEXT_FLAG_NO_SUGGESTIONS on ordinary text fields — Instagram and a lot of
         // WebViews do — which takes the composing region away and with it every word suggestion and the

@@ -820,3 +820,36 @@ heap/ANR measurement remain device checks; automated tests do not establish thes
 Next checkpoint: inspect the RC4 workflow for this release branch. Do not report publication until its
 run succeeds and the release asset is present. Confirm the tag target, supply the APK link, and
 fast-forward main to the release commit if main has not independently changed.
+
+
+## Quiet typing and clipboard defaults — 2026-09-10
+
+RC4 release workflow 34516003384 completed SUCCESS on
+0817394432626c29773590f1978dd47000dc32b4. This checkpoint starts from that verified RC4 commit.
+
+Clean installations now match the requested clipboard setup: internal clipboard and history enabled,
+both synchronization directions set to all events, suggestions retained for 300 seconds, history capped
+at 90 items, trimming enabled, tracking-link removal and both automatic cleaners disabled, history stays
+open after paste but hides on the next text field, and clearing the primary clip removes an unpinned
+history item. Grid columns remain automatic.
+
+Quiet typing is the default: word/emoji/math/next-word suggestions, autocorrect, automatic capitalization,
+double-space period, dictionary-backed suggestions, contact/user-dictionary spelling sources, glide typing
+and swipe actions are disabled. The IME also declares that Android's spell checker and inline suggestion
+strip are suppressed while it is active. Space/delete long presses remain usable because they are ordinary
+controls, not automatic text changes.
+
+These are defaults only. Existing stored preferences are intentionally not overwritten during an update;
+they apply to a clean install, cleared app data, or individually reset settings. Unit tests lock the requested
+defaults so upstream preference changes cannot silently undo them.
+
+Bugreport inspection found two 21:24 ANRs in `com.android.externalstorage` (Android's external-storage
+provider), not in `net.kapijuja.dictate.debug`. Kapijuja recording logs showed normal AudioIn/wakelock
+start-stop activity. The report does not enumerate Downloads contents, so it cannot identify an unnamed
+code-like directory. This app's only public Downloads creation path is an explicit rescued-audio export to
+`Download/Dictate`; UUID-like workspace directories otherwise stay inside app cache. Ask for the exact
+directory name or screenshot before attributing it to the app.
+
+Next checkpoint: run the source audit and full CI on this commit. If green, prepare RC5 without changing
+the pinned public test signing identity. Device upgrade behavior still needs a physical check because saved
+preferences correctly survive an update.
