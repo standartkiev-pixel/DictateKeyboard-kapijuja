@@ -2,13 +2,13 @@ name: Dictate Kapijuja RC release
 
 on:
   push:
-    branches: [release-v0.1.0-rc.1]
+    branches: [release-v0.1.0-rc.2]
 
 permissions:
   contents: write
 
 concurrency:
-  group: dictate-kapijuja-v0.1.0-rc.1
+  group: dictate-kapijuja-v0.1.0-rc.2
   cancel-in-progress: false
 
 jobs:
@@ -25,6 +25,18 @@ jobs:
 
       - name: Audit release source and credentials
         run: bash scripts/release-audit.sh
+
+      # Android creates a new random debug key on every clean runner. A checked, explicitly public test
+      # identity keeps prerelease APKs upgrade-compatible without using or exposing the future production key.
+      - name: Install pinned public prerelease signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          base64 --decode .github/test-signing/kapijuja-prerelease-debug.keystore.b64 \
+            > "$HOME/.android/debug.keystore"
+          echo "100a4ef0a4d5d2c702e5b9828f6fd71acb051fd61fc85c98ba14379cfd4700d2  $HOME/.android/debug.keystore" \
+            | sha256sum --check --strict
 
       - name: Fetch checksum-pinned native STT runtime
         run: |
@@ -72,14 +84,15 @@ jobs:
         run: |
           set -euo pipefail
           source_apk="app/build/outputs/apk/debug/app-debug.apk"
-          release_apk="dictate-kapijuja-v0.1.0-rc.1-test.apk"
+          release_apk="dictate-kapijuja-v0.1.0-rc.2-test.apk"
           test -f "$source_apk"
           cp "$source_apk" "$release_apk"
 
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
-          "$build_tools/apksigner" verify --verbose --print-certs "$release_apk"
+          "$build_tools/apksigner" verify --verbose --print-certs "$release_apk" | tee apk-signature.txt
+          grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
           "$build_tools/aapt" dump badging "$release_apk" | tee apk-badging.txt
-          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='1'" apk-badging.txt
+          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='2'" apk-badging.txt
 
           size="$(stat -c '%s' "$release_apk")"
           test "$size" -lt 157286400
@@ -98,9 +111,11 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' \
-            'First public test candidate of Dictate Kapijuja Keyboard.' \
+            'Second public test candidate of Dictate Kapijuja Keyboard.' \
             '' \
-            'This is intentionally a prerelease signed with the Android debug identity because the permanent Kapijuja JKS has not yet been recovered. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
+            'This prerelease uses the dedicated public Kapijuja test identity. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
+            '' \
+            'One-time migration: uninstall an older Kapijuja debug build before installing RC2 because earlier CI builds used random incompatible debug keys. RC2 and later test builds can update in place.' \
             '' \
             'Rewording now defaults to the compact prompt panel: the permanent prompt row is removed, while the magic-wand Smartbar action still opens translation, grammar and custom prompts.' \
             '' \
@@ -116,9 +131,9 @@ jobs:
             "SHA-256: $APK_SHA" \
             > release-notes.txt
 
-          gh release create v0.1.0-rc.1 "$APK_FILE" \
+          gh release create v0.1.0-rc.2 "$APK_FILE" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title 'Dictate Kapijuja 0.1.0 RC1 — test build' \
+            --title 'Dictate Kapijuja 0.1.0 RC2 — upgradeable test build' \
             --notes-file release-notes.txt \
             --prerelease
