@@ -13,7 +13,7 @@ fail_if_tracked() {
 # Product identity and the minimal release line must stay coherent.
 git grep -q 'applicationId = "net.kapijuja.dictate"' -- app/build.gradle.kts
 git grep -q 'rootProject.name = "DictateKapijuja"' -- settings.gradle.kts
-git grep -q '^projectVersionCode=2$' -- gradle.properties
+git grep -q '^projectVersionCode=3$' -- gradle.properties
 git grep -q '^projectVersionName=0.1.0$' -- gradle.properties
 
 # No production credentials, private keys, old Cloud/Billing wiring, or accidentally committed signing material.

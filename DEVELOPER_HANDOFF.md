@@ -757,3 +757,21 @@ full compilation, app/core/Wear tests and runtime-resource lint must be verified
 Next: inspect CI for THIS commit, fix any actual failures, then prepare RC3 (increment versionCode to 3,
 update the RC workflow/tag/asset names, preserve the pinned RC2 public test signing certificate).
 Do not call these changes released until the new release workflow and uploaded APK are confirmed.
+
+
+## RC3 release preparation — 2026-09-10
+
+Countdown source commit: b3fa9ef1b5d280bf2585725c63c7447c3f07c4bf.
+CI run 34504803072 completed SUCCESS: phone/Wear compiled, both APKs uploaded, and app/core/Wear
+unit tests passed. This was verified before starting the RC3 release workflow.
+
+RC3 changes versionCode from 2 to 3 and updates release-candidate.yml to release-v0.1.0-rc.3* branches,
+tag v0.1.0-rc.3, and dictate-kapijuja-v0.1.0-rc.3-test.apk. The package remains
+net.kapijuja.dictate.debug and the pinned public RC2 test certificate is unchanged. RC2 must not be
+uninstalled for this update. All existing test, repeated cancellation, lint, signature and size gates
+remain in the release workflow. This is a test prerelease, not a production-key release.
+
+Next small step: inspect the RC3 release branch Actions run. If it fails, inspect the failed job before
+changing anything. If successful, verify the release asset and tag target, give the owner the direct APK
+link, and fast-forward main to the verified release commit if main has not moved independently.
+Device heap/ANR and upgrade installation tests remain unverified here.

@@ -2,13 +2,13 @@ name: Dictate Kapijuja RC release
 
 on:
   push:
-    branches: ['release-v0.1.0-rc.2*']
+    branches: ['release-v0.1.0-rc.3*']
 
 permissions:
   contents: write
 
 concurrency:
-  group: dictate-kapijuja-v0.1.0-rc.2
+  group: dictate-kapijuja-v0.1.0-rc.3
   cancel-in-progress: false
 
 jobs:
@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           source_apk="app/build/outputs/apk/debug/app-debug.apk"
-          release_apk="dictate-kapijuja-v0.1.0-rc.2-test.apk"
+          release_apk="dictate-kapijuja-v0.1.0-rc.3-test.apk"
           test -f "$source_apk"
           cp "$source_apk" "$release_apk"
 
@@ -95,7 +95,7 @@ jobs:
           "$build_tools/apksigner" verify --verbose --print-certs "$release_apk" | tee apk-signature.txt
           grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
           "$build_tools/aapt" dump badging "$release_apk" | tee apk-badging.txt
-          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='2'" apk-badging.txt
+          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='3'" apk-badging.txt
 
           size="$(stat -c '%s' "$release_apk")"
           test "$size" -lt 157286400
@@ -114,13 +114,15 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' \
-            'Second public test candidate of Dictate Kapijuja Keyboard.' \
+            'Third public test candidate of Dictate Kapijuja Keyboard.' \
             '' \
             'This prerelease uses the dedicated public Kapijuja test identity. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
             '' \
-            'One-time migration: uninstall an older Kapijuja debug build before installing RC2 because earlier CI builds used random incompatible debug keys. RC2 and later test builds can update in place.' \
+            'Updates RC2 in place using the same pinned public test certificate. Export settings and retained audio before any one-time migration from older incompatible debug builds; do not uninstall RC2.' \
             '' \
-            'Rewording now defaults to the compact prompt panel: the permanent prompt row is removed, while the magic-wand Smartbar action still opens translation, grammar and custom prompts.' \
+            'The Smartbar now shows a shrinking no-progress timeout bar and remaining seconds, with Stop still available. Meaningful progress refills the budget; this is not a recognition percentage. Late cancelled-worker heartbeats are ignored. Compact rewording prompts and the magic wand remain available.' \
+            '' \
+            'Instant output already defaults to ON. If text appears character by character, enable Settings > Dictation > Output > Instant output.' \
             '' \
             'Validated before publishing:' \
             '- phone and Wear compilation;' \
@@ -134,9 +136,9 @@ jobs:
             "SHA-256: $APK_SHA" \
             > release-notes.txt
 
-          gh release create v0.1.0-rc.2 "$APK_FILE" \
+          gh release create v0.1.0-rc.3 "$APK_FILE" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title 'Dictate Kapijuja 0.1.0 RC2 — upgradeable test build' \
+            --title 'Dictate Kapijuja 0.1.0 RC3 — transcription countdown' \
             --notes-file release-notes.txt \
             --prerelease
