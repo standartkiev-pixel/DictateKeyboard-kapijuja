@@ -80,6 +80,8 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import dev.patrickgold.florisboard.lib.util.VersionName
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
@@ -409,6 +411,9 @@ object DictateController {
      * event refreshes [lastTranscriptionProgressAtMs]; silence longer than the user's request timeout
      * cancels the job through the SAME retained-audio recovery path as the explicit Stop button.
      */
+    // One snapshot from the watchdog drives the UI; the view never creates a competing timeout.
+    private val _transcriptionCountdown = MutableStateFlow<TranscriptionCountdown?>(null)
+    val transcriptionCountdown: StateFlow<TranscriptionCountdown?> = _transcriptionCountdown.asStateFlow()
     private var transcriptionWatchdogJob: Job? = null
     private var transcriptionWatchdogGeneration = 0L
     /**
@@ -1407,6 +1412,7 @@ object DictateController {
         val timeoutMs = prefs.dictate.requestTimeout.get().coerceIn(30, 600) * 1_000L
         markTranscriptionProgress()
         val generation = ++transcriptionWatchdogGeneration
+        _transcriptionCountdown.value = TranscriptionCountdown(timeoutMs, timeoutMs)
         val appContext = context.applicationContext
         transcriptionWatchdogJob = scope.launch {
             try {
@@ -1414,7 +1420,9 @@ object DictateController {
                     delay(TRANSCRIPTION_WATCHDOG_POLL_MS)
                     if (_state.value !is UiState.Transcribing) return@launch
                     val idleForMs = SystemClock.elapsedRealtime() - lastTranscriptionProgressAtMs
-                    if (idleForMs >= timeoutMs) {
+                    val countdown = TranscriptionCountdown.afterIdle(timeoutMs, idleForMs)
+                    _transcriptionCountdown.value = countdown
+                    if (countdown.remainingMs == 0L) {
                         // Important: route through cancelTranscription rather than directly changing
                         // UiState. That first copies the active audio, cancels the underlying coroutine /
                         // OkHttp call, and leaves Send again available.
@@ -1425,6 +1433,7 @@ object DictateController {
             } finally {
                 if (transcriptionWatchdogGeneration == generation) {
                     transcriptionWatchdogJob = null
+                    _transcriptionCountdown.value = null
                 }
             }
         }
@@ -1435,6 +1444,7 @@ object DictateController {
         transcriptionWatchdogGeneration++
         transcriptionWatchdogJob?.cancel()
         transcriptionWatchdogJob = null
+        _transcriptionCountdown.value = null
     }
 
     /**
@@ -1985,6 +1995,8 @@ object DictateController {
                         logLatency(latencyTrace, "audioConverted")
                     }
                 }
+                // A cancelled native decode may still report progress. It must not renew a later request.
+                val progress = activeTranscriptionProgress(currentCoroutineContext()[Job]!!, ::markTranscriptionProgress)
                 val request = TranscriptionRequest(
                     audioFile = uploadFile,
                     model = model,
@@ -1998,7 +2010,7 @@ object DictateController {
                     // Non-chat: style/punctuation prompt biases recognition (roadmap 2.4 / 4.11).
                     // Chat-audio: the full instruction (language + style + all auto-formatting) in one go.
                     prompt = if (chatAudio) buildChatAudioInstruction(appContext) else transcriptionStylePrompt(),
-                    onProgress = ::markTranscriptionProgress,
+                    onProgress = progress,
                 )
                 val providerStartedNanos = SystemClock.elapsedRealtimeNanos()
                 val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
@@ -2829,6 +2841,7 @@ object DictateController {
             val text = transcribeSegmentRaw(appContext, wav, continuity)
             // The session owns every segment WAV until final success/cancel. Keeping it in cache here is
             // what makes a later Stop recoverable even when permanent History audio retention is off.
+            currentCoroutineContext().ensureActive()
             onSegmentResult(appContext, idx, text ?: "")
         }
         segmentJobs.add(job)
@@ -2949,10 +2962,11 @@ object DictateController {
         } else {
             null
         }
+        val progress = activeTranscriptionProgress(currentCoroutineContext()[Job]!!, ::markTranscriptionProgress)
         val request = TranscriptionRequest(
             audioFile = packed ?: toUpload, model = model, language = language, prompt = prompt,
             expectedLanguages = expectedLanguages(),
-            onProgress = ::markTranscriptionProgress,
+            onProgress = progress,
         )
         return try {
             val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {

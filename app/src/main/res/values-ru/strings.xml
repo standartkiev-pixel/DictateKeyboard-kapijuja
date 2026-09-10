@@ -2127,4 +2127,5 @@
     <string name="sticker__source_threema">Threema</string>
     <string name="sticker__source_signal">Signal</string>
     <string name="sticker__source_stickers_folder">Папка со стикерами</string>
+    <string name="dictate__timeout_remaining">Распознавание: {seconds} секунд до остановки, если нет прогресса</string>
 </resources>

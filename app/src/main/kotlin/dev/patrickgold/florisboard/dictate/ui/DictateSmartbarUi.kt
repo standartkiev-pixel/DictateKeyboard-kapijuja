@@ -17,6 +17,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -90,6 +91,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -536,44 +543,50 @@ private fun LanguageChip() {
 @Composable
 private fun RowScope.TranscribingContent(state: DictateController.UiState.Transcribing) {
     val context = LocalContext.current
-    val transition = rememberInfiniteTransition(label = "transcribing")
-    val rotation by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(900)),
-        label = "spin",
-    )
-    val retrying = state.attempt > 1
-    Row(
-        modifier = Modifier.weight(1f),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-    SnyggIcon(
-        imageVector = if (retrying) Icons.Default.CloudOff else Icons.Default.Sync,
-        modifier = Modifier
-            .size(18.dp)
-            .then(if (retrying) Modifier else Modifier.rotate(rotation)),
-    )
-    Spacer(modifier = Modifier.width(10.dp))
-    SnyggText(
-        text = if (retrying) {
-            stringRes(R.string.dictate__status_retrying, "attempt" to state.attempt)
-        } else {
-            stringRes(R.string.dictate__status_transcribing)
-        },
-    )
-    // Transcribing is transcribing — the spinner and the wording stay the same wherever it happens. The
-    // phone alongside them says only where: this one is running here, not on a provider's machine. It
-    // matters most right after holding the button to escape a hanging request (#270), where it is the
-    // confirmation that the escape worked.
-    if (state.onDevice) {
-        Spacer(modifier = Modifier.width(8.dp))
-        SnyggIcon(
-            imageVector = Icons.Default.PhoneAndroid,
-            modifier = Modifier.size(16.dp),
-            contentDescription = stringRes(R.string.dictate__status_transcribing_local),
-        )
+    val countdown by DictateController.transcriptionCountdown.collectFlowAsState()
+    val remaining = countdown?.secondsRemaining
+    val fraction = countdown?.fractionRemaining ?: 1f
+    val description = if (remaining != null) {
+        stringRes(R.string.dictate__timeout_remaining, "seconds" to remaining)
+    } else {
+        stringRes(R.string.dictate__status_transcribing)
     }
+    val barColor = LocalContentColor.current
+    Row(
+        modifier = Modifier.weight(1f).semantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (state.attempt > 1 || state.onDevice) {
+            SnyggIcon(
+                imageVector = if (state.attempt > 1) Icons.Default.CloudOff else Icons.Default.PhoneAndroid,
+                modifier = Modifier.size(16.dp),
+                contentDescription = if (state.attempt > 1) {
+                    stringRes(R.string.dictate__status_retrying, "attempt" to state.attempt)
+                } else {
+                    stringRes(R.string.dictate__status_transcribing_local)
+                },
+            )
+        }
+        // Physical left anchoring makes the right edge retreat left, even in an RTL keyboard.
+        // This is a timeout budget, not a claim about the provider's percentage of work completed.
+        Canvas(
+            modifier = Modifier.weight(1f).size(80.dp, 5.dp).semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+            },
+        ) {
+            val radius = CornerRadius(size.height / 2f)
+            drawRoundRect(barColor.copy(alpha = 0.18f), cornerRadius = radius)
+            if (fraction > 0f) {
+                drawRoundRect(barColor, size = Size(size.width * fraction, size.height), cornerRadius = radius)
+            }
+        }
+        Text(
+            text = remaining?.let { stringRes(R.string.unit__seconds__symbol, "v" to it) } ?: "…",
+            fontSize = 11.sp,
+            maxLines = 1,
+            color = barColor,
+        )
     }
     // Kapijuja exposes Stop directly in the status row instead of relying on the sticky mic changing
     // meaning. Stopping ends the provider request immediately but DictateController preserves a resend copy.

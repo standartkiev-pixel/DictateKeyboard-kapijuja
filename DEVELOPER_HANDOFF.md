@@ -721,3 +721,39 @@ CI is therefore required to:
 
 Do not call a commit fully verified unless this expanded CI is green. In particular, network retry /
 cancellation tests are not proven by app-only tests.
+
+
+## 2026-09-10 checkpoint — countdown and cancelled-worker liveness
+
+Base: main 07c347a4bdcc83907b41471151646cd7e04fd925. RC2 already exists and its release run
+34441984434 succeeded. Do not recreate or overwrite RC2.
+
+This small step adds:
+- a compact Smartbar bar whose right edge shrinks left, plus remaining seconds and the existing Stop;
+- one StateFlow snapshot from the existing no-progress watchdog (no additional UI timer);
+- reset/clear on watchdog start, finish and cancellation, guarded by the existing watchdog generation;
+- cancelled-job filtering for batch and segment heartbeat callbacks;
+- an explicit cancellation check before applying a late segment result;
+- tests for timeout rounding/expiry, heartbeat budget reset, and late cancelled callbacks.
+
+The bar is seconds WITHOUT PROGRESS, not recognition percentage or a total request deadline.
+Uploads, polls and local progress can refill it. Async servers that keep answering can still extend
+this budget; provider-specific polling deadlines remain separate. Rewording is a separate UI state.
+
+Instant output already defaults to true. Existing users with the option off can enable Settings >
+Dictation > Output > Instant output. This checkpoint does not silently overwrite saved preferences.
+
+Review evidence: OkHttp cancellation calls Call.cancel(), responses are closed with use, the watchdog
+holds applicationContext only, screen-off registrations have teardown paths, and the new countdown
+contains no Context, audio or UI references. This is source review, NOT a device heap/ANR measurement.
+Remaining device checks: Stop/resend, network loss, Stop then immediate new recording, long-form late
+native completion, hide/reopen keyboard during countdown, and process-death audio recovery.
+Existing synchronous rescue-copy fallback during Stop can still cause a pause for very large files;
+most non-sensitive rescues use rename. Do not refactor this safety-critical path without preserving
+source ownership and process-death recovery.
+
+Local source audit and whitespace checks passed. Android SDK/Gradle cache are absent in this workspace;
+full compilation, app/core/Wear tests and runtime-resource lint must be verified in GitHub Actions.
+Next: inspect CI for THIS commit, fix any actual failures, then prepare RC3 (increment versionCode to 3,
+update the RC workflow/tag/asset names, preserve the pinned RC2 public test signing certificate).
+Do not call these changes released until the new release workflow and uploaded APK are confirmed.
