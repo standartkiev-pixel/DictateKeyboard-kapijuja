@@ -802,3 +802,21 @@ mid-recording, wired/USB input, pause/resume and stop/start. Sampling reports wh
 it does not prove OEM routing correctness or measure microphone signal origin physically.
 Next: verify this CI, then prepare a new RC (RC4/versionCode 4), retaining the pinned test signature.
 Do not overwrite the successful RC3 tag or asset to add this feature.
+
+
+## RC4 preparation — 2026-09-10
+
+Microphone indicator commit 5944dbc8036c7cb0993941f21f9da9ace9753cef passed full CI run
+34509415823 (SUCCESS): phone/Wear builds and app/core/Wear unit tests.
+
+RC4 increments versionCode to 4, updates the exact source-audit version check, and targets
+release-v0.1.0-rc.4* branches, tag v0.1.0-rc.4 and dictate-kapijuja-v0.1.0-rc.4-test.apk.
+All existing release checks remain: compile, all JVM tests, repeated cancellation tests, core/Wear
+lint, critical phone resource/lifecycle lint, pinned signature, application ID and size verification.
+The pinned public test signing identity is unchanged, so RC4 is intended to update RC2/RC3 in place.
+It includes both the countdown and actual microphone indicator. Physical installation/routing and
+heap/ANR measurement remain device checks; automated tests do not establish these results.
+
+Next checkpoint: inspect the RC4 workflow for this release branch. Do not report publication until its
+run succeeds and the release asset is present. Confirm the tag target, supply the APK link, and
+fast-forward main to the release commit if main has not independently changed.

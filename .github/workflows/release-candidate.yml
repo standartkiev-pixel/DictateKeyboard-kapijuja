@@ -2,13 +2,13 @@ name: Dictate Kapijuja RC release
 
 on:
   push:
-    branches: ['release-v0.1.0-rc.3*']
+    branches: ['release-v0.1.0-rc.4*']
 
 permissions:
   contents: write
 
 concurrency:
-  group: dictate-kapijuja-v0.1.0-rc.3
+  group: dictate-kapijuja-v0.1.0-rc.4
   cancel-in-progress: false
 
 jobs:
@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           source_apk="app/build/outputs/apk/debug/app-debug.apk"
-          release_apk="dictate-kapijuja-v0.1.0-rc.3-test.apk"
+          release_apk="dictate-kapijuja-v0.1.0-rc.4-test.apk"
           test -f "$source_apk"
           cp "$source_apk" "$release_apk"
 
@@ -95,7 +95,7 @@ jobs:
           "$build_tools/apksigner" verify --verbose --print-certs "$release_apk" | tee apk-signature.txt
           grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
           "$build_tools/aapt" dump badging "$release_apk" | tee apk-badging.txt
-          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='3'" apk-badging.txt
+          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='4'" apk-badging.txt
 
           size="$(stat -c '%s' "$release_apk")"
           test "$size" -lt 157286400
@@ -114,13 +114,15 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' \
-            'Third public test candidate of Dictate Kapijuja Keyboard.' \
+            'Fourth public test candidate of Dictate Kapijuja Keyboard.' \
             '' \
             'This prerelease uses the dedicated public Kapijuja test identity. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
             '' \
-            'Updates RC2 in place using the same pinned public test certificate. Export settings and retained audio before any one-time migration from older incompatible debug builds; do not uninstall RC2.' \
+            'Updates RC2 and RC3 in place using the same pinned public test certificate. Export settings and retained audio before any one-time migration from older incompatible debug builds; do not uninstall RC2 or RC3.' \
             '' \
             'The Smartbar now shows a shrinking no-progress timeout bar and remaining seconds, with Stop still available. Meaningful progress refills the budget; this is not a recognition percentage. Late cancelled-worker heartbeats are ignored. Compact rewording prompts and the magic wand remain available.' \
+            '' \
+            'During recording, a microphone icon and short label show the actual Android capture route: Bluetooth, phone, wired, USB, other or unknown. The route is sampled every half second; this does not independently force phone-speaker output.' \
             '' \
             'Instant output already defaults to ON. If text appears character by character, enable Settings > Dictation > Output > Instant output.' \
             '' \
@@ -136,9 +138,9 @@ jobs:
             "SHA-256: $APK_SHA" \
             > release-notes.txt
 
-          gh release create v0.1.0-rc.3 "$APK_FILE" \
+          gh release create v0.1.0-rc.4 "$APK_FILE" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title 'Dictate Kapijuja 0.1.0 RC3 — transcription countdown' \
+            --title 'Dictate Kapijuja 0.1.0 RC4 — actual microphone indicator' \
             --notes-file release-notes.txt \
             --prerelease
