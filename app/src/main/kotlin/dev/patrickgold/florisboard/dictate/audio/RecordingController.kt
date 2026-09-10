@@ -53,6 +53,14 @@ class RecordingController(private val cacheDir: File) {
     var outputFile: File? = null
         private set
 
+    /** Read the actual capture route, never infer it from the requested Bluetooth preference.
+     * Android may return null during startup or a route transition; report unknown in that case.
+     */
+    fun activeInput(): RecordingInput = runCatching {
+        val device = record?.routedDevice
+        if (device?.isSource == true) RecordingInput.fromDeviceType(device.type) else RecordingInput.UNKNOWN
+    }.getOrDefault(RecordingInput.UNKNOWN)
+
     val isRecording: Boolean
         get() = recording
 

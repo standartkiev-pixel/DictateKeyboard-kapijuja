@@ -31,8 +31,9 @@ import kotlin.coroutines.resume
  *  - API 26–30 uses the deprecated `startBluetoothSco()` and waits for the SCO-connected broadcast
  *    (with a short timeout) before the recorder is started, so we don't capture silence.
  *
- * [activate] returns true only if recording is actually routed to a Bluetooth mic; in that case the
- * caller should record from [MediaRecorder.AudioSource.VOICE_COMMUNICATION]. On false (no device,
+ * [activate] returns true when Android accepts the Bluetooth communication-route request; the
+ * caller should use VOICE_COMMUNICATION and inspect AudioRecord.routedDevice after capture starts.
+ * This request alone does not prove which microphone supplies the samples. On false (no device,
  * timeout, error) the caller falls back to the local mic. [deactivate] must always be called once
  * recording ends, regardless of the [activate] result.
  */

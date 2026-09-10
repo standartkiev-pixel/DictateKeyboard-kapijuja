@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.dictate.audio.AudioDecode
 import dev.patrickgold.florisboard.dictate.audio.AudioLevelSmoother
 import dev.patrickgold.florisboard.dictate.audio.AudioEncode
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
+import dev.patrickgold.florisboard.dictate.audio.RecordingInput
 import dev.patrickgold.florisboard.dictate.audio.BluetoothMicRouter
 import dev.patrickgold.florisboard.dictate.audio.LiveSpeechSplitter
 import dev.patrickgold.florisboard.dictate.audio.SmartTurnModel
@@ -431,6 +432,8 @@ object DictateController {
     private var audioManager: AudioManager? = null
     private var focusRequest: AudioFocusRequest? = null
     private var btRouter: BluetoothMicRouter? = null
+    private val _recordingInput = MutableStateFlow(RecordingInput.UNKNOWN)
+    val recordingInput: StateFlow<RecordingInput> = _recordingInput.asStateFlow()
 
     /** When true, the next finished recording is fed to the rewording model instead of committed. */
     private var livePromptArmed = false
@@ -1562,9 +1565,18 @@ object DictateController {
     private fun startAudioLevelSampling() {
         audioLevelJob?.cancel()
         val smoother = AudioLevelSmoother()
+        _recordingInput.value = RecordingInput.UNKNOWN
         audioLevelJob = scope.launch {
+            var nextRouteSampleMs = 0L
             while (_state.value is UiState.Recording) {
                 val recording = _state.value as UiState.Recording
+                // Reuse the bounded recording sampler instead of registering a long-lived route listener.
+                // A disconnected headset must stop being labelled Bluetooth within the next sample.
+                val now = SystemClock.elapsedRealtime()
+                if (now >= nextRouteSampleMs) {
+                    _recordingInput.value = recorder?.activeInput() ?: RecordingInput.UNKNOWN
+                    nextRouteSampleMs = now + 500L
+                }
                 _audioLevel.value = if (recording.paused) {
                     smoother.reset()
                 } else {
@@ -1573,6 +1585,7 @@ object DictateController {
                 delay(AUDIO_LEVEL_SAMPLE_MS)
             }
             _audioLevel.value = smoother.reset()
+            _recordingInput.value = RecordingInput.UNKNOWN
         }
     }
 
@@ -4435,6 +4448,7 @@ object DictateController {
     }
 
     private fun cleanupAudioRouting() {
+        _recordingInput.value = RecordingInput.UNKNOWN
         focusRequest?.let { request -> audioManager?.abandonAudioFocusRequest(request) }
         focusRequest = null
         audioManager = null

@@ -775,3 +775,30 @@ Next small step: inspect the RC3 release branch Actions run. If it fails, inspec
 changing anything. If successful, verify the release asset and tag target, give the owner the direct APK
 link, and fast-forward main to the verified release commit if main has not moved independently.
 Device heap/ANR and upgrade installation tests remain unverified here.
+
+
+## Actual recording input indicator — 2026-09-10
+
+RC3 release workflow 34505336276 completed SUCCESS on 94ae9b5c338aca81927d1cc9b7fd38976126d7e3.
+The microphone indicator below is a NEW change after RC3, not part of the RC3 APK.
+
+Current routing: useBluetoothMic requests SCO via setCommunicationDevice on Android 31+ or legacy
+startBluetoothSco before 31. If unavailable, the configured AudioSource is used and Android selects
+its input. There is no explicit independent Bluetooth-microphone/phone-speaker combination. An accepted
+communication-route request is not proof of AudioRecord capture routing. The existing selector requests
+SCO only; BLE is classified if Android actually routes capture there, not newly forced by this change.
+
+Implemented: RecordingController.activeInput reads AudioRecord.routedDevice and checks isSource.
+Only a value enum reaches StateFlow/UI: phone, SCO/BLE Bluetooth, wired, USB, other or unknown.
+The existing recording sampler checks this every 500 ms, including paused capture. Cleanup resets it.
+No route listeners, extra coroutine, Context or device handle is retained by the indicator.
+The Smartbar shows an icon plus a short source label beside the recording timer. Unknown/null routes
+are labelled unknown, never optimistically labelled phone. Tests distinguish SCO/BLE/USB/built-in input
+from unknown/output types. References: Android AudioRecord.getRoutedDevice API documentation.
+
+Static source audit, XML parsing and whitespace checks passed. CI must verify compilation/tests for
+this new commit. Device checks still needed: Bluetooth option on/off, actual headset input, disconnect
+mid-recording, wired/USB input, pause/resume and stop/start. Sampling reports what Android exposes;
+it does not prove OEM routing correctness or measure microphone signal origin physically.
+Next: verify this CI, then prepare a new RC (RC4/versionCode 4), retaining the pinned test signature.
+Do not overwrite the successful RC3 tag or asset to add this feature.

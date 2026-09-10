@@ -2128,4 +2128,10 @@
     <string name="sticker__source_signal">Signal</string>
     <string name="sticker__source_stickers_folder">Папка со стикерами</string>
     <string name="dictate__timeout_remaining">Распознавание: {seconds} секунд до остановки, если нет прогресса</string>
+    <string name="dictate__input_bluetooth">BT микр.</string>
+    <string name="dictate__input_phone">Телефон</string>
+    <string name="dictate__input_wired">Гарнитура</string>
+    <string name="dictate__input_usb">USB микр.</string>
+    <string name="dictate__input_other">Другой микр.</string>
+    <string name="dictate__input_unknown">Микр. ?</string>
 </resources>

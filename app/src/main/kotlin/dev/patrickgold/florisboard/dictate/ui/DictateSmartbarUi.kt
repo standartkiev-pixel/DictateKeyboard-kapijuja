@@ -40,6 +40,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.HeadsetMic
+import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
@@ -119,6 +122,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.dictate.audio.RecordingInput
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.dictate.DictateLanguages
 import dev.patrickgold.florisboard.dictate.DictateRecordingAnimation
@@ -176,6 +180,39 @@ fun DictateSmartbarUi(state: DictateController.UiState, modifier: Modifier = Mod
             is DictateController.UiState.Promo -> PromoContent(state.kind, state.message)
             else -> {}
         }
+    }
+}
+
+/** Shows the actual microphone, including automatic fallback after a headset disconnect. */
+@Composable
+private fun RecordingInputIndicator() {
+    val input by DictateController.recordingInput.collectFlowAsState()
+    val label = stringRes(when (input) {
+        RecordingInput.BLUETOOTH -> R.string.dictate__input_bluetooth
+        RecordingInput.PHONE -> R.string.dictate__input_phone
+        RecordingInput.WIRED -> R.string.dictate__input_wired
+        RecordingInput.USB -> R.string.dictate__input_usb
+        RecordingInput.OTHER -> R.string.dictate__input_other
+        RecordingInput.UNKNOWN -> R.string.dictate__input_unknown
+    })
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier.semantics {
+            contentDescription = label
+        },
+    ) {
+        SnyggIcon(
+            imageVector = when (input) {
+                RecordingInput.BLUETOOTH -> Icons.Default.Bluetooth
+                RecordingInput.PHONE -> Icons.Default.PhoneAndroid
+                RecordingInput.WIRED -> Icons.Default.HeadsetMic
+                RecordingInput.USB -> Icons.Default.Usb
+                else -> Icons.Default.Mic
+            },
+            modifier = Modifier.size(16.dp),
+        )
+        Text(text = label, fontSize = 10.sp, maxLines = 1)
     }
 }
 
@@ -313,6 +350,8 @@ private fun RecordingContent(state: DictateController.UiState.Recording) {
                 }
             }
         }
+        RecordingInputIndicator()
+        Spacer(modifier = Modifier.width(8.dp))
         RecordingAudioDot(paused = state.paused, frozen = ptt.discarding)
         Spacer(modifier = Modifier.width(10.dp))
         SnyggText(text = formatElapsed(elapsedMs))
