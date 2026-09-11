@@ -868,3 +868,21 @@ state that new defaults do not overwrite preferences already saved on an existin
 Next checkpoint: run the local source audit, commit this release-only change to the RC5 branch, inspect
 that branch's release workflow to completion, and verify the tag, target, APK asset, package and signature.
 Do not call RC5 published until every check and the release asset are confirmed.
+
+
+## RC5 publication and countdown urgency colors — 2026-09-11
+
+RC5 release workflow 34567115669 completed SUCCESS on
+674213b619c4e64cd610109f4716c8f798114de2. Tag v0.1.0-rc.5 points to that exact commit and the
+129,672,036-byte dictate-kapijuja-v0.1.0-rc.5-test.apk asset is present. Main was fast-forwarded to
+the verified release commit. The pinned public test certificate and package ID remain unchanged.
+
+The no-progress countdown previously inherited the ordinary Smartbar text color, so it was difficult
+to distinguish from static labels. The new post-RC5 change uses contrast-aware semantic colors: blue
+while work has more than 25% of its budget, amber at 25% or less, and red at 10% or less. The transition
+is animated. Remaining seconds and progress semantics remain present, so urgency is not conveyed by
+color alone. A pure color-selection function has unit tests for light and dark surfaces.
+
+This color change is NOT included in RC5. Next: run full CI for the color commit and perform a physical
+light/dark/custom-theme check before including it in a later release. Do not create RC6 solely for this
+cosmetic checkpoint unless the owner explicitly wants another APK.

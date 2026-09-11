@@ -11,6 +11,8 @@
 package dev.patrickgold.florisboard.dictate.ui
 
 import android.os.SystemClock
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -49,13 +51,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.animation.core.Animatable
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Language
@@ -96,12 +95,15 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -141,6 +143,25 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 /** Recording red, shared by the indicator dot and the armed slide-to-cancel bin (#235). */
 private val RecordingRed = Color(0xFFE53935)
+
+// These fixed pairs keep the countdown meaningful across user themes: blue means active work,
+// amber warns that the no-progress budget is running low, and red is reserved for imminent timeout.
+private val CountdownBlueOnDark = Color(0xFF64B5F6)
+private val CountdownBlueOnLight = Color(0xFF1565C0)
+private val CountdownAmberOnDark = Color(0xFFFFCA5C)
+private val CountdownAmberOnLight = Color(0xFF8A5A00)
+private val CountdownRedOnDark = Color(0xFFFF6B6B)
+private val CountdownRedOnLight = Color(0xFFB71C1C)
+
+/** Selects a contrast-safe urgency color without relying on the keyboard theme's accent semantics. */
+internal fun transcriptionCountdownColor(contentColor: Color, fractionRemaining: Float): Color {
+    val useOnDarkPalette = contentColor.luminance() >= 0.5f
+    return when {
+        fractionRemaining <= 0.10f -> if (useOnDarkPalette) CountdownRedOnDark else CountdownRedOnLight
+        fractionRemaining <= 0.25f -> if (useOnDarkPalette) CountdownAmberOnDark else CountdownAmberOnLight
+        else -> if (useOnDarkPalette) CountdownBlueOnDark else CountdownBlueOnLight
+    }
+}
 
 /**
  * Gboard-style in-Smartbar dictation indicator. Rendered in the Smartbar's center area (left of the
@@ -590,7 +611,11 @@ private fun RowScope.TranscribingContent(state: DictateController.UiState.Transc
     } else {
         stringRes(R.string.dictate__status_transcribing)
     }
-    val barColor = LocalContentColor.current
+    val contentColor = LocalContentColor.current
+    val barColor by animateColorAsState(
+        targetValue = transcriptionCountdownColor(contentColor, fraction),
+        label = "transcription countdown urgency",
+    )
     Row(
         modifier = Modifier.weight(1f).semantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
@@ -609,6 +634,7 @@ private fun RowScope.TranscribingContent(state: DictateController.UiState.Transc
         }
         // Physical left anchoring makes the right edge retreat left, even in an RTL keyboard.
         // This is a timeout budget, not a claim about the provider's percentage of work completed.
+        // Seconds and accessibility semantics carry the same warning, so color is never the only signal.
         Canvas(
             modifier = Modifier.weight(1f).size(80.dp, 5.dp).semantics {
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
