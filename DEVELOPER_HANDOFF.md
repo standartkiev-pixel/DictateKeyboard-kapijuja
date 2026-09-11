@@ -853,3 +853,18 @@ directory name or screenshot before attributing it to the app.
 Next checkpoint: run the source audit and full CI on this commit. If green, prepare RC5 without changing
 the pinned public test signing identity. Device upgrade behavior still needs a physical check because saved
 preferences correctly survive an update.
+
+
+## RC5 preparation — 2026-09-11
+
+Quiet-typing/defaults commit a01216e5b2a8f0b2f843926c0c46bed40802b03c passed full CI run
+34541496183 (SUCCESS): phone/Wear builds and app/core/Wear unit tests.
+
+RC5 increments versionCode from 4 to 5 and targets release-v0.1.0-rc.5* branches, tag
+v0.1.0-rc.5 and dictate-kapijuja-v0.1.0-rc.5-test.apk. It retains the same package ID and pinned
+public test certificate, so it is intended to update RC2, RC3 or RC4 in place. Release notes explicitly
+state that new defaults do not overwrite preferences already saved on an existing installation.
+
+Next checkpoint: run the local source audit, commit this release-only change to the RC5 branch, inspect
+that branch's release workflow to completion, and verify the tag, target, APK asset, package and signature.
+Do not call RC5 published until every check and the release asset are confirmed.
