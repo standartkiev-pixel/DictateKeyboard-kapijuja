@@ -881,8 +881,19 @@ The no-progress countdown previously inherited the ordinary Smartbar text color,
 to distinguish from static labels. The new post-RC5 change uses contrast-aware semantic colors: blue
 while work has more than 25% of its budget, amber at 25% or less, and red at 10% or less. The transition
 is animated. Remaining seconds and progress semantics remain present, so urgency is not conveyed by
-color alone. A pure color-selection function has unit tests for light and dark surfaces.
+color alone. A pure color-selection function has unit tests for light and dark surfaces. The animation
+is owned by Compose and adds no timer, retained Context, flow collector or independent coroutine; the
+existing watchdog remains the only countdown clock.
 
-This color change is NOT included in RC5. Next: run full CI for the color commit and perform a physical
-light/dark/custom-theme check before including it in a later release. Do not create RC6 solely for this
-cosmetic checkpoint unless the owner explicitly wants another APK.
+Color commit 7f38f9ee9cc4648cb1e8c9eea1c07507dee57d4d passed full CI run 34576851378
+(SUCCESS), including its light/dark palette unit tests. This color change is NOT included in RC5.
+Next: perform a physical light/dark/custom-theme check before including it in a later release. Do not
+create RC6 solely for this cosmetic checkpoint unless the owner explicitly wants another APK.
+
+
+## Product review checkpoint — 2026-09-11
+
+`PRODUCT_ROADMAP.md` records the reliability-first direction, review findings, upstream billing architecture,
+evidence from active keyboard issue trackers, and a prioritized professional/Wear OS backlog. Keep this file
+focused on durable product direction; implementation-specific lifecycle contracts remain in this handoff and
+`DEVELOPER_GUIDE.md`.
