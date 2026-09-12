@@ -145,7 +145,7 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 private val RecordingRed = Color(0xFFE53935)
 
 // These fixed pairs keep the countdown meaningful across user themes: blue means active work,
-// amber warns that the no-progress budget is running low, and red is reserved for imminent timeout.
+// Amber warns that the wall-clock budget is running low, and red is reserved for imminent timeout.
 private val CountdownBlueOnDark = Color(0xFF64B5F6)
 private val CountdownBlueOnLight = Color(0xFF1565C0)
 private val CountdownAmberOnDark = Color(0xFFFFCA5C)

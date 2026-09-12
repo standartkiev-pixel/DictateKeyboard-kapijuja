@@ -404,13 +404,11 @@ object DictateController {
     private var transcribeJob: Job? = null
 
     /**
-     * Provider-independent no-progress watchdog for the ordinary batch transcription path.
+     * Provider-independent wall-clock watchdog for the ordinary batch transcription path.
      *
-     * OkHttp has read/write/call timeouts, async providers have polling budgets, and the local engine has
-     * no socket at all. None of those individually proves the UI state machine will eventually leave
-     * Transcribing. This watchdog sits one level higher: every meaningful provider/local-engine progress
-     * event refreshes [lastTranscriptionProgressAtMs]; silence longer than the user's request timeout
-     * cancels the job through the SAME retained-audio recovery path as the explicit Stop button.
+     * OkHttp has per-call timeouts and internal retries, while async providers have polling budgets. None
+     * of those proves the UI will leave Transcribing within one clear period. This watchdog caps the whole
+     * operation and cancels through the SAME retained-audio recovery path as the explicit Stop button.
      */
     // One snapshot from the watchdog drives the UI; the view never creates a competing timeout.
     private val _transcriptionCountdown = MutableStateFlow<TranscriptionCountdown?>(null)
@@ -422,8 +420,6 @@ object DictateController {
      * finally block must never clear the in-flight audio/watchdog belonging to a newer dictation.
      */
     private var transcriptionRequestGeneration = 0L
-    @Volatile private var lastTranscriptionProgressAtMs = 0L
-
     // The in-flight manual rewording coroutine (a prompt chip / "Send"), so the stop button can abort it
     // mid-generation (issue #192). The post-transcription rewording chain instead runs inside
     // [transcribeJob]; [cancelRewording] cancels whichever is active.
@@ -687,7 +683,7 @@ object DictateController {
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
-    /** Polling the heartbeat every second is cheap and still makes a timeout feel immediate. */
+    /** Sampling the wall-clock deadline every second is cheap and makes timeout feel immediate. */
     private const val TRANSCRIPTION_WATCHDOG_POLL_MS = 1_000L
 
     /** 20 Hz is responsive for a voice indicator while avoiding a display-rate UI loop. */
@@ -1394,18 +1390,9 @@ object DictateController {
     }
 
     /**
-     * Refreshes the batch-transcription liveness timestamp. This can be called from OkHttp writer threads,
-     * async-poll coroutines or sherpa-onnx worker threads, so the timestamp is volatile and the operation
-     * deliberately does not touch Compose/StateFlow state.
-     */
-    private fun markTranscriptionProgress() {
-        lastTranscriptionProgressAtMs = SystemClock.elapsedRealtime()
-    }
-
-    /**
-     * Starts one watchdog for the current batch request. The existing Request timeout setting already
-     * means "how long may this operation make no progress"; reusing it avoids presenting two subtly
-     * different timeout sliders to the user.
+     * Starts one wall-clock watchdog for the current batch request. Upload callbacks, provider polling and
+     * internal HTTP retries deliberately cannot renew it. The countdown therefore states the real maximum
+     * time until this operation ends instead of repeatedly jumping back to the configured timeout.
      *
      * A generation token prevents an old watchdog's finally block from clearing a newer one when a
      * realtime fallback or resend starts another transcription immediately after the first finishes.
@@ -1413,19 +1400,24 @@ object DictateController {
     private fun startTranscriptionWatchdog(context: Context) {
         stopTranscriptionWatchdog()
         val timeoutMs = prefs.dictate.requestTimeout.get().coerceIn(30, 600) * 1_000L
-        markTranscriptionProgress()
+        val startedAtMs = SystemClock.elapsedRealtime()
         val generation = ++transcriptionWatchdogGeneration
         _transcriptionCountdown.value = TranscriptionCountdown(timeoutMs, timeoutMs)
+        Log.i(LATENCY_LOG_TAG, "transcriptionWatchdog started timeoutMs=$timeoutMs generation=$generation")
         val appContext = context.applicationContext
         transcriptionWatchdogJob = scope.launch {
             try {
                 while (true) {
                     delay(TRANSCRIPTION_WATCHDOG_POLL_MS)
                     if (_state.value !is UiState.Transcribing) return@launch
-                    val idleForMs = SystemClock.elapsedRealtime() - lastTranscriptionProgressAtMs
-                    val countdown = TranscriptionCountdown.afterIdle(timeoutMs, idleForMs)
+                    val elapsedMs = SystemClock.elapsedRealtime() - startedAtMs
+                    val countdown = TranscriptionCountdown.afterElapsed(timeoutMs, elapsedMs)
                     _transcriptionCountdown.value = countdown
                     if (countdown.remainingMs == 0L) {
+                        Log.w(
+                            LATENCY_LOG_TAG,
+                            "transcriptionWatchdog expired elapsedMs=$elapsedMs generation=$generation",
+                        )
                         // Important: route through cancelTranscription rather than directly changing
                         // UiState. That first copies the active audio, cancels the underlying coroutine /
                         // OkHttp call, and leaves Send again available.
@@ -1448,6 +1440,12 @@ object DictateController {
         transcriptionWatchdogJob?.cancel()
         transcriptionWatchdogJob = null
         _transcriptionCountdown.value = null
+    }
+
+    /** Exposes a bounded provider retry in the UI and leaves an unambiguous bugreport marker. */
+    private fun showTranscriptionRetry(attempt: Int) {
+        Log.w(LATENCY_LOG_TAG, "transcriptionRetry attempt=$attempt")
+        _state.value = UiState.Transcribing(attempt)
     }
 
     /**
@@ -2008,8 +2006,6 @@ object DictateController {
                         logLatency(latencyTrace, "audioConverted")
                     }
                 }
-                // A cancelled native decode may still report progress. It must not renew a later request.
-                val progress = activeTranscriptionProgress(currentCoroutineContext()[Job]!!, ::markTranscriptionProgress)
                 val request = TranscriptionRequest(
                     audioFile = uploadFile,
                     model = model,
@@ -2023,7 +2019,6 @@ object DictateController {
                     // Non-chat: style/punctuation prompt biases recognition (roadmap 2.4 / 4.11).
                     // Chat-audio: the full instruction (language + style + all auto-formatting) in one go.
                     prompt = if (chatAudio) buildChatAudioInstruction(appContext) else transcriptionStylePrompt(),
-                    onProgress = progress,
                 )
                 val providerStartedNanos = SystemClock.elapsedRealtimeNanos()
                 val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
@@ -2046,7 +2041,7 @@ object DictateController {
                             timeoutSeconds = prefs.dictate.requestTimeout.get().toLong(),
                         ).transcribe(
                             request,
-                            onRetry = { attempt -> _state.value = UiState.Transcribing(attempt) },
+                            onRetry = ::showTranscriptionRetry,
                         )
                     } catch (e: DictateApiException) {
                         // A provider that will not take the m4a gets the WAV instead (#281). Three of the
@@ -2063,7 +2058,7 @@ object DictateController {
                                 timeoutSeconds = prefs.dictate.requestTimeout.get().toLong(),
                             ).transcribe(
                                 request.copy(audioFile = packedFrom!!),
-                                onRetry = { attempt -> _state.value = UiState.Transcribing(attempt) },
+                                onRetry = ::showTranscriptionRetry,
                             )
                         } else {
                         // Offline fallback (#104): the cloud call failed because we're offline (after its
@@ -2081,7 +2076,6 @@ object DictateController {
                         }
                     }
                 }
-                markTranscriptionProgress()
                 logLatency(latencyTrace, "providerCompleted", providerStartedNanos)
                 // Prompt-echo guard (issue #77): on silent/unclear audio, Whisper-style models echo the
                 // transcription style prompt back verbatim (the old default was infamously returned as
@@ -2867,7 +2861,6 @@ object DictateController {
      */
     private suspend fun onSegmentResult(appContext: Context, idx: Int, text: String) {
         if (segmentCancellationPending) return
-        markTranscriptionProgress()
         val shouldFinish = segmentMutex.withLock {
             segmentResults[idx] = text
             while (segmentResults.containsKey(segmentCommitIndex)) {
@@ -2975,11 +2968,9 @@ object DictateController {
         } else {
             null
         }
-        val progress = activeTranscriptionProgress(currentCoroutineContext()[Job]!!, ::markTranscriptionProgress)
         val request = TranscriptionRequest(
             audioFile = packed ?: toUpload, model = model, language = language, prompt = prompt,
             expectedLanguages = expectedLanguages(),
-            onProgress = progress,
         )
         return try {
             val result = if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
@@ -3629,7 +3620,7 @@ object DictateController {
     }
 
     /**
-     * Persists audio rescued by manual Stop or the no-progress watchdog. It is intentionally a History
+     * Persists audio rescued by manual Stop or the wall-clock watchdog. It is intentionally a History
      * entry, not only the transient resend cache: if Android kills the IME before the user taps Send again,
      * the spoken material is still recoverable later. Replays are excluded by the caller because their
      * source audio already belongs to an existing history row.
