@@ -38,19 +38,20 @@ class RecordingInputRouterTest {
         val route = FakeBluetoothRoute(activationGate)
         val router = RecordingInputRouter(route)
         var preferredDeviceCalls = 0
-        var preference = true
+        val persisted = mutableListOf<Boolean>()
+        router.sourceForStart(bluetoothEnabled = false, localSource = MediaRecorder.AudioSource.MIC)
         router.bindInputPreference {
             preferredDeviceCalls++
             true
         }
 
-        router.applyBluetoothPreference(this, enabled = true) { preference }
+        router.toggleBluetoothPreference(this, persist = { persisted += it }, isRecording = { true })
         runCurrent()
-        preference = false
-        router.applyBluetoothPreference(this, enabled = false) { !preference }
+        router.toggleBluetoothPreference(this, persist = { persisted += it }, isRecording = { true })
         activationGate.complete(Unit)
         advanceUntilIdle()
 
+        assertEquals(listOf(true, false), persisted)
         assertEquals(0, route.bluetoothDeviceCalls)
         assertEquals(1, route.phoneDeviceCalls)
         assertEquals(1, preferredDeviceCalls)

@@ -23,7 +23,7 @@ import kotlinx.coroutines.sync.withLock
  *
  * Mid-recording changes keep the same [RecordingController] and WAV file. Android's preferred-input
  * routing moves the active AudioRecord between the Bluetooth SCO device and the built-in microphone,
- * so already captured speech is never discarded. [isCurrent] makes rapid taps converge on the newest
+ * so already captured speech is never discarded. Serialized route changes make rapid taps converge on the newest
  * preference even when establishing a legacy SCO connection takes a few seconds.
  */
 internal class RecordingInputRouter internal constructor(
@@ -33,14 +33,17 @@ internal class RecordingInputRouter internal constructor(
 
     private val routeMutex = Mutex()
     private var preferInputDevice: ((AudioDeviceInfo?) -> Boolean)? = null
+    private var bluetoothEnabled = false
 
     /** Selects the AudioRecord source used when a recording session is first created. */
-    suspend fun sourceForStart(bluetoothEnabled: Boolean, localSource: Int): Int =
-        if (bluetoothEnabled && bluetooth.activate()) {
+    suspend fun sourceForStart(bluetoothEnabled: Boolean, localSource: Int): Int {
+        this.bluetoothEnabled = bluetoothEnabled
+        return if (bluetoothEnabled && bluetooth.activate()) {
             MediaRecorder.AudioSource.VOICE_COMMUNICATION
         } else {
             localSource
         }
+    }
 
     /** Applies the already prepared Bluetooth device after AudioRecord has been created. */
     fun bind(recorder: RecordingController) {
@@ -55,16 +58,19 @@ internal class RecordingInputRouter internal constructor(
         }
     }
 
-    /** Changes the active input; if Bluetooth is unavailable, recording continues on its current input. */
-    fun applyBluetoothPreference(
+    /** Toggles, persists and applies the route in click order; the newest rapid tap always wins. */
+    fun toggleBluetoothPreference(
         scope: CoroutineScope,
-        enabled: Boolean,
-        isCurrent: () -> Boolean,
+        persist: suspend (Boolean) -> Unit,
+        isRecording: () -> Boolean,
     ) {
+        val enabled = !bluetoothEnabled
+        bluetoothEnabled = enabled
         scope.launch {
             routeMutex.withLock {
+                persist(enabled)
                 val prefer = preferInputDevice ?: return@withLock
-                if (!isCurrent()) return@withLock
+                if (!isRecording() || bluetoothEnabled != enabled) return@withLock
                 if (!enabled) {
                     bluetooth.deactivate()
                     prefer(bluetooth.phoneInputDevice())
@@ -72,7 +78,7 @@ internal class RecordingInputRouter internal constructor(
                 }
 
                 if (!bluetooth.activate()) return@withLock
-                if (!isCurrent()) {
+                if (!isRecording() || bluetoothEnabled != enabled) {
                     bluetooth.deactivate()
                     return@withLock
                 }

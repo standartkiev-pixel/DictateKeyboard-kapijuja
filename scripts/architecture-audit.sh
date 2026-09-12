@@ -5,8 +5,8 @@ controller="app/src/main/kotlin/dev/patrickgold/florisboard/dictate/DictateContr
 
 # Freeze the current ceiling. New behavior must be placed in focused components, and each
 # extraction should lower these limits so the monolith cannot silently grow back.
-max_lines=4475
-max_bytes=243416
+max_lines=4474
+max_bytes=243331
 
 if ! iconv -f UTF-8 -t UTF-8 "$controller" >/dev/null; then
   echo "Architecture audit rejected a non-UTF-8 DictateController.kt." >&2

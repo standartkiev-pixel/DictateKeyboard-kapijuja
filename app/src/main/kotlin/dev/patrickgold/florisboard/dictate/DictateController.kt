@@ -1546,11 +1546,10 @@ object DictateController {
 
     fun toggleRecordingBluetooth() {
         if (_state.value !is UiState.Recording || recorder == null) return
-        val enabled = !prefs.dictate.useBluetoothMic.get()
-        prefs.dictate.useBluetoothMic.set(enabled)
-        recordingInputRouter?.applyBluetoothPreference(scope, enabled) {
-            _state.value is UiState.Recording && prefs.dictate.useBluetoothMic.get() == enabled
-        }
+        recordingInputRouter?.toggleBluetoothPreference(
+            scope, persist = { prefs.dictate.useBluetoothMic.set(it) },
+            isRecording = { _state.value is UiState.Recording },
+        )
     }
 
     /**
