@@ -26,6 +26,9 @@ jobs:
       - name: Audit release source and credentials
         run: bash scripts/release-audit.sh
 
+      - name: Prevent controller growth and source corruption
+        run: bash scripts/architecture-audit.sh
+
       # Android creates a new random debug key on every clean runner. A checked, explicitly public test
       # identity keeps prerelease APKs upgrade-compatible without using or exposing the future production key.
       - name: Install pinned public prerelease signing key

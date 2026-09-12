@@ -26,6 +26,9 @@ jobs:
       - name: Audit release source and credentials
         run: bash scripts/release-audit.sh
 
+      - name: Prevent controller growth and source corruption
+        run: bash scripts/architecture-audit.sh
+
       # Use the same intentionally public test identity as prereleases. Without this step each clean
       # runner creates a random certificate and its debug artifact cannot update an earlier CI build.
       - name: Install pinned public prerelease signing key
