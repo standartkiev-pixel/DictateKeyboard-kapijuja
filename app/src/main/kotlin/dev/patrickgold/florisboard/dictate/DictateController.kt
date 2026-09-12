@@ -403,18 +403,9 @@ object DictateController {
     /** The in-flight transcription coroutine, cancellable via the stop button (see [cancelTranscription]). */
     private var transcribeJob: Job? = null
 
-    /**
-     * Provider-independent wall-clock watchdog for the ordinary batch transcription path.
-     *
-     * OkHttp has per-call timeouts and internal retries, while async providers have polling budgets. None
-     * of those proves the UI will leave Transcribing within one clear period. This watchdog caps the whole
-     * operation and cancels through the SAME retained-audio recovery path as the explicit Stop button.
-     */
-    // One snapshot from the watchdog drives the UI; the view never creates a competing timeout.
-    private val _transcriptionCountdown = MutableStateFlow<TranscriptionCountdown?>(null)
-    val transcriptionCountdown: StateFlow<TranscriptionCountdown?> = _transcriptionCountdown.asStateFlow()
-    private var transcriptionWatchdogJob: Job? = null
-    private var transcriptionWatchdogGeneration = 0L
+    // The view observes the same watchdog that cancels the request; it never creates a competing timer.
+    private val transcriptionWatchdog = TranscriptionWatchdog(scope, SystemClock::elapsedRealtime)
+    val transcriptionCountdown: StateFlow<TranscriptionCountdown?> = transcriptionWatchdog.countdown
     /**
      * Ownership token for batch requests. A cancelled native local decode can return much later; its old
      * finally block must never clear the in-flight audio/watchdog belonging to a newer dictation.
@@ -683,9 +674,6 @@ object DictateController {
     // Realtime (#128): after finish(), how long to wait for the provider to flush the last words before we
     // commit the already-streamed text. Short — the text is already on screen; we only wait for the tail.
     private const val REALTIME_FINALIZE_TIMEOUT_MS = 1_200L
-    /** Sampling the wall-clock deadline every second is cheap and makes timeout feel immediate. */
-    private const val TRANSCRIPTION_WATCHDOG_POLL_MS = 1_000L
-
     /** 20 Hz is responsive for a voice indicator while avoiding a display-rate UI loop. */
     private const val AUDIO_LEVEL_SAMPLE_MS = 50L
 
@@ -1389,58 +1377,26 @@ object DictateController {
         }
     }
 
-    /**
-     * Starts one wall-clock watchdog for the current batch request. Upload callbacks, provider polling and
-     * internal HTTP retries deliberately cannot renew it. The countdown therefore states the real maximum
-     * time until this operation ends instead of repeatedly jumping back to the configured timeout.
-     *
-     * A generation token prevents an old watchdog's finally block from clearing a newer one when a
-     * realtime fallback or resend starts another transcription immediately after the first finishes.
-     */
+    /** Connects an expired batch deadline to the controller's retained-audio cancellation path. */
     private fun startTranscriptionWatchdog(context: Context) {
-        stopTranscriptionWatchdog()
         val timeoutMs = prefs.dictate.requestTimeout.get().coerceIn(30, 600) * 1_000L
-        val startedAtMs = SystemClock.elapsedRealtime()
-        val generation = ++transcriptionWatchdogGeneration
-        _transcriptionCountdown.value = TranscriptionCountdown(timeoutMs, timeoutMs)
-        Log.i(LATENCY_LOG_TAG, "transcriptionWatchdog started timeoutMs=$timeoutMs generation=$generation")
         val appContext = context.applicationContext
-        transcriptionWatchdogJob = scope.launch {
-            try {
-                while (true) {
-                    delay(TRANSCRIPTION_WATCHDOG_POLL_MS)
-                    if (_state.value !is UiState.Transcribing) return@launch
-                    val elapsedMs = SystemClock.elapsedRealtime() - startedAtMs
-                    val countdown = TranscriptionCountdown.afterElapsed(timeoutMs, elapsedMs)
-                    _transcriptionCountdown.value = countdown
-                    if (countdown.remainingMs == 0L) {
-                        Log.w(
-                            LATENCY_LOG_TAG,
-                            "transcriptionWatchdog expired elapsedMs=$elapsedMs generation=$generation",
-                        )
-                        // Important: route through cancelTranscription rather than directly changing
-                        // UiState. That first copies the active audio, cancels the underlying coroutine /
-                        // OkHttp call, and leaves Send again available.
-                        cancelTranscription(appContext, keepForResend = true, stalled = true)
-                        return@launch
-                    }
-                }
-            } finally {
-                if (transcriptionWatchdogGeneration == generation) {
-                    transcriptionWatchdogJob = null
-                    _transcriptionCountdown.value = null
-                }
-            }
+        val generation = transcriptionWatchdog.start(
+            timeoutMs = timeoutMs,
+            isRequestActive = { _state.value is UiState.Transcribing },
+        ) { elapsedMs, expiredGeneration ->
+            Log.w(
+                LATENCY_LOG_TAG,
+                "transcriptionWatchdog expired elapsedMs=$elapsedMs generation=$expiredGeneration",
+            )
+            // Use the same path as explicit Stop: retain audio, cancel the provider call and offer resend.
+            cancelTranscription(appContext, keepForResend = true, stalled = true)
         }
+        Log.i(LATENCY_LOG_TAG, "transcriptionWatchdog started timeoutMs=$timeoutMs generation=$generation")
     }
 
     /** Stops the current watchdog without affecting the transcription itself. */
-    private fun stopTranscriptionWatchdog() {
-        transcriptionWatchdogGeneration++
-        transcriptionWatchdogJob?.cancel()
-        transcriptionWatchdogJob = null
-        _transcriptionCountdown.value = null
-    }
+    private fun stopTranscriptionWatchdog() = transcriptionWatchdog.stop()
 
     /** Exposes a bounded provider retry in the UI and leaves an unambiguous bugreport marker. */
     private fun showTranscriptionRetry(attempt: Int) {

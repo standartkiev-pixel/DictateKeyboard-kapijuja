@@ -11,7 +11,7 @@ No stage should combine structural movement with a new feature.
 ## Stages
 
 1. Freeze controller growth and reject corrupted source in CI.
-2. Extract request timeout and cancellation orchestration with deterministic tests.
+2. Extract request timeout and cancellation orchestration with deterministic tests. (Completed.)
 3. Extract the long-form session coordinator while preserving ordered output and rescue audio.
 4. Extract stopped-session recovery and retained-audio ownership.
 5. Extract recording lifecycle and audio-route observation.
