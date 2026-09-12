@@ -26,7 +26,6 @@ import android.net.Uri
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.media.MediaRecorder
 import android.os.SystemClock
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
@@ -39,7 +38,7 @@ import dev.patrickgold.florisboard.dictate.audio.AudioLevelSmoother
 import dev.patrickgold.florisboard.dictate.audio.AudioEncode
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
 import dev.patrickgold.florisboard.dictate.audio.RecordingInput
-import dev.patrickgold.florisboard.dictate.audio.BluetoothMicRouter
+import dev.patrickgold.florisboard.dictate.audio.RecordingInputRouter
 import dev.patrickgold.florisboard.dictate.audio.LiveSpeechSplitter
 import dev.patrickgold.florisboard.dictate.audio.SmartTurnModel
 import dev.patrickgold.florisboard.dictate.audio.Pcm16Resampler
@@ -418,7 +417,7 @@ object DictateController {
 
     private var audioManager: AudioManager? = null
     private var focusRequest: AudioFocusRequest? = null
-    private var btRouter: BluetoothMicRouter? = null
+    private var recordingInputRouter: RecordingInputRouter? = null
     private val _recordingInput = MutableStateFlow(RecordingInput.UNKNOWN)
     val recordingInput: StateFlow<RecordingInput> = _recordingInput.asStateFlow()
 
@@ -1446,7 +1445,10 @@ object DictateController {
                 // disabled) before the realtime session / request reads it.
                 reconcileActiveLanguage()
                 requestAudioFocusIfEnabled(appContext)
-                val audioSource = setupBluetoothIfEnabled(appContext)
+                val inputRouter = RecordingInputRouter(appContext).also { recordingInputRouter = it }
+                val audioSource = inputRouter.sourceForStart(
+                    prefs.dictate.useBluetoothMic.get(), prefs.dictate.audioInputSource.get().resolve(appContext),
+                )
                 // Long-form segmented dictation (#170): transcribe cut segments in the background while
                 // recording continues. Off for realtime / live-prompt / overlay / multimodal (see the gate).
                 val segmented = isSegmentedMode(appContext)
@@ -1470,9 +1472,8 @@ object DictateController {
                     segmentVad != null -> { val v = segmentVad!!; { pcm, len -> v.feed(pcm, len) } }
                     else -> null
                 }
-                // RecordingController needs only a directory. Passing the value instead of Context keeps
-                // native recording ownership independent from Android component lifetimes.
-                recorder = RecordingController(appContext.cacheDir).also { it.start(audioSource, pcmSink) }
+                // The recorder receives no Context and therefore cannot retain an Android component.
+                recorder = RecordingController(appContext.cacheDir).also { it.start(audioSource, pcmSink); inputRouter.bind(it) }
                 if (prefs.dictate.skipSilentRecordings.get()) {
                     // Hide the one-time native VAD/session setup behind the user's recording time.
                     scope.launch { SpeechGate.prewarm(appContext) }
@@ -1540,6 +1541,15 @@ object DictateController {
             }
             _audioLevel.value = smoother.reset()
             _recordingInput.value = RecordingInput.UNKNOWN
+        }
+    }
+
+    fun toggleRecordingBluetooth() {
+        if (_state.value !is UiState.Recording || recorder == null) return
+        val enabled = !prefs.dictate.useBluetoothMic.get()
+        prefs.dictate.useBluetoothMic.set(enabled)
+        recordingInputRouter?.applyBluetoothPreference(scope, enabled) {
+            _state.value is UiState.Recording && prefs.dictate.useBluetoothMic.get() == enabled
         }
     }
 
@@ -4381,26 +4391,13 @@ object DictateController {
         am.requestAudioFocus(request)
     }
 
-    private suspend fun setupBluetoothIfEnabled(context: Context): Int {
-        // Non-Bluetooth path uses the user's chosen audio source (issue #62); Bluetooth SCO always needs
-        // VOICE_COMMUNICATION. If BT is requested but can't be activated, fall back to the chosen source.
-        val localSource = prefs.dictate.audioInputSource.get().resolve(context)
-        if (!prefs.dictate.useBluetoothMic.get()) return localSource
-        val router = BluetoothMicRouter(context).also { btRouter = it }
-        return if (router.activate()) {
-            MediaRecorder.AudioSource.VOICE_COMMUNICATION
-        } else {
-            localSource
-        }
-    }
-
     private fun cleanupAudioRouting() {
         _recordingInput.value = RecordingInput.UNKNOWN
         focusRequest?.let { request -> audioManager?.abandonAudioFocusRequest(request) }
         focusRequest = null
         audioManager = null
-        btRouter?.deactivate()
-        btRouter = null
+        recordingInputRouter?.close()
+        recordingInputRouter = null
     }
 
     /** Resolves the registry preset (base URL, defaults, headers) backing [account]. */

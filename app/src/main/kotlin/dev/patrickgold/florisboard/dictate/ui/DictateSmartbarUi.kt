@@ -219,9 +219,12 @@ private fun RecordingInputIndicator() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier.semantics {
-            contentDescription = label
-        },
+        modifier = Modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { DictateController.toggleRecordingBluetooth() }
+            .padding(horizontal = 4.dp)
+            .semantics { contentDescription = label },
     ) {
         SnyggIcon(
             imageVector = when (input) {
@@ -749,8 +752,8 @@ private fun RowScope.ErrorContent(state: DictateController.UiState.Error) {
 
     when (state.action) {
         DictateController.ErrorAction.RESEND -> {
-            SendButton(onClick = { DictateController.sendRetainedAudio(context) })
             DismissButton()
+            SendButton(onClick = { DictateController.sendRetainedAudio(context) })
         }
         DictateController.ErrorAction.OPEN_SETTINGS -> {
             SnyggIconButton(
@@ -792,7 +795,8 @@ private fun RowScope.ErrorContent(state: DictateController.UiState.Error) {
 
 /**
  * Shared "send the kept audio" (↻) button, used by both the error-resend chip and the interrupted-
- * recording chip (unified resend path). Both route through [DictateController.sendRetainedAudio].
+ * recording chip (unified resend path). It stays rightmost so a repeated tap after Stop resends rather
+ * than discarding the retained recording. Both chips route through [DictateController.sendRetainedAudio].
  */
 @Composable
 private fun RowScope.SendButton(onClick: () -> Unit) {
@@ -826,7 +830,7 @@ private fun RowScope.DismissButton() {
 /**
  * Interrupted-recording chip: shown on the next keyboard open after a recording was finalized because
  * the keyboard closed mid-recording. Neutral (not an error): a mic glyph + "recording interrupted"
- * headline with the captured length, then the shared send (↻) and dismiss (✗) buttons. Sending runs
+ * headline with the captured length, then the shared dismiss (✗) and send (↻) buttons. Sending runs
  * the same resend path as the error chip.
  */
 @Composable
@@ -868,8 +872,8 @@ private fun RowScope.InterruptedContent(state: DictateController.UiState.Interru
             contentDescription = stringRes(R.string.dictate__action_continue_recording),
         )
     }
-    SendButton(onClick = { DictateController.sendRetainedAudio(context) })
     DismissButton()
+    SendButton(onClick = { DictateController.sendRetainedAudio(context) })
 }
 
 /**

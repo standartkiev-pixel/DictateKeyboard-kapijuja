@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.dictate.audio
 
 import android.annotation.SuppressLint
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -60,6 +61,10 @@ class RecordingController(private val cacheDir: File) {
         val device = record?.routedDevice
         if (device?.isSource == true) RecordingInput.fromDeviceType(device.type) else RecordingInput.UNKNOWN
     }.getOrDefault(RecordingInput.UNKNOWN)
+
+    /** Requests a new input device without restarting AudioRecord or replacing the current WAV file. */
+    fun preferInputDevice(device: AudioDeviceInfo?): Boolean =
+        record?.let { runCatching { it.setPreferredDevice(device) }.getOrDefault(false) } ?: false
 
     val isRecording: Boolean
         get() = recording

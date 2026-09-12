@@ -14,7 +14,7 @@ No stage should combine structural movement with a new feature.
 2. Extract request timeout and cancellation orchestration with deterministic tests. (Completed.)
 3. Extract the long-form session coordinator while preserving ordered output and rescue audio.
 4. Extract stopped-session recovery and retained-audio ownership.
-5. Extract recording lifecycle and audio-route observation.
+5. Extract recording lifecycle and audio-route observation. (Input switching extracted; lifecycle pending.)
 6. Extract provider request construction and response normalization.
 7. Leave `DictateController` as the lifecycle-facing coordinator and lower the CI size ceiling.
 

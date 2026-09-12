@@ -37,12 +37,27 @@ import kotlin.coroutines.resume
  * timeout, error) the caller falls back to the local mic. [deactivate] must always be called once
  * recording ends, regardless of the [activate] result.
  */
-class BluetoothMicRouter(context: Context) {
+internal interface BluetoothInputRoute {
+    val isActivated: Boolean
+    fun bluetoothInputDevice(): AudioDeviceInfo?
+    fun phoneInputDevice(): AudioDeviceInfo?
+    suspend fun activate(): Boolean
+    fun deactivate()
+}
+
+internal class BluetoothMicRouter(context: Context) : BluetoothInputRoute {
 
     private val appContext = context.applicationContext
     private val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     private var activated = false
+    override val isActivated: Boolean get() = activated
+
+    /** Bluetooth SCO input currently exposed by Android, if one is connected. */
+    override fun bluetoothInputDevice(): AudioDeviceInfo? = inputDevice(AudioDeviceInfo.TYPE_BLUETOOTH_SCO)
+
+    /** Built-in handset microphone used when Bluetooth routing is turned off. */
+    override fun phoneInputDevice(): AudioDeviceInfo? = inputDevice(AudioDeviceInfo.TYPE_BUILTIN_MIC)
 
     /** Whether a Bluetooth SCO input device is currently present and usable. */
     fun isAvailable(): Boolean {
@@ -55,7 +70,8 @@ class BluetoothMicRouter(context: Context) {
     }
 
     /** Attempts to route capture to the Bluetooth mic. Returns true if it is now active. */
-    suspend fun activate(): Boolean {
+    override suspend fun activate(): Boolean {
+        if (activated) return true
         if (!isAvailable()) return false
         activated = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             activateModern()
@@ -66,7 +82,7 @@ class BluetoothMicRouter(context: Context) {
     }
 
     /** Stops Bluetooth routing if it was activated. Safe to call unconditionally. */
-    fun deactivate() {
+    override fun deactivate() {
         if (!activated) return
         activated = false
         runCatching {
@@ -85,6 +101,10 @@ class BluetoothMicRouter(context: Context) {
         } ?: return false
         return runCatching { am.setCommunicationDevice(device) }.getOrDefault(false)
     }
+
+    private fun inputDevice(type: Int): AudioDeviceInfo? = runCatching {
+        am.getDevices(AudioManager.GET_DEVICES_INPUTS).firstOrNull { it.type == type }
+    }.getOrNull()
 
     @Suppress("DEPRECATION")
     private suspend fun activateLegacy(): Boolean {
