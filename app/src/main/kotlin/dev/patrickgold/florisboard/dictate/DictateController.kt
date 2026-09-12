@@ -321,7 +321,7 @@ object DictateController {
     // finalizeAndCommit(finalizeViaComposing=true), which replaces the preview with the finished text.
     private var segmentedActive = false
     private val segmentQueue = LongFormSegmentQueue()
-    private val segmentJobs = mutableSetOf<Job>()
+    private val segmentResources = LongFormSessionResources()
     private val segmentMutex = Mutex()        // orders index assignment + rotate + the commit drain
     private var segmentCancellationPending = false // manual Stop/watchdog is collecting a rescue WAV
     private var segmentRecordedSeconds = 0L
@@ -329,7 +329,6 @@ object DictateController {
     // Every segment WAV stays in cache until the long-form session ends. This is temporary ownership,
     // independent of History retention: it lets Stop/watchdog reconstruct a rescue recording even when
     // permanent audio history is disabled. [segmentKeepAudio] only decides whether success is copied to History.
-    private val segmentAudioFiles = HashMap<Int, File>()
     private var segmentKeepAudio = false                  // whether successful session audio is retained in History
     private val _segmentFlushCount = MutableStateFlow(0)
     /** Monotonic count of segment cuts — the recording bar flashes the Next button on each change (#170). */
@@ -1156,9 +1155,8 @@ object DictateController {
         // Long-form segmented (#170): abort the background segment transcriptions; the realtime cleanup
         // below removes the progressively-shown preview text (segmented reuses realtimeShown/Context).
         if (segmentedActive) {
-            segmentJobs.forEach { it.cancel() }
-            segmentJobs.clear()
-            segmentAudioFiles.values.forEach { runCatching { it.delete() } }
+            segmentResources.cancelJobs()
+            segmentResources.discardAudio()
             resetSegmentedState()
         }
         // Tear down any realtime stream (#128) and remove the live provisional text from the field. Set the
@@ -2547,7 +2545,7 @@ object DictateController {
     private fun initSegmented(appContext: Context) {
         segmentedActive = true
         segmentQueue.reset()
-        segmentAudioFiles.clear()
+        segmentResources.clearAudioReferences()
         segmentCancellationPending = false
         segmentRecordedSeconds = 0L
         _segmentFlushCount.value = 0
@@ -2564,7 +2562,7 @@ object DictateController {
     private fun resetSegmentedState() {
         segmentedActive = false
         segmentQueue.reset()
-        segmentAudioFiles.clear() // files themselves are deleted by finalize/cancel, not here
+        segmentResources.clearAudioReferences() // finalize/cancel takes or deletes the files first
         // Cancellation keeps segmentCancellationPending armed across this reset while its rescue WAV is
         // assembled; cancelSegmentedTranscription clears it only after every cancelled source file has
         // been consumed. Normal successful sessions entered with the flag false and keep it false.
@@ -2594,7 +2592,7 @@ object DictateController {
                 if (!segmentedActive || _state.value !is UiState.Recording) return@withLock null
                 val i = segmentQueue.reserve()
                 val w = withContext(Dispatchers.IO) { recorder?.rotate() }
-                if (w != null && w.exists() && w.length() > 0L) segmentAudioFiles[i] = w
+                if (w != null) segmentResources.trackAudio(i, w)
                 _segmentsInFlight.value = segmentQueue.inFlightCount
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
                 i to w
@@ -2654,7 +2652,7 @@ object DictateController {
                     // Deleted chunk: drop its audio so it lands in neither the transcript nor the history WAV.
                     withContext(Dispatchers.IO) { runCatching { w?.delete() } }
                 } else if (w != null && w.exists() && w.length() > 0L) {
-                    segmentAudioFiles[i] = w
+                    segmentResources.trackAudio(i, w)
                 }
                 _segmentsInFlight.value = segmentQueue.inFlightCount
                 i to w
@@ -2700,8 +2698,7 @@ object DictateController {
 
         // Stop every tracked segment first. Network calls are cancellable through OkHttp; native local
         // decode may finish its current native call, but cancellation prevents its late text from landing.
-        segmentJobs.toList().forEach { it.cancel() }
-        segmentJobs.clear()
+        segmentResources.cancelJobs()
 
         scope.launch {
             val files = segmentMutex.withLock {
@@ -2712,13 +2709,11 @@ object DictateController {
                 val tail = withContext(Dispatchers.IO) { activeRecorder?.stop() }
                 cleanupAudioRouting()
                 if (tail != null && tail.exists() && tail.length() > 0L &&
-                    segmentAudioFiles.values.none { it == tail }
+                    !segmentResources.containsAudio(tail)
                 ) {
-                    segmentAudioFiles[segmentQueue.reserveRescueTail()] = tail
+                    segmentResources.trackAudio(segmentQueue.reserveRescueTail(), tail)
                 }
-                val snapshot = segmentAudioFiles.toSortedMap().values
-                    .filter { it.exists() && it.length() > 0L }
-                    .toList()
+                val snapshot = segmentResources.takeOrderedAudio()
                 resetSegmentedState()
                 snapshot
             }
@@ -2801,8 +2796,7 @@ object DictateController {
             currentCoroutineContext().ensureActive()
             onSegmentResult(appContext, idx, text ?: "")
         }
-        segmentJobs.add(job)
-        job.invokeOnCompletion { segmentJobs.remove(job) }
+        segmentResources.trackJob(job)
     }
 
     /**
@@ -2843,7 +2837,7 @@ object DictateController {
         // Snapshot the kept segment files (in cut order) before resetting; merge them into one WAV so the
         // whole dictation has a single retained-audio file in the history (issue #170 / #140 reuse).
         val keepAudio = segmentKeepAudio
-        val audioFiles = segmentAudioFiles.toSortedMap().values.filter { it.exists() && it.length() > 0L }
+        val audioFiles = segmentResources.takeOrderedAudio()
         resetSegmentedState()
         val mergedWav = if (keepAudio && audioFiles.isNotEmpty()) {
             val merged = File(
