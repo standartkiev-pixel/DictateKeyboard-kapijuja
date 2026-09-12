@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,7 +23,7 @@ import kotlin.test.assertTrue
 
 class LongFormSessionResourcesTest {
     @Test fun `audio transfers in speaking order and ignores unusable files`() {
-        val directory = createTempDir(prefix = "long-form-resources-")
+        val directory = createTempDirectory("long-form-resources-").toFile()
         try {
             val resources = LongFormSessionResources()
             val first = File(directory, "first.wav").apply { writeBytes(byteArrayOf(1)) }
@@ -43,7 +44,7 @@ class LongFormSessionResourcesTest {
     }
 
     @Test fun `discard deletes tracked audio and clears ownership`() {
-        val directory = createTempDir(prefix = "long-form-discard-")
+        val directory = createTempDirectory("long-form-discard-").toFile()
         try {
             val resources = LongFormSessionResources()
             val audio = File(directory, "segment.wav").apply { writeBytes(byteArrayOf(1)) }
