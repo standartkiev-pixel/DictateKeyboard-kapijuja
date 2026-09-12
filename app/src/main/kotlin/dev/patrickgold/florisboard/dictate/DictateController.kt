@@ -320,13 +320,9 @@ object DictateController {
     // segmented and realtime are mutually exclusive). All formatting/rewording runs ONCE at the end via
     // finalizeAndCommit(finalizeViaComposing=true), which replaces the preview with the finished text.
     private var segmentedActive = false
-    private var segmentNextIndex = 0          // next index to assign to a cut segment (cut order)
-    private var segmentCommitIndex = 0        // next index expected by the ordered commit drain
-    private val segmentResults = HashMap<Int, String>()  // index -> raw text, buffered until in-order
+    private val segmentQueue = LongFormSegmentQueue()
     private val segmentJobs = mutableSetOf<Job>()
     private val segmentMutex = Mutex()        // orders index assignment + rotate + the commit drain
-    private var segmentInFlightCount = 0      // segments cut but not yet committed
-    private var segmentStopped = false        // stop requested; finish once the queue drains
     private var segmentCancellationPending = false // manual Stop/watchdog is collecting a rescue WAV
     private var segmentRecordedSeconds = 0L
     private var segmentVad: LiveSpeechSplitter? = null  // live VAD auto-split, when enabled (Phase 2)
@@ -2550,12 +2546,8 @@ object DictateController {
 
     private fun initSegmented(appContext: Context) {
         segmentedActive = true
-        segmentNextIndex = 0
-        segmentCommitIndex = 0
-        segmentResults.clear()
+        segmentQueue.reset()
         segmentAudioFiles.clear()
-        segmentInFlightCount = 0
-        segmentStopped = false
         segmentCancellationPending = false
         segmentRecordedSeconds = 0L
         _segmentFlushCount.value = 0
@@ -2571,12 +2563,8 @@ object DictateController {
 
     private fun resetSegmentedState() {
         segmentedActive = false
-        segmentNextIndex = 0
-        segmentCommitIndex = 0
-        segmentResults.clear()
+        segmentQueue.reset()
         segmentAudioFiles.clear() // files themselves are deleted by finalize/cancel, not here
-        segmentInFlightCount = 0
-        segmentStopped = false
         // Cancellation keeps segmentCancellationPending armed across this reset while its rescue WAV is
         // assembled; cancelSegmentedTranscription clears it only after every cancelled source file has
         // been consumed. Normal successful sessions entered with the flag false and keep it false.
@@ -2604,11 +2592,10 @@ object DictateController {
         scope.launch {
             val assigned = segmentMutex.withLock {
                 if (!segmentedActive || _state.value !is UiState.Recording) return@withLock null
-                val i = segmentNextIndex++
+                val i = segmentQueue.reserve()
                 val w = withContext(Dispatchers.IO) { recorder?.rotate() }
                 if (w != null && w.exists() && w.length() > 0L) segmentAudioFiles[i] = w
-                segmentInFlightCount++
-                _segmentsInFlight.value = segmentInFlightCount
+                _segmentsInFlight.value = segmentQueue.inFlightCount
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
                 i to w
             } ?: return@launch
@@ -2658,7 +2645,7 @@ object DictateController {
         scope.launch {
             val assigned = segmentMutex.withLock {
                 if (segmentCancellationPending) return@withLock null
-                val i = segmentNextIndex++
+                val i = segmentQueue.reserveFinal()
                 val activeRecorder = recorder
                 recorder = null
                 val w = withContext(Dispatchers.IO) { activeRecorder?.stop() }
@@ -2669,9 +2656,7 @@ object DictateController {
                 } else if (w != null && w.exists() && w.length() > 0L) {
                     segmentAudioFiles[i] = w
                 }
-                segmentStopped = true
-                segmentInFlightCount++
-                _segmentsInFlight.value = segmentInFlightCount
+                _segmentsInFlight.value = segmentQueue.inFlightCount
                 i to w
             }
             val (idx, wav) = assigned ?: return@launch
@@ -2729,7 +2714,7 @@ object DictateController {
                 if (tail != null && tail.exists() && tail.length() > 0L &&
                     segmentAudioFiles.values.none { it == tail }
                 ) {
-                    segmentAudioFiles[segmentNextIndex++] = tail
+                    segmentAudioFiles[segmentQueue.reserveRescueTail()] = tail
                 }
                 val snapshot = segmentAudioFiles.toSortedMap().values
                     .filter { it.exists() && it.length() > 0L }
@@ -2827,10 +2812,8 @@ object DictateController {
     private suspend fun onSegmentResult(appContext: Context, idx: Int, text: String) {
         if (segmentCancellationPending) return
         val shouldFinish = segmentMutex.withLock {
-            segmentResults[idx] = text
-            while (segmentResults.containsKey(segmentCommitIndex)) {
-                val raw = segmentResults.remove(segmentCommitIndex)!!.trim()
-                segmentCommitIndex++
+            val drain = segmentQueue.complete(idx, text)
+            for (raw in drain.readyText) {
                 if (raw.isNotEmpty()) {
                     val prev = realtimeShown.toString()
                     val full = if (prev.isEmpty()) raw else "$prev $raw"
@@ -2839,9 +2822,8 @@ object DictateController {
                     realtimeShown.append(full)
                 }
             }
-            segmentInFlightCount--
-            _segmentsInFlight.value = segmentInFlightCount.coerceAtLeast(0)
-            segmentStopped && segmentInFlightCount <= 0
+            _segmentsInFlight.value = drain.inFlightCount
+            drain.shouldFinish
         }
         if (shouldFinish) finalizeSegmentedEnd(appContext)
     }
