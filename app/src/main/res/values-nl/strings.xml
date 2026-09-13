@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 57819)
-Total output lines: 2014
-
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">Dictate</string>
@@ -333,7 +330,1345 @@ Total output lines: 2014
     <string name="pref__input_feedback__audio_feat_key_press__label" comment="Preference title">Trillen bij toetsaanslag</string>
     <string name="pref__input_feedback__audio_feat_key_long_press__label" comment="Preference title">Geluidje bij lang indrukken toets</string>
     <string name="pref__input_feedback__audio_feat_key_repeated_action__label" comment="Preference title">Geluiden voor herhaalde toetsacties</string>
-    <string name="pref__input_feedback__audio_feat_gesture_swipe__label" co…37819 tokens truncated…ng name="dictate__legacy_enter">Enter</string>
+    <string name="pref__input_feedback__audio_feat_gesture_swipe__label" comment="Preference title">Geluiden voor veeggebaren</string>
+    <string name="pref__input_feedback__audio_feat_gesture_moving_swipe__label" comment="Preference title">Geluiden voor veegbewegingen</string>
+    <string name="pref__input_feedback__group_haptic__label" comment="Preference group title">Haptische Feedback /Vibratie</string>
+    <string name="pref__input_feedback__haptic_enabled__label" comment="Preference title">Schakel haptische feedback in</string>
+    <string name="pref__input_feedback__haptic_enabled__summary_disabled" comment="Preference summary">Nooit trillen bij invoer, ongeacht de systeeminstellingen</string>
+    <string name="pref__input_feedback__haptic_vibration_mode__label" comment="Preference title">Vibratiemodus</string>
+    <string name="pref__input_feedback__haptic_vibration_duration__label" comment="Preference title">Trillingsduur</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__label" comment="Preference title">Trilsterkte</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_vibrator" comment="Preference summary">Deze functie vereist een hardwarevibrator, die op dit apparaat lijkt te ontbreken</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_amplitude_ctrl" comment="Preference summary">Deze functie vereist hardwarematige besturing van de trillingssterkte, en wordt niet ondersteund door uw apparaat</string>
+    <string name="pref__input_feedback__haptic_feat_key_press__label" comment="Preference title">Trillen bij toetsaanslag</string>
+    <string name="pref__input_feedback__haptic_feat_key_long_press__label" comment="Preference title">Trilling voor langdurige toetsaanslag</string>
+    <string name="pref__input_feedback__haptic_feat_key_repeated_action__label" comment="Preference title">Trilling voor herhaalde toetsaanslagen</string>
+    <string name="pref__input_feedback__haptic_feat_gesture_swipe__label" comment="Preference title">Trilling voor veeggebaar</string>
+    <string name="pref__input_feedback__haptic_feat_gesture_moving_swipe__label" comment="Preference title">Trilling voor veeggebaar</string>
+    <string name="pref__input_feedback__any_feat_key_press__summary" comment="Preference summary">bijv. toetsen, knoppen, emoji\'s</string>
+    <string name="pref__input_feedback__any_feat_key_long_press__summary" comment="Preference summary">bijv. popup menu</string>
+    <string name="pref__input_feedback__any_feat_key_repeated_action__summary" comment="Preference summary">bijv. backspace</string>
+    <string name="pref__input_feedback__any_feat_gesture_swipe__summary" comment="Preference summary">bijv. vegen om van taal te wisselen, veegtypen</string>
+    <string name="pref__input_feedback__any_feat_gesture_moving_swipe__summary" comment="Preference summary">bijv. gebaar voor cursorbediening</string>
+    <string name="settings__keyboard__title" comment="Title of Keyboard preferences screen">Toetsenbord</string>
+    <string name="pref__keyboard__number_row__label" comment="Preference title">Nummerrij</string>
+    <string name="pref__keyboard__number_row__summary" comment="Preference summary">Toon nummerrij boven de alfabettoetsen</string>
+    <string name="pref__keyboard__hinted_number_row_mode__label" comment="Preference title">nummer op de achterkant</string>
+    <string name="pref__keyboard__hinted_symbols_mode__label" comment="Preference title">Symbolen achter</string>
+    <string name="pref__keyboard__utility_key_enabled__label" comment="Preference title">Toon functietoets</string>
+    <string name="pref__keyboard__utility_key_enabled__summary" comment="Preference summary">Toont een instelbare functietoets naast de spatiebalk</string>
+    <string name="pref__keyboard__utility_key_action__label" comment="Preference title">Functietoets actie</string>
+    <string name="pref__keyboard__space_bar_mode__label" comment="Preference title">Spatiebalk-label</string>
+    <string name="pref__keyboard__capitalization_behavior__label" comment="Preference title">Hoofdlettergebruik</string>
+    <string name="pref__keyboard__font_size_multiplier__label" comment="Preference title">Vermenigvuldigingsfactor tekengrootte</string>
+    <string name="pref__keyboard__group_layout__label" comment="Preference group title">Indeling</string>
+    <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landschapsmodus volledig scherm invoer</string>
+    <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Test druk</string>
+    <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Pop-up zichtbaarheid</string>
+    <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Pop-up tonen als je op een toets drukt</string>
+    <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Accenten zijn pop-ups van symbolen</string>
+    <string name="pref__keyboard__merge_hint_popups_enabled__summary" comment="Preference summary">Voegt symboolpop-ups toe aan de accenten van de standaardlay-out</string>
+    <string name="pref__keyboard__long_press_delay__label" comment="Preference title">Lange toetsaanslagvertraging</string>
+    <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Spatiebalk keert terug naar letters</string>
+    <string name="pref__keyboard__space_bar_switches_to_characters__summary" comment="Preference summary">In de symbolen-/cijferindeling keert de spatiebalk terug naar het lettertoetsenbord.</string>
+    <string name="pref__keyboard__incognito_indicator__label" comment="Preference title">Incognito-indicator</string>
+    <!-- Smartbar strings -->
+    <string name="settings__smartbar__title" comment="Title of Smartbar screen">Slimme Balk</string>
+    <string name="pref__smartbar__enabled__label" comment="Preference title">Schakel Slimme Balk in</string>
+    <string name="pref__smartbar__enabled__summary" comment="Preference summary">Word getoond boven het toetsenbord</string>
+    <string name="pref__smartbar__layout__label" comment="Preference title">Indeling</string>
+    <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Indeling-specifieke opties</string>
+    <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Schakelknoppen omdraaien</string>
+    <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Wisselt actierij schakelt</string>
+    <string name="pref__smartbar__selection_metrics__label" comment="Preference title, keep short">Selectieteller</string>
+    <string name="pref__smartbar__selection_metrics__summary" comment="Preference summary, keep short (one line)">Woorden en tekens van de selectie</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__label" comment="Preference title">Automatisch uitvouwen/samenvouwen</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary" comment="Preference summary">De gedeelde actierij wordt automatisch uitgevouwen/samengevouwen op basis van de huidige status</string>
+    <string name="pref__smartbar__extended_actions_placement__label" comment="Preference title">Plaatsing van actierij</string>
+    <!-- Typing strings -->
+    <string name="settings__typing__title" comment="Title of Typing screen">Typen</string>
+    <string name="pref__suggestion__title" comment="Preference group title">Suggesties</string>
+    <string name="pref__suggestion__enabled__label" comment="Preference title">Suggesties weergeven</string>
+    <string name="pref__suggestion__enabled__summary" comment="Preference summary">Geeft suggesties bij het typen</string>
+    <string name="pref__suggestion__display_mode__label" comment="Preference title">Suggesties weergavemodus:</string>
+    <string name="pref__suggestion__block_possibly_offensive__label" comment="Preference title">Blokkeer mogelijk aanstootgevende woorden</string>
+    <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Inline suggesties weergeven van services voor automatisch aanvullen</string>
+    <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognitomodus</string>
+    <string name="pref__correction__title" comment="Preference group title">Verbeteringen</string>
+    <string name="pref__correction__auto_capitalization__label" comment="Preference title">Automatisch hoofdlettergebruik</string>
+    <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Woorden kapitaliseren op basis van de huidige invoercontext</string>
+    <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Automatische spatie na interpunctie</string>
+    <string name="pref__correction__auto_space_punctuation__summary" comment="Preference summary">Automatisch een spatie invoegen na leestekens</string>
+    <string name="pref__correction__remember_caps_lock_state__label" comment="Preference title">Onthoud CapsLock status</string>
+    <string name="pref__correction__remember_caps_lock_state__summary" comment="Preference summary">CapsLock blijft aan bij het verplaatsen naar een ander tekstveld</string>
+    <string name="pref__correction__double_space_period__label" comment="Preference title">Dubbele tik op de spatiebalk</string>
+    <string name="enum__double_space_action__punctuation" comment="Enum value label">Zinseinde</string>
+    <string name="enum__double_space_action__punctuation__description" comment="Enum value description. The character in brackets is the Devanagari danda, the Hindi full stop, and must stay as it is.">Het teken waarmee een zin eindigt in de taal die je typt, gevolgd door een spatie — meestal een punt, in het Hindi de danda (।).</string>
+    <string name="enum__double_space_action__comma" comment="Enum value label">Komma</string>
+    <string name="enum__double_space_action__comma__description" comment="Enum value description">Een komma gevolgd door een spatie.</string>
+    <string name="enum__double_space_action__newline" comment="Enum value label">Nieuwe regel</string>
+    <string name="enum__double_space_action__newline__description" comment="Enum value description">Een regeleinde in plaats van de spatie.</string>
+    <string name="enum__double_space_action__slash" comment="Enum value label">Schuine streep</string>
+    <string name="enum__double_space_action__slash__description" comment="Enum value description">Een schuine streep zonder spaties, voor bijvoorbeeld en/of.</string>
+    <string name="pref__spelling__title" comment="Preference group title">Spelling</string>
+    <string name="pref__spelling__active_spellchecker__summary_disabled">Systeem-breed uitgeschakeld. Er zullen geen rode lijnen verschijnen in tekstvelden voor incorrecte woorden. Klik om te wijzigen.</string>
+    <string name="pref__spelling__active_spellchecker__summary_none">Geen inline spellingscontrole ingesteld. Klik om te wijzigen.</string>
+    <string name="pref__spelling__language_mode__label" comment="Label of Language mode pref">Talen</string>
+    <string name="pref__spelling__use_contacts__label" comment="Label of Use contact list pref">Gebruik namen van contacten</string>
+    <string name="pref__spelling__use_contacts__summary" comment="Summary of Use contact list pref">Namen opzoeken in je contactenlijst</string>
+    <string name="pref__spelling__use_udm_entries__label" comment="Label of Use user dictionary entries pref">Gebruik gebruikerswoordenboekvermeldingen</string>
+    <string name="pref__spelling__use_udm_entries__summary" comment="Summary of Use user dictionary entries pref">Items uit de gebruikerswoordenboeken opzoeken</string>
+    <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">Gebruikerswoordenboeken</string>
+    <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Activeer het persoonlijke woordenboek van het systeem</string>
+    <string name="pref__dictionary__enable_system_user_dictionary__summary" comment="Preference summary">Stel woorden voor uit het persoonlijke woordenboek van het systeem</string>
+    <string name="pref__dictionary__manage_system_user_dictionary__label" comment="Preference title">Beheer persoonlijke woordenboek van het systeem</string>
+    <string name="pref__dictionary__manage_system_user_dictionary__summary" comment="Preference summary">Voeg toe, bekijk of verwijder woorden uit het persoonlijke woordenboek van het systeem</string>
+    <string name="pref__dictionary__enable_internal_user_dictionary__label" comment="Preference title">Schakel intern persoonlijke woordenboek in</string>
+    <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Stel woorden voor uit het interne persoonlijke woordenboek</string>
+    <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Beheer interne persoonlijke woordenboek</string>
+    <string name="pref__dictionary__manage_floris_user_dictionary__summary" comment="Preference summary">Voeg toe, bekijk of verwijder woorden uit het interne persoonlijke woordenboek</string>
+    <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Intern persoonlijk woordenboek</string>
+    <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">Persoonlijk woordenboek van het systeem</string>
+    <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">Dit gebruikerswoordenboek bevat geen woorden.</string>
+    <string name="settings__udm__word_summary_freq" comment="Summary label for a word entry. The decimal placeholder inserts the frequency for the word it summarizes.">Frequentie: {freq}</string>
+    <string name="settings__udm__word_summary_freq_shortcut" comment="Summary label for a word entry. The first placeholder inserts the frequency for the word it summarizes, the second placeholder the shortcut defined.">Frequentie: {freq} | Snelkoppeling: {snelkoppeling}</string>
+    <string name="settings__udm__all_languages" comment="Label of the For all languages entry in the language list">Voor alle talen</string>
+    <string name="settings__udm__open_system_manager_ui" comment="Label of the Open system manager UI menu option">Open systeembeheer UI</string>
+    <string name="settings__udm__dictionary_import_success" comment="Message for dictionary import success">Persoonlijk woordenboek met succes geïmporteerd!</string>
+    <string name="settings__udm__dictionary_export_success" comment="Message for dictionary export success">Persoonlijk woordenboek met succces geëxporteerd!</string>
+    <string name="settings__udm__add_from_contacts">Een naam uit je contacten toevoegen</string>
+    <string name="settings__udm__import_from_contacts_file">Namen uit een contactenbestand importeren</string>
+    <string name="settings__udm__contacts_confirm_message">{count} namen in dit bestand gevonden. Toevoegen aan je woordenboek?</string>
+    <string name="settings__udm__contacts_added_one">{name} toegevoegd aan je woordenboek</string>
+    <string name="settings__udm__contacts_added_many">{count} namen toegevoegd aan je woordenboek</string>
+    <string name="settings__udm__contacts_added_none">Geen nieuwe namen gevonden</string>
+    <string name="settings__udm__contacts_file_unreadable">Dat bestand kon niet worden gelezen</string>
+    <string name="settings__udm__contacts_no_picker">Geen contactenapp gevonden</string>
+    <string name="settings__udm__dialog__title_add" comment="Label for the title (when in adding mode) in the user dictionary add/edit dialog">Woord toevoegen</string>
+    <string name="settings__udm__dialog__title_edit" comment="Label for the title (when in editing mode) in the user dictionary add/edit dialog">Woord bewerken</string>
+    <string name="settings__udm__dialog__word_label" comment="Label for the word in the user dictionary add/edit dialog">Woord</string>
+    <string name="settings__udm__dialog__word_error_empty" comment="Error label for the word in the user dictionary add/edit dialog">Voer een woord in</string>
+    <string name="settings__udm__dialog__word_error_invalid">Dit veld accepteert één woord — geen spaties, komma\'s of puntkomma\'s. Maak voor een hele zin of een tekst met meerdere regels een fragment aan onder Prompts.</string>
+    <string name="settings__udm__dialog__freq_label" comment="Label for the frequency in the user dictionary add/edit dialog. The two decimal placeholders are the minimum and maximum frequency, both inclusive.">Frequentie (tussen {f_min} en {f_max})</string>
+    <string name="settings__udm__dialog__freq_error_empty" comment="Error label for the frequency in the user dictionary add/edit dialog">Voer een frequentiewaarde in</string>
+    <string name="settings__udm__dialog__freq_error_invalid" comment="Error label for the frequency in the user dictionary add/edit dialog">Voer een geldig nummer in binnen de opgegeven grenzen</string>
+    <string name="settings__udm__dialog__shortcut_label" comment="Label for the shortcut in the user dictionary add/edit dialog">Afkorting (optioneel)</string>
+    <string name="settings__udm__dialog__shortcut_error_invalid">Een snelkoppeling is één woord — geen spaties, komma\'s of puntkomma\'s.</string>
+    <string name="settings__udm__dialog__locale_label" comment="Label for the language code in the user dictionary add/edit dialog">Taalcode (optioneel)</string>
+    <string name="settings__udm__dialog__locale_error_invalid" comment="Error label for the language code in the user dictionary add/edit dialog">Deze taalcode komt niet overeen met de verwachte syntax. De code moet ofwel enkel de taal (bv. \"en\"), een taal en een land (bv. \"en_US\") of een taal, land en script (bv. \"en_US-script\") bevatten.</string>
+    <string name="settings__gestures__title" comment="Title of Gestures screen">Gebaren &amp; Typen met gebaren</string>
+    <string name="pref__glide__title" comment="Preference group title">Vegend typen</string>
+    <string name="pref__glide__enabled__label" comment="Preference title">Glijdend typen inschakelen</string>
+    <string name="pref__glide__enabled__summary" comment="Preference summary">Typ een woord door je vinger over de letters te vegen</string>
+    <string name="pref__glide__show_trail__label" comment="Preference title">Veegspoor tonen</string>
+    <string name="pref__glide__show_trail__summary" comment="Preference summary">Verdwijnt na elk woord</string>
+    <string name="pref__glide_trail_fade_duration">Vervaagtijd veegspoor</string>
+    <string name="pref__glide_preview_refresh_delay">Vertraging vernieuwing voorbeeld</string>
+    <string name="pref__glide__show_preview">Toon voorbeeld tijdens vegend typen</string>
+    <string name="pref__glide__show_preview__summary">Toon het beste woord in de suggestiebalk tijdens het glijden</string>
+    <string name="pref__glide__immediate_backspace_deletes_word__label">Altijd woord verwijderen</string>
+    <string name="pref__glide__immediate_backspace_deletes_word__summary">Door direct na het glijden op verwijderen te drukken, wordt het hele woord verwijderd</string>
+    <string name="pref__gestures__general_title" comment="Preference group title">Algemene gebaren</string>
+    <string name="pref__gestures__space_bar_title" comment="Preference group title">Spatiebalkgebaren</string>
+    <string name="pref__gestures__other_title" comment="Preference group title">Andere gebaren</string>
+    <string name="pref__gestures__swipe_up__label" comment="Preference title">Omhoog scrollen</string>
+    <string name="pref__gestures__swipe_down__label" comment="Preference title">Naar beneden vegen</string>
+    <string name="pref__gestures__swipe_left__label" comment="Preference title">Naar links vegen</string>
+    <string name="pref__gestures__swipe_right__label" comment="Preference title">Naar rechts vegen</string>
+    <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Omhoog vegen op de spatiebalk</string>
+    <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Naar links vegen op de spatiebalk</string>
+    <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Naar rechts vegen op de spatiebalk</string>
+    <string name="pref__gestures__space_bar_long_press__label" comment="Preference title">Spatiebalk lang indrukken</string>
+    <string name="pref__gestures__delete_key_swipe_left__label" comment="Preference title">Naar links vegen op de verwijdertoets</string>
+    <string name="pref__gestures__delete_key_long_press__label" comment="Preference title">Verwijdertoets lang indrukken</string>
+    <string name="pref__gestures__swipe_velocity_threshold__label" comment="Preference title">Drempelwaarde voor veegsnelheid</string>
+    <string name="pref__gestures__swipe_distance_threshold__label" comment="Preference title">Drempelwaarde voor veegafstand</string>
+    <string name="settings__other__title" comment="Title of Other settings">Overige</string>
+    <string name="pref__other__settings_theme__label" comment="Label of Settings theme preference in Other">Thema-instellingen</string>
+    <string name="pref__other__settings_theme__auto_amoled" comment="Possible value of Settings theme preference in Other">Systeemstandaard (AMOLED)</string>
+    <string name="pref__other__settings_theme__light" comment="Possible value of Settings theme preference in Other">Licht</string>
+    <string name="pref__other__settings_theme__dark" comment="Possible value of Settings theme preference in Other">Donker</string>
+    <string name="pref__other__settings_theme__amoled_dark" comment="Possible value of Settings theme preference in Other">AMOLED Donker</string>
+    <string name="pref__other__settings_accent_color__label" comment="Label of accent color preference in Other">        Instellingen accentkleur
+    </string>
+    <string name="pref__other__settings_language__label" comment="Label of Settings language preference in Other">Instellingen taal</string>
+    <string name="pref__other__show_app_icon__label" comment="Label of Show app icon preference in Other">App-pictogram weergeven in launcher</string>
+    <string name="pref__other__clear_cache__label">Cache wissen</string>
+    <string name="pref__other__clear_cache__summary">Tijdelijke bestanden: {size}</string>
+    <string name="pref__other__clear_cache__confirm">Wissen</string>
+    <string name="pref__other__clear_cache__message">Verwijdert tijdelijke bestanden die de app opnieuw kan maken: een gedeeld bestand dat wordt getranscribeerd, gedownloade GIF\'s en stickers, gedecodeerde afbeeldingen. Je dicteergeschiedenis, opnamen, instellingen en woordenboeken blijven ongemoeid. Een lopende opname of transcriptie kan worden onderbroken.</string>
+    <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Altijd ingeschakeld op Android 10+ vanwege systeembeperkingen</string>
+    <!-- About UI strings -->
+    <string name="about__title" comment="Title of About activity">Over</string>
+    <string name="about__app_icon_content_description" comment="Content description of app icon in About">App-pictogram van {app_name}</string>
+    <string name="about__view_licenses" comment="Label of View licenses button in About">Open source-licenties</string>
+    <string name="about__view_privacy_policy" comment="Label of View privacy policy button in About">Privacybeleid</string>
+    <string name="about__view_source_code" comment="Label of View source code button in About">Broncode</string>
+    <string name="about__license__title" comment="Title of Open-source licenses dialog">Open source-licenties</string>
+    <string name="about__data_attributions__title">Licenties van gegevens en modellen</string>
+    <string name="about__data_attributions__summary">Licenties van de modellen op het apparaat, woordenboeken en taalgegevens</string>
+    <string name="about__version__title" comment="Preference title">Versie</string>
+    <string name="about__version_copied__title" comment="Title of the toast for copying the version string">Appversie gekopieerd naar klembord</string>
+    <string name="about__version_copied__error" comment="Title of the error toast for copying the version string">Er is iets misgegaan: {error_message}</string>
+    <string name="about__changelog__title" comment="Preference title">Wijzigingenlogboek</string>
+    <string name="about__changelog__summary" comment="Preference summary">Wat is er nieuw</string>
+    <string name="about__repository__title" comment="Preference title">Opslagplaats (GitHub)</string>
+    <string name="about__repository__summary" comment="Preference summary">Broncode, discussies, problemen en info</string>
+    <string name="about__privacy_policy__title" comment="Preference title">Privacybeleid</string>
+    <string name="about__privacy_policy__summary" comment="Preference summary">Het privacybeleid voor dit project</string>
+    <string name="about__project_license__title" comment="Preference title">Projectlicentie</string>
+    <string name="about__project_license__summary" comment="Preference summary">{app_name} heeft een licentie onder {license_name}</string>
+    <string name="about__project_license__error_license_text_failed" comment="Error text for license text loading failure">Fout: kan licentietekst niet laden.\n-&gt; Reden: {error_message}</string>
+    <string name="about__project_license__error_reason_asset_manager_null" comment="Error text if asset manager is null">Ontbrekende referentie in onderdelenbeheer</string>
+    <string name="about__third_party_licenses__title" comment="Preference title">Licenties van derden</string>
+    <string name="about__third_party_licenses__summary" comment="Preference summary">Licenties van de bibliotheken van derden die in deze app zijn opgenomen</string>
+    <!-- Setup UI strings -->
+    <string name="setup__title" comment="Title of Setup">Welkom!</string>
+    <string name="setup__intro_message" comment="Short intro message welcoming new users">Bedankt voor het gebruik van {app_name}! Deze snelle installatie leidt u door de vereiste stappen om {app_name} op uw apparaat te gebruiken.</string>
+    <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacybeleid</string>
+    <string name="setup__footer__repository" comment="Repository label for URL">Opslagplaats</string>
+    <string name="setup__enable_ime__title">{app_name} inschakelen</string>
+    <string name="setup__enable_ime__description">Android vereist dat elk aangepast toetsenbord afzonderlijk is ingeschakeld voordat u het kunt gebruiken. Open het systeem<i> Taal</i> Instellingen, activeer daar \"{app_name}\".</string>
+    <string name="setup__enable_ime__open_settings_btn">Systeeminstellingen openen</string>
+    <string name="setup__select_ime__title">Selecteer {app_name}</string>
+    <string name="setup__select_ime__description">{app_name} is nu ingeschakeld in uw systeem. Om het actief te gebruiken, schakel over naar {app_name} door het te selecteren in het invoerkeuzedialoogvenster!</string>
+    <string name="setup__select_ime__switch_keyboard_btn">Van toetsenbord wisselen</string>
+    <string name="setup__grant_notification_permission__title">Meldingen van crashrapporten toestaan</string>
+    <string name="setup__grant_notification_permission__description">Vanaf Android 13+ moeten apps toestemming vragen om meldingen te verzenden. In Dictate wordt dit alleen gebruikt om bij een crash een crashrapportage te openen.
+Deze toestemming kan op elk moment worden gewijzigd in de systeeminstellingen.    </string>
+    <string name="setup__grant_notification_permission__btn">Toestemming verlenen</string>
+    <string name="setup__finish_up__title">Afronden</string>
+    <string name="setup__finish_up__description_p1">{app_name} is nu ingeschakeld in het systeem en kan door jou worden aangepast.</string>
+    <string name="setup__finish_up__description_p2">Als je problemen, bugs, crashes tegenkomt of gewoon een suggestie wilt doen, bekijk dan de projectrepository vanaf het about-scherm!</string>
+    <string name="setup__finish_up__finish_btn">Begin met aanpassen</string>
+    <!-- Physical keyboard -->
+    <string name="physical_keyboard__title">Fysiek toetsenbord</string>
+    <string name="physical_keyboard__system_settings__title">Instellingen fysiek toetsenbord</string>
+    <string name="physical_keyboard__system_settings__summary_not_attached">Enkel beschikbaar wanneer toetsenbord is aangesloten</string>
+    <string name="physical_keyboard__show_on_screen_keyboard__title">Schermtoetsenbord weergeven</string>
+    <string name="physical_keyboard__show_on_screen_keyboard__summary">Toetsenbord op het scherm weergeven tijdens het gebruik van een fysiek toetsenbord</string>
+    <!-- Back up & Restore -->
+    <string name="backup_and_restore__title">Back-up &amp; Herstel</string>
+    <string name="backup_and_restore__back_up__title">Back-upgegevens</string>
+    <string name="backup_and_restore__back_up__summary">Genereer een back-uparchief met voorkeuren en aanpassingen</string>
+    <string name="backup_and_restore__back_up__destination">Selecteer back-upbestemming</string>
+    <string name="backup_and_restore__back_up__destination_file_sys">Lokaal bestandssysteem</string>
+    <string name="backup_and_restore__back_up__destination_share_intent">App van derden via menu delen</string>
+    <string name="backup_and_restore__back_up__files">Selecteer waarvan u een back-up wilt maken</string>
+    <string name="backup_and_restore__back_up__files_jetpref_datastore">Voorkeuren</string>
+    <string name="backup_and_restore__back_up__files_ime_keyboard">Toetsenbordextensies</string>
+    <string name="backup_and_restore__back_up__files_ime_spelling">Spellingextensies /woordenboeken</string>
+    <string name="backup_and_restore__back_up__files_ime_theme">Thema-extensies</string>
+    <string name="backup_and_restore__back_up__files_clipboard_history">Klembordgeschiedenis</string>
+    <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_text_items">Tekst-items</string>
+    <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Afbeeldingen</string>
+    <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Video\'s</string>
+    <string name="backup_and_restore__back_up__success">Geëxporteerd back-uparchief!</string>
+    <string name="backup_and_restore__back_up__failure">Kan back-uparchief niet exporteren: {error_message}</string>
+    <string name="backup_and_restore__restore__title">Data herstellen</string>
+    <string name="backup_and_restore__restore__summary">Herstel voorkeuren en aanpassingen vanuit een back-uparchief</string>
+    <string name="backup_and_restore__restore__files">Selecteer wat u wilt herstellen</string>
+    <string name="backup_and_restore__restore__metadata">Geselecteerd back-uparchief</string>
+    <string name="backup_and_restore__restore__metadata_warn_different_version">Dit back-uparchief is gegenereerd in een andere versie dan de huidige, die over het algemeen wordt ondersteund. Houd er echter rekening mee dat er kleine problemen kunnen optreden of dat sommige voorkeuren mogelijk niet correct worden overgedragen vanwege functieverschillen.</string>
+    <string name="backup_and_restore__restore__metadata_warn_different_vendor">Dit back-uparchief is gegenereerd in een app van derden, die over het algemeen niet wordt ondersteund. Gegevensverlies kan optreden, herstel op eigen risico!</string>
+    <string name="backup_and_restore__restore__metadata_error_invalid_metadata">Dit back-uparchief bevat ongeldige metadata. Of het is beschadigd of slecht gewijzigd. Herstellen vanuit dit archief is niet mogelijk, selecteer een andere.</string>
+    <string name="backup_and_restore__restore__metadata_error_nothing_to_restore">Dit back-uparchief bevat geen bestanden om te herstellen, selecteer een andere.</string>
+    <string name="backup_and_restore__restore__mode">Herstelmodus</string>
+    <string name="backup_and_restore__restore__mode_merge">Samenvoegen met huidige gegevens</string>
+    <string name="backup_and_restore__restore__mode_erase_and_overwrite">Huidige gegevens wissen en overschrijven</string>
+    <string name="backup_and_restore__restore__success">Gegevens succesvol hersteld!</string>
+    <string name="backup_and_restore__restore__failure">Kan gegevens niet herstellen: {error_message}</string>
+    <!-- Crash Dialog strings -->
+    <string name="crash_dialog__title" comment="Title of crash dialog">Dictate-foutenrapportage</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">Sorry voor het ongemak, maar Dictate is gecrashed omwille van een onverwachte fout.</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">Als je deze fout wilt rapporteren, kijk dan eerst in de issuetracker op GitHub of de crash nog niet gerapporteerd is.\nAls dat niet het geval is, kopieer dan de gegenereerde crashlogboek en open een nieuwe issue. Gebruik het \"%s\"-sjabloon en vul de beschrijving in, de stappen om te reproduceren, en plak het gegenereerde crash log aan het eind. Dit helpt om Dictate beter en stabieler te maken voor iedereen. Bedankt!</string>
+    <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Kopieer naar systeemklembord</string>
+    <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">Gekopieerd naar systeemklembord</string>
+    <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">Kan niet kopiëren naar systeemklembord: Klembordbeheerinstantie niet gevonden</string>
+    <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">Probleemtracker openen (github.com)</string>
+    <string name="crash_dialog__close" comment="Label of Close button in crash dialog">Sluiten</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Foutenrapporten van Dictate</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Dictate is gestopt met werken…</string>
+    <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Tik om foutdetails te bekijken</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Dictate lijkt herhaaldelijk te stoppen met werken…</string>
+    <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">Terugvallen op het vorige toetsenbord om oneindige crash-loop te stoppen. Tik om foutdetails te bekijken</string>
+    <!-- Clipboard strings -->
+    <string name="clipboard__header_title">Klembord</string>
+    <string name="clipboard__search_placeholder" comment="Hint inside the clipboard search field">Zoeken in klembord</string>
+    <string name="clipboard__search_no_results" comment="Shown when no clip contains what was typed">Geen fragment bevat dat</string>
+    <string name="clipboard__disabled__title">Klembordgeschiedenis is momenteel uitgeschakeld</string>
+    <string name="clipboard__disabled__message">Met de klembordgeschiedenis van {app_name} kun je snel tekst en afbeeldingen die je kopieert opslaan en openen, met de mogelijkheid om items vast te zetten, automatische opschoning te configureren en een maximale itemlimiet in te stellen.</string>
+    <string name="clipboard__disabled__enable_button">Schakel klembordgeschiedenis in</string>
+    <string name="clipboard__empty__title">Je klembord is leeg</string>
+    <string name="clipboard__empty__message">Zodra u tekstfragmenten of afbeeldingen kopieert, worden ze hier weergegeven.</string>
+    <string name="clipboard__locked__title">Je klembord is vergrendeld</string>
+    <string name="clipboard__locked__message">Ontgrendel eerst uw apparaat om toegang te krijgen tot uw klembordgeschiedenis.</string>
+    <string name="clipboard__group_pinned">Vastgemaakt</string>
+    <string name="clipboard__group_recent">Recent</string>
+    <string name="clipboard__group_other">Overige</string>
+    <string name="clipboard__item_description_email">E-mail</string>
+    <string name="clipboard__item_description_url">URL</string>
+    <string name="clipboard__item_description_phone">Telefoon</string>
+    <string name="clip__clear_history">Wis geschiedenis</string>
+    <string name="clip__unpin_item">Item losmaken</string>
+    <string name="clip__pin_item">Item vastmaken</string>
+    <string name="clip__delete_item">Verwijderen</string>
+    <string name="clip__paste_item">Plaatsen</string>
+    <string name="clip__back_to_text_input">Terug naar tekstinvoer</string>
+    <string name="clip__cant_paste">Deze app laat niet toe om deze inhoud te plakken.</string>
+    <string name="clipboard__cleared_primary_clip">Primaire clip gewist</string>
+    <string name="clipboard__cleared_history">Geschiedenis gewist</string>
+    <string name="clipboard__cleared_full_history">Volledige geschiedenis gewist</string>
+    <string name="settings__clipboard__title">Klembord</string>
+    <string name="pref__clipboard__use_internal_clipboard__label">Gebruik intern klembord</string>
+    <string name="pref__clipboard__use_internal_clipboard__summary">Gebruik een intern klembord in plaats van het systeemklembord</string>
+    <string name="pref__clipboard__sync_from_system_clipboard__label">Synchroniseer met systeemklembord</string>
+    <string name="pref__clipboard__sync_to_system_clipboard__label">Synchroniseer met systeemklembord</string>
+    <string name="pref__clipboard__group_clipboard_suggestion__label">Suggesties voor de klembord</string>
+    <string name="pref__clipboard__suggestion_enabled__label" comment="Preference title">Suggesties voor de klembordinhoud</string>
+    <string name="pref__clipboard__trim_on_copy__label" comment="Preference title, keep short">Bijsnijden bij kopiëren</string>
+    <string name="pref__clipboard__trim_on_copy__summary" comment="Preference summary, keep short (one line)">Verwijdert spaties en regeleinden aan de uiteinden</string>
+    <string name="pref__clipboard__suggestion_enabled__summary" comment="Preference summary">Eerder gekopieerde klembordinhoud voorstellen</string>
+    <string name="pref__clipboard__num_history_grid_columns__label">Aantal kolommen</string>
+    <string name="pref__clipboard__suggestion_timeout__label" comment="Preference title; Translators: This should form a sentence together with `pref__clipboard__suggestion_timeout__summary` and is the first part">Beperk klembordsuggesties tot</string>
+    <string name="pref__clipboard__suggestion_timeout__summary" comment="Preference summary; Translators: This should form a sentence together with `pref__clipboard__suggestion_timeout__label` and is the second part">Items gekopieerd in de laatste {v} s</string>
+    <string name="pref__clipboard__group_clipboard_history__label">Klembordgeschiedenis</string>
+    <string name="pref__clipboard__enable_clipboard_history__label">Schakel klembordgeschiedenis in</string>
+    <string name="pref__clipboard__enable_clipboard_history__summary">Bewaar klemborditems voor snelle toegang</string>
+    <string name="pref__clipboard__clean_up_old__label">Oude items opruimen</string>
+    <string name="pref__clipboard__clean_up_after__label">Oude items opruimen na</string>
+    <string name="pref__clipboard__auto_clean_sensitive__label">Gevoelige items automatisch opschonen</string>
+    <string name="pref__clipboard__auto_clean_sensitive_after__label">Gevoelige items automatisch opschonen na</string>
+    <string name="pref__clipboard__limit_history_size__label">Beperk geschiedenisgrootte</string>
+    <string name="pref__clipboard__max_history_size__label">Maximale grootte geschiedenis</string>
+    <string name="pref__clipboard__history_hide_on_paste__label">Geschiedenis verbergen bij plakken</string>
+    <string name="pref__clipboard__history_hide_on_next_text_field__label">Geschiedenis verbergen bij volgende tekstveld</string>
+    <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label">Clip wissen beïnvloedt geschiedenis</string>
+    <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary">Het wissen van de clip verwijdert het ook uit de geschiedenis, indien niet vastgepind</string>
+    <string name="send_to_clipboard__unknown_error">Een onbekende fout is opgetreden. Probeer het alstublieft opnieuw!</string>
+    <string name="send_to_clipboard__type_not_supported_error">Dit mediatype wordt niet ondersteund.</string>
+    <string name="send_to_clipboard__description__copied_image_to_clipboard">Onderstaande afbeelding gekopieerd naar klembord.</string>
+    <!-- Devtools strings -->
+    <string name="devtools__title" comment="Title of Devtools screen. Translators: treat this string as 'Developer tools' for translation, except a similar short term is available for your language.">Devtools</string>
+    <string name="devtools__enabled__label" comment="Label of Enable developer tools in Devtools">Activeer ontwikkelaarshulpmiddelen</string>
+    <string name="devtools__enabled__summary" comment="Summary of Enable developer tools in Devtools">Hulpmiddelen specifiek voor debuggen en problemen verhelpen</string>
+    <string name="devtools__show_primary_clip__label" comment="Label of Show primary clip in Devtools">Toon primaire clip</string>
+    <string name="devtools__show_primary_clip__summary" comment="Summary of Show primary clip in Devtools">Bedekt de huidige primaire clip van het klembord</string>
+    <string name="devtools__show_input_state_overlay__label" comment="Label of Show input cache overlay in Devtools">Overlay invoerstatus weergeven</string>
+    <string name="devtools__show_input_state_overlay__summary" comment="Summary of Show input cache overlay in Devtools">Overlegt de huidige invoerstatus voor foutopsporing</string>
+    <string name="devtools__show_spelling_overlay__label" comment="Label of Show spelling overlay in Devtools">Spelling-overlay tonen</string>
+    <string name="devtools__show_spelling_overlay__summary" comment="Summary of Show spelling overlay in Devtools">Overlays met de huidige spellingresultaten voor foutopsporing</string>
+    <string name="devtools__show_inline_autofill_overlay__label">Inline overlay voor automatisch aanvullen weergeven</string>
+    <string name="devtools__show_inline_autofill_overlay__summary">Overlapt de huidige inline resultaten voor automatisch aanvullen voor foutopsporing</string>
+    <string name="devtools__show_key_touch_boundaries__label" comment="Label of Show key touch boundaries in Devtools">Toon toetsaanslaggrenzen</string>
+    <string name="devtools__show_key_touch_boundaries__summary" comment="Summary of Show key touch boundaries in Devtools">Geef een rode omlijning van de toetsaanslaggrenzen</string>
+    <string name="devtools__show_drag_and_drop_helpers__label" comment="Label of Show drag and drop helpers in Devtools">Drag&amp;drop assistentie weergeven</string>
+    <string name="devtools__show_drag_and_drop_helpers__summary" comment="Summary of Show drag and drop helpers in Devtools">Anders onzichtbare assistenten voor foutopsporing weergeven in drag&amp;drop-schermen</string>
+    <string name="devtools__clear_udm_internal_database__label" comment="Label of Clear internal user dictionary database in Devtools">Wis database van het interne persoonlijke woordenboek</string>
+    <string name="devtools__clear_udm_internal_database__summary" comment="Summary of Clear internal user dictionary database in Devtools">Wis alle woorden van de woordenlijst in de datatabel</string>
+    <string name="devtools__reset_flag__label" comment="Label of Reset flag preferences in Devtools">Reset \"{flag_name}\" vlag</string>
+    <string name="devtools__reset_flag_is_ime_set_up__summary" comment="Summary of Reset is IME set up flag in Devtools">Foutopsporingsactie om het instellingenscherm opnieuw weer te geven</string>
+    <string name="devtools__test_crash_report__label" comment="Label of Test Crash Report in Devtools">Test crash rapport scherm</string>
+    <string name="devtools__test_crash_report__summary" comment="Summary of Test Crash Report in Devtools">Debug actie om opzettelijk een crash te veroorzaken</string>
+    <string name="devtools__group_android__title" comment="Title of Android group in Devtools">Android-systeemtools</string>
+    <string name="devtools__android_settings_global__title" comment="Title of Android settings (global) screen">Algemene Android-instellingen</string>
+    <string name="devtools__android_settings_secure__title" comment="Title of Android settings (secure) screen">Veilige Android-instellingen</string>
+    <string name="devtools__android_settings_system__title" comment="Title of Android settings (system) screen">Systeem Android-instellingen</string>
+    <string name="devtools__android_locales__title" comment="Title of Android locales screen">Systeemlandinstellingen</string>
+    <string name="devtools__debuglog__title">Foutopsporingslogboek</string>
+    <string name="devtools__debuglog__copied_to_clipboard">Foutopsporingslogboek gekopieerd naar klembord</string>
+    <string name="devtools__debuglog__copy_log">Logboek kopiëren</string>
+    <string name="devtools__debuglog__copy_for_github">Logboek kopiëren (GitHub-opmaak)</string>
+    <string name="devtools__debuglog__loading">Laden…</string>
+    <!-- Extension strings -->
+    <string name="ext__home__title">Add-ons &amp; extensies</string>
+    <string name="ext__list__ext_theme">Thema-extensies</string>
+    <string name="ext__list__ext_keyboard">Toetsenbordextensies</string>
+    <string name="ext__list__ext_languagepack">Taalpakket-uitbreidingen</string>
+    <string name="ext__meta__authors">Auteurs</string>
+    <string name="ext__meta__components">Gebundelde componenten</string>
+    <string name="ext__meta__components_theme">Gebundelde thema\'s</string>
+    <string name="ext__meta__components_language_pack">Gebundelde taalpakketten</string>
+    <string name="ext__meta__components_none_found">Dit extensiearchief bevat geen gebundelde componenten.</string>
+    <string name="ext__meta__description">Beschrijving</string>
+    <string name="ext__meta__homepage">Startpagina</string>
+    <string name="ext__meta__id">ID kaart</string>
+    <string name="ext__meta__issue_tracker">Probleemtracker</string>
+    <string name="ext__meta__keywords">Trefwoorden</string>
+    <string name="ext__meta__label">Label</string>
+    <string name="ext__meta__license">Licentie</string>
+    <string name="ext__meta__maintainers">Onderhouders</string>
+    <string name="ext__meta__maintainers_by">Door: {onderhouders}</string>
+    <string name="ext__meta__title">titel</string>
+    <string name="ext__meta__version">Versie</string>
+    <string name="ext__error__not_found_title">Extensie niet gevonden</string>
+    <string name="ext__error__not_found_description">Er kon geen extensie met ID \"{id}\" gevonden worden.</string>
+    <string name="ext__editor__title_create_any">Extensie maken</string>
+    <string name="ext__editor__title_create_keyboard">Toetsenbordextensie maken</string>
+    <string name="ext__editor__title_create_theme">Thema-extensie maken</string>
+    <string name="ext__editor__title_edit_any">Extensie bewerken</string>
+    <string name="ext__editor__title_edit_keyboard">Toetsenbordextensie bewerken</string>
+    <string name="ext__editor__title_edit_theme">Thema-extensie bewerken</string>
+    <string name="ext__editor__metadata__title">Metagegevens beheren</string>
+    <string name="ext__editor__metadata__title_invalid">Ongeldige metagegevens</string>
+    <string name="ext__editor__metadata__message_invalid">De metagegevens voor deze extensie zijn niet geldig, controleer de metagegevenseditor voor details!</string>
+    <string name="ext__editor__dependencies__title">Afhankelijkheden beheren</string>
+    <string name="ext__editor__files__title">Archiefbestanden beheren</string>
+    <string name="ext__editor__files__type_fonts">Lettertypes</string>
+    <string name="ext__editor__files__type_images">Afbeeldingen</string>
+    <string name="ext__editor__create_component__title">Component maken</string>
+    <string name="ext__editor__create_component__title_theme">Thema maken</string>
+    <string name="ext__editor__create_component__from_empty">Leeg</string>
+    <string name="ext__editor__create_component__from_existing">Van bestaande</string>
+    <string name="ext__editor__create_component__from_empty_warning">Het maken en configureren van een leeg onderdeel kan moeilijk zijn als {app_name} nieuw voor u is of als u niet bekend bent met de details. Overweeg om een ​​bestaand onderdeel te kopiëren en in dat geval naar wens aan te passen.</string>
+    <string name="ext__editor__edit_component__title">Bewerk onderdeel</string>
+    <string name="ext__editor__edit_component__title_theme">Themacomponent bewerken</string>
+    <string name="ext__export__success">Extensie geëxporteerd!</string>
+    <string name="ext__export__failure">Kan extensie niet exporteren: {error_message}</string>
+    <string name="ext__import__success">Extensie geïmporteerd!</string>
+    <string name="ext__import__failure">Kan extensie niet importeren: {error_message}</string>
+    <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported Dictate Keyboard extension">Extensie importeren</string>
+    <string name="ext__import__ext_keyboard" comment="Title of Importer screen for keyboard extension import">Toetsenbordextensie importeren</string>
+    <string name="ext__import__ext_theme" comment="Title of Importer screen for theme extension import">Thema-extensie importeren</string>
+    <string name="ext__import__ext_languagepack" comment="Title of Importer screen for language pack extension import">Taalpakket-uitbreidingen importeren</string>
+    <string name="ext__import__file_skip" comment="Label when a file cannot be imported in the current context. The actual reason string is in a separate text view below this string.">Bestand kan niet worden geïmporteerd. Reden:</string>
+    <string name="ext__import__file_skip_unsupported" comment="Reason string when file is unsupported">Niet-ondersteund of niet-herkend bestandstype.</string>
+    <string name="ext__import__file_skip_ext_core" comment="Reason string when ext has core extension ID">Kan standaarduitbreidingspakketten die bij de kernactiva van de app worden geleverd, niet vervangen of bijwerken. Overweeg de app zelf bij te werken als u van plan bent een nieuwere versie van een kernuitbreidingspakket te gebruiken.</string>
+    <string name="ext__import__file_skip_ext_corrupted" comment="Reason string when file seems to be ext but is corrupted">Het bestand lijkt een extensiearchief te zijn, maar het parseren van de archiefgegevens is mislukt. Het archief is beschadigd of dit bestand is helemaal geen extensie.</string>
+    <string name="ext__import__file_skip_ext_incorrect_type" comment="Reason string when file is of incorrect extension serial type">Verwachtte een extensiearchief van het serieel type \"{expected_serial_type}\" maar was \"{actual_serial_type}\".</string>
+    <string name="ext__import__file_skip_ext_not_supported" comment="Reason string when file is loaded in incorrect context">Verwachtte een mediabestand (afbeelding, audio, lettertype, etc.) maar vond een extensiearchief.</string>
+    <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Had een extensiearchief verwacht, maar vond een mediabestand (afbeelding, audio, lettertype, enz.).</string>
+    <string name="ext__import__error_unexpected_exception" comment="Label when an error occurred during import. The error message will be appended below this text view">Er is een onverwachte fout opgetreden tijdens het importeren. De volgende gegevens werden verstrekt:</string>
+    <string name="ext__validation__enter_package_name">Voer een pakketnaam in</string>
+    <string name="ext__validation__error_package_name">De pakketnaam komt niet overeen met regex {id_regex}</string>
+    <string name="ext__validation__enter_version">Voer een versie in</string>
+    <string name="ext__validation__enter_title">Voer alsjeblieft een titel in</string>
+    <string name="ext__validation__enter_maintainer">Voer ten minste één geldige onderhouder in</string>
+    <string name="ext__validation__enter_license">Voer een licentie-ID in</string>
+    <string name="ext__validation__enter_component_id">Voer een component-ID in</string>
+    <string name="ext__validation__error_component_id">Voer een component-ID in die overeenkomt met {component_id_regex}</string>
+    <string name="ext__validation__enter_component_label">Voer een componentlabel in</string>
+    <string name="ext__validation__hint_component_label_to_long">Het componentlabel is vrij lang, wat kan leiden tot afbreking in de weergave</string>
+    <string name="ext__validation__error_author">Voer ten minste één geldige auteur in</string>
+    <string name="ext__validation__error_stylesheet_path_blank">Het stylesheet-pad mag niet leeg zijn</string>
+    <string name="ext__validation__error_stylesheet_path">Voer een geldig stylesheet-pad in dat overeenkomt met {stylesheet_path_regex}</string>
+    <string name="ext__validation__enter_property">Voer de naam van een variabele in</string>
+    <string name="ext__validation__error_property">Voer een geldige variabelenaam in die overeenkomt met {variable_name_regex}</string>
+    <string name="ext__validation__enter_color">Voer een kleurenreeks in</string>
+    <string name="ext__validation__error_color">Voer een geldige kleurreeks in</string>
+    <string name="ext__validation__enter_dp_size">Voer een dp-grootte in</string>
+    <string name="ext__validation__enter_valid_number">Voer een geldig nummer in</string>
+    <string name="ext__validation__enter_positive_number">Voer een positief getal in (&gt;=0)</string>
+    <string name="ext__validation__enter_percent_size">Voer een procentgrootte in</string>
+    <string name="ext__validation__enter_number_between_0_100">Voer een positief getal tussen de 0 en de 100 in</string>
+    <string name="ext__validation__hint_value_above_50_percent">Elke waarde boven 50% zal zich gedragen alsof je 50% hebt ingesteld, overweeg dus om je percentagegrootte te verlagen</string>
+    <string name="ext__update_box__internet_permission_hint">Aangezien deze app geen internettoegang heeft, moeten updates voor geïnstalleerde extensies handmatig worden gecontroleerd.</string>
+    <string name="ext__update_box__search_for_updates">Zoeken naar updates</string>
+    <string name="ext__addon_management_box__managing_placeholder">{extensions} beheren</string>
+    <string name="ext__addon_management_box__addon_manager_info">Alle taken met betrekking tot het importeren, exporteren, maken, aanpassen en verwijderen van extensies kunnen worden afgehandeld via de gecentraliseerde beheer van add-ons.</string>
+    <string name="ext__addon_management_box__go_to_page">Ga naar {ext_home_title}</string>
+    <string name="ext__home__info">Je kunt extensies downloaden en installeren uit de Dictate Addons Store of een extensiebestand importeren dat van internet is gedownload.</string>
+    <string name="ext__home__visit_store">Bezoek de Addons Store</string>
+    <string name="ext__home__manage_extensions">Geïnstalleerde extensies beheren</string>
+    <string name="ext__list__view_details">Details weergeven</string>
+    <string name="ext__check_updates__title">Controleren op Updates</string>
+    <!-- Action strings -->
+    <string name="action__add">Toevoegen</string>
+    <string name="action__apply">Van toepassing zijn</string>
+    <string name="action__back_up">Back-up</string>
+    <string name="action__cancel">Annuleren</string>
+    <string name="action__back">Terug</string>
+    <string name="action__clear">Wissen</string>
+    <string name="action__create">Creëren</string>
+    <string name="action__default">Standaard</string>
+    <string name="action__delete">Verwijderen</string>
+    <string name="action__delete_confirm_title">Bevestig verwijderen</string>
+    <string name="action__delete_confirm_message">Weet je zeker dat je {name} wil verwijderen? Deze actie kan niet ongedaan gemaakt worden.</string>
+    <string name="action__reset_confirm_title">Herstellen bevestigen</string>
+    <string name="action__reset_confirm_message">Weet je zeker dat je {name} wil herstellen? Deze actie kan niet ongedaan gemaakt worden.</string>
+    <string name="action__discard">Weggooien</string>
+    <string name="action__discard_confirm_title">Niet-opgeslagen wijzigingen</string>
+    <string name="action__discard_confirm_message">Weet u zeker dat u uw niet-opgeslagen wijzigingen wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt nadat deze is uitgevoerd.</string>
+    <string name="action__edit">Bewerk</string>
+    <string name="action__export">Exporteren</string>
+    <string name="action__export_file">Bestand importeren</string>
+    <string name="action__export_files">Bestanden importeren</string>
+    <string name="action__import">Importeren</string>
+    <string name="action__import_file">Bestand importeren</string>
+    <string name="action__import_files">Bestanden importeren</string>
+    <string name="action__no">Nee</string>
+    <string name="action__ok">Oké</string>
+    <string name="action__restore">Herstellen</string>
+    <string name="action__save">Opslaan</string>
+    <string name="action__select">Kiezen</string>
+    <string name="action__select_dir">Map kiezen</string>
+    <string name="action__select_dirs">Mappen kiezen</string>
+    <string name="action__select_file">Bestand kiezen</string>
+    <string name="action__select_files">Bestanden kiezen</string>
+    <string name="action__yes">Ja</string>
+    <!-- Error strings (generic) -->
+    <string name="error__title">Fout</string>
+    <string name="error__details">Details</string>
+    <string name="error__invalid">Ongeldig</string>
+    <string name="error__snackbar_message">Er is iets fout gegaan</string>
+    <string name="error__snackbar_message_template">Er is iets fout gegaan: {error_message}</string>
+    <!-- General strings -->
+    <string name="general__example_given" comment="This string is used where an example will be inserted in the {example} block. When translating, use the abbreviation used in your language for 'example given'.">bijv. {voorbeeld}</string>
+    <string name="general__no_browser_app_found_for_url">Geen browser app gevonden voor het afhandelen van URL {url}</string>
+    <string name="general__select_dropdown_value_placeholder">- selecteer -</string>
+    <string name="general__unlimited">Onbeperkt</string>
+    <string name="general__file_name">Bestandsnaam</string>
+    <string name="general__properties">Eigenschappen</string>
+    <string name="general__auto" comment="Generic shorthand for 'Automatic' value">Auto</string>
+    <!-- Screen orientation strings -->
+    <string name="screen_orientation__portrait">Staand</string>
+    <string name="screen_orientation__landscape">Liggend</string>
+    <string name="screen_orientation__vertical">Verticaal</string>
+    <string name="screen_orientation__horizontal">Horizontaal</string>
+    <!-- State strings -->
+    <string name="state__disabled">Uitgeschakeld</string>
+    <string name="state__enabled">Ingeschakeld</string>
+    <string name="state__no_dir_selected">Geen map geselecteerd</string>
+    <string name="state__no_dirs_selected">Geen mappen geselecteerd</string>
+    <string name="state__no_file_selected">Geen bestand geselecteerd</string>
+    <string name="state__no_files_selected">Geen bestanden geselecteerd</string>
+    <!-- Enum label and description strings -->
+    <string name="enum__candidates_display_mode__classic" comment="Enum value label">Klassiek (3 kolommen)</string>
+    <string name="enum__candidates_display_mode__dynamic" comment="Enum value label">Dynamische breedte</string>
+    <string name="enum__candidates_display_mode__dynamic_scrollable" comment="Enum value label">Dynamische breedte</string>
+    <string name="enum__capitalization_behavior__capslock_by_double_tap" comment="Enum value label">Capslock inschakelen door tweemaal op shift te tikken</string>
+    <string name="enum__capitalization_behavior__capslock_by_cycle" comment="Enum value label">Telkens wanneer de shift-toets wordt ingedrukt, overschakelen naar de volgende hoofdletterstap</string>
+    <string name="enum__clipboard_sync_behavior__no_events" comment="Enum value label">Geen gebeurtenissen</string>
+    <string name="enum__clipboard_sync_behavior__only_set_events" comment="Enum value label">Alleen ingestelde gebeurtenissen</string>
+    <string name="enum__clipboard_sync_behavior__all_events" comment="Enum value label">Alle gebeurtenissen</string>
+    <string name="enum__color_representation__hex" comment="Enum value label">Hexadecimaal</string>
+    <string name="enum__color_representation__rgb" comment="Enum value label">Rood Groen Blauw</string>
+    <string name="enum__display_kbd_after_dialogs__always" comment="Enum value label">Altijd weergeven</string>
+    <string name="enum__display_kbd_after_dialogs__always__description" comment="Enum value description">Het toetsenbord altijd weergeven na het sluiten van een editor-dialoogvenster</string>
+    <string name="enum__display_kbd_after_dialogs__never" comment="Enum value label">Nooit weergeven</string>
+    <string name="enum__display_kbd_after_dialogs__never__description" comment="Enum value description">Laat nooit het toetsenbord zien na het sluiten van een editor-dialoogvenster</string>
+    <string name="enum__display_kbd_after_dialogs__remember" comment="Enum value label">Laatste staat onthouden</string>
+    <string name="enum__display_kbd_after_dialogs__remember__description" comment="Enum value description">Toon alleen het toetsenbord na het sluiten van een editor-dialoogvenster als het eerder zichtbaar was</string>
+    <string name="enum__display_language_names_in__system_locale" comment="Enum value label">Systeemlandinstelling</string>
+    <string name="enum__display_language_names_in__system_locale__description" comment="Enum value description">Taalnamen in de app en de gebruikersinterface van het toetsenbord worden weergegeven in de landinstelling die is ingesteld voor het hele apparaat</string>
+    <string name="enum__display_language_names_in__native_locale" comment="Enum value label">Inheemse landinstelling</string>
+    <string name="enum__display_language_names_in__native_locale__description" comment="Enum value description">Taalnamen in de app en de gebruikersinterface van het toetsenbord worden weergegeven in de landinstelling waarnaar zelf wordt verwezen</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_prepend" comment="Enum value label">Autom. sorteren (voorvoegen)</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_prepend__description" comment="Enum value description">Emoji\'s automatisch opnieuw ordenen op basis van emoji-gebruik. Nieuwe emoji\'s worden vooraan toegevoegd.</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_append" comment="Enum value label">Autom. sorteren (toevoegen)</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_append__description" comment="Enum value description">Emoji\'s automatisch opnieuw ordenen op basis van emoji-gebruik. Nieuwe emoji\'s worden achteraan toegevoegd.</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_prepend" comment="Enum value label">Handm. sorteren (voorvoegen)</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_prepend__description" comment="Enum value description">Emoji\'s niet automatisch opnieuw ordenen op basis van emoji-gebruik. Nieuwe emoji\'s worden vooraan toegevoegd.</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_append" comment="Enum value label">Handm. sorteren (toevoegen)</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_append__description" comment="Enum value description">Emoji\'s niet automatisch opnieuw ordenen op basis van emoji-gebruik. Nieuwe emoji\'s worden achteraan toegevoegd.</string>
+    <string name="enum__emoji_skin_tone__default" comment="Enum value label">{emoji} Standaard huidskleur</string>
+    <string name="enum__emoji_skin_tone__light_skin_tone" comment="Enum value label">{emoji} Lichte huidskleur</string>
+    <string name="enum__emoji_skin_tone__medium_light_skin_tone" comment="Enum value label">{emoji} Lichtgetinte huidskleur</string>
+    <string name="enum__emoji_skin_tone__medium_skin_tone" comment="Enum value label">{emoji} getinte huidskleur</string>
+    <string name="enum__emoji_skin_tone__medium_dark_skin_tone" comment="Enum value label">{emoji} Donkergetinte huidskleur</string>
+    <string name="enum__emoji_skin_tone__dark_skin_tone" comment="Enum value label">{emoji} Donkere huidskleur</string>
+    <string name="enum__emoji_hair_style__default" comment="Enum value label">{emoji} Standaard haar</string>
+    <string name="enum__emoji_hair_style__red_hair" comment="Enum value label">{emoji} Rood haar</string>
+    <string name="enum__emoji_hair_style__curly_hair" comment="Enum value label">{emoji} Krullend haar</string>
+    <string name="enum__emoji_hair_style__white_hair" comment="Enum value label">{emoji} Wit haar</string>
+    <string name="enum__emoji_hair_style__bald" comment="Enum value label">{emoji} Kaal</string>
+    <string name="enum__emoji_suggestion_type__leading_colon">Leidende dubbele punt</string>
+    <string name="enum__emoji_suggestion_type__leading_colon__description" comment="Keep the :emoji_name while translating, this is a syntax guide">Emoji\'s voorstellen met behulp van de :emoji_name-syntaxis</string>
+    <string name="enum__emoji_suggestion_type__inline_text">Inline tekst</string>
+    <string name="enum__emoji_suggestion_type__inline_text__description">Emoji\'s voorstellen door simpelweg de emoji-naam als een woord te typen</string>
+    <string name="enum__extended_actions_placement__above_candidates" comment="Enum value label">Kandidaten hierboven</string>
+    <string name="enum__extended_actions_placement__above_candidates__description" comment="Enum value description">Hiermee plaatst u de uitgebreide actierij tussen de gebruikersinterface van de app en de kandidatenrij</string>
+    <string name="enum__extended_actions_placement__below_candidates" comment="Enum value label">Kandidaten hierboven</string>
+    <string name="enum__extended_actions_placement__below_candidates__description" comment="Enum value description">Hiermee plaatst u de uitgebreide actierij tussen de kandidaatrij en het teksttoetsenbord</string>
+    <string name="enum__extended_actions_placement__overlay_app_ui" comment="Enum value label">App-UI overlappen</string>
+    <string name="enum__extended_actions_placement__overlay_app_ui__description" comment="Enum value description">Hiermee wordt de uitgebreide actierij als overlay boven de gebruikersinterface van de app geplaatst, zonder dat dit invloed heeft op de resulterende hoogte van de gebruikersinterface van het toetsenbord. Houd er rekening mee dat deze plaatsing ertoe kan leiden dat het invoerveld van de app gedeeltelijk wordt overtekend</string>
+    <string name="enum__haptic_vibration_mode__use_vibrator_directly" comment="Enum value label">Vibrator direct gebruiken</string>
+    <string name="enum__haptic_vibration_mode__use_vibrator_directly__description" comment="Enum value description">{app_name} werkt rechtstreeks samen met de standaard hardwarevibrator. Dit geeft meer controle over de duur en sterkte van een trilling, maar de trilling is mogelijk niet zo soepel en geoptimaliseerd als bij het gebruik van de haptische feedbackinterface</string>
+    <string name="enum__haptic_vibration_mode__use_haptic_feedback_interface" comment="Enum value label">Haptische feedback-interface gebruiken</string>
+    <string name="enum__haptic_vibration_mode__use_haptic_feedback_interface__description" comment="Enum value description">{app_name} gebruikt de interface voor haptische feedback om een vooraf gedefinieerde trilvolgorde te activeren voor toetsaanslagen. Dit kan op sommige apparaten uitzonderlijk goed werken, maar op andere apparaten volledig falen of zeer slecht presteren</string>
+    <string name="enum__key_hint_mode__accent_priority" comment="Enum value label">Accent krijgt prioriteit</string>
+    <string name="enum__key_hint_mode__accent_priority__description" comment="Enum value description">Het eerste geselecteerde teken na een lange indruk is altijd het primaire accent, of het hint symbool als er geen primair accent beschikbaar is</string>
+    <string name="enum__key_hint_mode__hint_priority" comment="Enum value label">Hint krijgt prioriteit</string>
+    <string name="enum__key_hint_mode__hint_priority__description" comment="Enum value description">Het eerste geselecteerde teken na een lange indruk is altijd het hint symbool, of het primaire accent als er geen hint symbool beschikbaar is</string>
+    <string name="enum__key_hint_mode__smart_priority" comment="Enum value label">Slimme prioriteiten</string>
+    <string name="enum__key_hint_mode__smart_priority__description" comment="Enum value description">Het eerste teken dat is geselecteerd na lang indrukken, wordt dynamisch bepaald als het primaire accent of het hintsymbool, op basis van de huidige taal en lay-out</string>
+    <string name="enum__incognito_display_mode__replace_shared_actions_toggle" comment="Enum value label">Schakelaarpictogram voor gedeelde acties vervangen door incognito-indicator</string>
+    <string name="enum__incognito_display_mode__display_behind_keyboard" comment="Enum value label">De incognito-indicator achter het toetsenbord weergeven</string>
+    <string name="enum__incognito_mode__force_off" comment="Enum value label">Uitschakelen</string>
+    <string name="enum__incognito_mode__force_off__description" comment="Enum value description">De Incognito modus zal altijd worden uitgeschakeld, ongeacht de doorgegeven opties van de doel-app. De incognito snelle actie in de Smartbar zal niet beschikbaar zijn met deze optie.</string>
+    <string name="enum__incognito_mode__force_on" comment="Enum value label">Geforceerd inschakelen</string>
+    <string name="enum__incognito_mode__force_on__description" comment="Enum value description">De Incognito modus zal altijd ingeschakeld zijn, ongeacht de doorgegeven opties van de doel-app. De snelle incognito-actie in de Smartbar is niet beschikbaar met deze optie.</string>
+    <string name="enum__incognito_mode__dynamic_on_off" comment="Enum value label">Dynamisch aan/uit</string>
+    <string name="enum__incognito_mode__dynamic_on_off__description" comment="Enum value description">Aanbevolen optie. De incognitomodus wordt dynamisch in- of uitgeschakeld via de doorgegeven opties van de doel-app of door deze handmatig in te schakelen via de snelle actie Incognito in de Smartbar.</string>
+    <string name="enum__input_feedback_activation_mode__audio_respect_system_settings" comment="Enum value label">Dynamisch geluiden afspelen voor invoergebeurtenissen, afhankelijk van de systeeminstellingen</string>
+    <string name="enum__input_feedback_activation_mode__audio_ignore_system_settings" comment="Enum value label">Altijd geluiden afspelen voor invoergebeurtenissen, ongeacht de systeeminstellingen</string>
+    <string name="enum__input_feedback_activation_mode__haptic_respect_system_settings" comment="Enum value label">Dynamisch trillen bij invoergebeurtenissen, afhankelijk van de systeeminstellingen</string>
+    <string name="enum__input_feedback_activation_mode__haptic_ignore_system_settings" comment="Enum value label">Altijd trillen bij invoergebeurtenissen, ongeacht de systeeminstellingen</string>
+    <string name="enum__input_shift_state__unshifted" comment="Enum value label">niet verschoven</string>
+    <string name="enum__input_shift_state__shifted_manual" comment="Enum value label">Verschoven (handmatig)</string>
+    <string name="enum__input_shift_state__shifted_automatic" comment="Enum value label">geschakeld (automatisch)</string>
+    <string name="enum__input_shift_state__caps_lock" comment="Enum value label">Caps Lock</string>
+    <string name="enum__keyboard_mode__characters" comment="Enum value label">Tekens</string>
+    <string name="enum__keyboard_mode__symbols" comment="Enum value label">Symbolen</string>
+    <string name="enum__keyboard_mode__symbols2" comment="Enum value label">Symbolen 2</string>
+    <string name="enum__keyboard_mode__numeric" comment="Enum value label">Numeriek</string>
+    <string name="enum__keyboard_mode__numeric_advanced" comment="Enum value label">Numeriek geavanceerd</string>
+    <string name="enum__keyboard_mode__phone" comment="Enum value label">Telefoon</string>
+    <string name="enum__keyboard_mode__phone2" comment="Enum value label">Telefoon 2</string>
+    <string name="enum__landscape_input_ui_mode__never_show" comment="Enum value label">Nooit tonen</string>
+    <string name="enum__landscape_input_ui_mode__always_show" comment="Enum value label">Altijd tonen</string>
+    <string name="enum__landscape_input_ui_mode__dynamically_show" comment="Enum value label">Dynamisch tonen</string>
+    <string name="enum__shape_corner__top_start" comment="Enum value label">Top start</string>
+    <string name="enum__shape_corner__top_end" comment="Enum value label">De beste</string>
+    <string name="enum__shape_corner__bottom_end" comment="Enum value label">Onderkant</string>
+    <string name="enum__shape_corner__bottom_start" comment="Enum value label">Begin onderaan</string>
+    <string name="enum__smartbar_layout__suggestions_only" comment="Enum value label">Enkel suggesties</string>
+    <string name="enum__smartbar_layout__suggestions_only__description" comment="Enum value description">Toont alleen de kandidatenrij, zonder enige actierij/schakelaar of plakactie</string>
+    <string name="enum__smartbar_layout__actions_only" comment="Enum value label">Enkel acties</string>
+    <string name="enum__smartbar_layout__actions_only__description" comment="Enum value description">Toont alleen de actierij, zonder de kandidaatrij of een expliciete plakactie</string>
+    <string name="enum__smartbar_layout__suggestions_action_shared" comment="Enum value label">Suggesties &amp; Gedeelde acties</string>
+    <string name="enum__smartbar_layout__suggestions_action_shared__description" comment="Enum value description">Gedeelde schakelbare rij met kandidaten en acties, met plakactie</string>
+    <string name="enum__smartbar_layout__suggestions_actions_extended" comment="Enum value label">Suggesties &amp; Uitgebreide acties</string>
+    <string name="enum__smartbar_layout__suggestions_actions_extended__description" comment="Enum value description">Statische kandidatenrij en extra schakelbare actierij, met plakactie</string>
+    <string name="enum__snygg_level__basic" comment="Enum value label">Basis</string>
+    <string name="enum__snygg_level__basic__description" comment="Enum value description">Alleen kleureigenschappen worden getoond, eigenschappen en regels worden vertaald.</string>
+    <string name="enum__snygg_level__advanced" comment="Enum value label">Geavanceerd</string>
+    <string name="enum__snygg_level__advanced__description" comment="Enum value description">Alle eigenschappen worden getoond, eigenschappen en regels worden vertaald.</string>
+    <string name="enum__snygg_level__developer" comment="Enum value label">Ontwikkelaar</string>
+    <string name="enum__snygg_level__developer__description" comment="Enum value description">Alle eigenschappen worden getoond, eigenschappen en regels worden weergegeven zoals geschreven in het stylesheet-bestand zelf.</string>
+    <string name="enum__space_bar_mode__nothing" comment="Enum value label">Geen label</string>
+    <string name="enum__space_bar_mode__current_language" comment="Enum value label">Huidige taal</string>
+    <string name="enum__space_bar_mode__space_bar_key" comment="Enum value label">␣</string>
+    <string name="enum__spelling_language_mode__use_system_languages" comment="Enum value label">Systeemtalen gebruiken</string>
+    <string name="enum__spelling_language_mode__use_keyboard_subtypes" comment="Enum value label">Toetsenbordindeling gebruiken</string>
+    <string name="enum__swipe_action__no_action" comment="Enum value label">Geen actie</string>
+    <string name="enum__swipe_action__cycle_to_previous_keyboard_mode" comment="Enum value label">Naar de vorige toetsenbordmodus draaien</string>
+    <string name="enum__swipe_action__cycle_to_next_keyboard_mode" comment="Enum value label">Naar de volgende toetsenbordmodus draaien</string>
+    <string name="enum__swipe_action__delete_character" comment="Enum value label">Teken vóór cursor verwijderen</string>
+    <string name="enum__swipe_action__delete_characters_precisely" comment="Enum value label">Tekens nauwkeurig verwijderen</string>
+    <string name="enum__swipe_action__delete_word" comment="Enum value label">Woord vóór cursor verwijderen</string>
+    <string name="enum__swipe_action__delete_words_precisely" comment="Enum value label">Woorden nauwkeurig verwijderen</string>
+    <string name="enum__swipe_action__hide_keyboard" comment="Enum value label">Toetsenbord verbergen</string>
+    <string name="enum__swipe_action__insert_space" comment="Enum value label">Spatie invoegen</string>
+    <string name="enum__swipe_action__move_cursor_up" comment="Enum value label">Cursor naar boven verplaatsen</string>
+    <string name="enum__swipe_action__move_cursor_down" comment="Enum value label">Cursor naar beneden verplaatsen</string>
+    <string name="enum__swipe_action__move_cursor_left" comment="Enum value label">Cursor naar links verplaatsen</string>
+    <string name="enum__swipe_action__move_cursor_right" comment="Enum value label">Cursor naar rechts verplaatsen</string>
+    <string name="enum__swipe_action__move_cursor_start_of_line" comment="Enum value label">Cursor aan het begin van de regel plaatsen</string>
+    <string name="enum__swipe_action__move_cursor_end_of_line" comment="Enum value label">Cursor aan het einde van de regel plaatsen</string>
+    <string name="enum__swipe_action__move_cursor_start_of_page" comment="Enum value label">Cursor aan het begin van de pagina plaatsen</string>
+    <string name="enum__swipe_action__move_cursor_end_of_page" comment="Enum value label">Cursor aan het einde van de pagina plaatsen</string>
+    <string name="enum__swipe_action__switch_to_clipboard_context" comment="Enum value label">Open klembordbeheer/geschiedenis</string>
+    <string name="enum__swipe_action__switch_to_media_context" comment="Enum value label">Emoji-paneel openen</string>
+    <string name="enum__swipe_action__shift" comment="Enum value label">Verschuiving</string>
+    <string name="enum__swipe_action__redo" comment="Enum value label">Opnieuw</string>
+    <string name="enum__swipe_action__undo" comment="Enum value label">Ongedaan maken</string>
+    <string name="enum__swipe_action__select_characters_precisely" comment="Enum value label">Selecteer tekens nauwkeurig</string>
+    <string name="enum__swipe_action__select_words_precisely" comment="Enum value label">Selecteer woorden nauwkeurig</string>
+    <string name="enum__swipe_action__show_input_method_picker" comment="Enum value label">Invoermethodekiezer weergeven</string>
+    <string name="enum__swipe_action__switch_to_prev_keyboard" comment="Enum value label">Overschakelen naar het vorige toetsenbord</string>
+    <string name="enum__swipe_action__switch_to_prev_subtype" comment="Enum value label">Naar vorige indeling schakelen</string>
+    <string name="enum__swipe_action__switch_to_next_subtype" comment="Enum value label">Naar volgende indeling schakelen</string>
+    <string name="enum__swipe_action__toggle_smartbar_visibility" comment="Enum value label">Slimme Balk weergeven</string>
+    <string name="enum__theme_mode__always_day" comment="Enum value label">Altijd dag</string>
+    <string name="enum__theme_mode__always_night" comment="Enum value label">Altijd nacht</string>
+    <string name="enum__theme_mode__follow_system" comment="Enum value label">Systeem volgen</string>
+    <string name="enum__theme_mode__follow_time" comment="Enum value label">Tijd volgen</string>
+    <string name="enum__utility_key_action__switch_to_emojis" comment="Enum value label">Wissel naar emoji\'s</string>
+    <string name="enum__utility_key_action__switch_language" comment="Enum value label">Taal wisselen</string>
+    <string name="enum__utility_key_action__switch_keyboard_app" comment="Enum value label">Toetsenbord-app wisselen</string>
+    <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Dynamisch: Wissel naar emoji\'s /Taal wisselen</string>
+    <!-- Unit strings (symbols) -->
+    <!-- Unit strings (written words) -->
+    <plurals name="unit__hours__written">
+        <item quantity="one">{v} uur</item>
+        <item quantity="other">{v} uren</item>
+    </plurals>
+    <plurals name="unit__minutes__written">
+        <item quantity="one">{v} minuut</item>
+        <item quantity="other">{v} minuten</item>
+    </plurals>
+    <plurals name="unit__seconds__written">
+        <item quantity="one">{v} seconde</item>
+        <item quantity="other">{v} seconden</item>
+    </plurals>
+    <plurals name="unit__items__written">
+        <item quantity="one">{v} item</item>
+        <item quantity="other">{v} items</item>
+    </plurals>
+    <plurals name="unit__characters__written">
+        <item quantity="one">{v} teken</item>
+        <item quantity="other">{v} tekens</item>
+    </plurals>
+    <plurals name="unit__words__written">
+        <item quantity="one">{v} woord</item>
+        <item quantity="other">{v} woorden</item>
+    </plurals>
+    <plurals name="unit__candidates__written">
+        <item quantity="one">{v} kandidaat</item>
+        <item quantity="other">{v} kandidaten</item>
+    </plurals>
+    <!-- Dictate strings -->
+    <string name="quick_action__ime_ui_mode_dictate">Dictate</string>
+    <string name="quick_action__ime_ui_mode_dictate__tooltip">Tik om te dicteren, tik nogmaals om te transcriberen</string>
+    <string name="quick_action__dictate_live_prompt">Live-instructie</string>
+    <string name="quick_action__dictate_live_prompt__tooltip">Neem een gesproken instructie op en stuur die naar de AI</string>
+    <string name="quick_action__dictate_prompts">AI-prompts</string>
+    <string name="quick_action__dictate_prompts__tooltip">De AI-herformuleringsprompts openen</string>
+    <string name="about__based_on_floris__title">Gebaseerd op FlorisBoard</string>
+    <string name="about__based_on_floris__summary">Een fork van FlorisBoard door Patrick Goldinger en bijdragers, Apache 2.0. Tik om te openen.</string>
+    <string name="about__made_by">Gemaakt met ❤️ door DevEmperor\nSoli deo gloria ✝️</string>
+    <string name="about__feedback__title">Feedback en ondersteuning</string>
+    <string name="about__feedback__summary">Stuur een e-mail met vragen, bugs of ideeën</string>
+    <string name="about__feedback__email">contact@devemperor.net</string>
+    <string name="about__feedback__subject">Dictate Feedback</string>
+    <string name="setup__provider__title">Kies hoe Dictate transcribeert</string>
+    <string name="setup__provider__choose_intro">Dictate zet je spraak om in tekst met een AI-dienst. Voor de meeste mensen voldoet een van deze twee manieren — en wil je helemaal geen clouddienst gebruiken, dan staan er hieronder nog twee.</string>
+    <string name="setup__provider__choice_own_title">Je eigen AI-aanbieder gebruiken</string>
+    <string name="setup__provider__choice_own_body">Maak een sleutel aan bij een aanbieder naar keuze — Groq is gratis voor dagelijks dicteren. Je houdt je eigen account en betaalt de aanbieder rechtstreeks tegen diens prijzen. Duurt zo\'n twee minuten.</string>
+    <string name="setup__provider__choice_own_btn">Mijn eigen sleutel instellen</string>
+    <string name="setup__provider__back_to_choice">Terug naar alle mogelijkheden</string>
+    <string name="setup__provider__more_ways">Liever helemaal zonder clouddienst?</string>
+    <string name="setup__provider__choice_local_title">Op je toestel, offline</string>
+    <string name="setup__provider__choice_local_body">Download één keer een spraakmodel. Geen account, geen kosten, en er verlaat geen audio je telefoon.</string>
+    <string name="setup__provider__choice_server_title">Je eigen server</string>
+    <string name="setup__provider__choice_server_body">Laat Dictate wijzen naar een spraakserver die je zelf draait, of naar elk OpenAI-compatibel endpoint.</string>
+    <string name="setup__provider__local_intro">Spraakherkenning draait dan op je telefoon: er wordt niets verstuurd en het werkt zonder verbinding. Kies nu één model om te downloaden — later kun je modellen toevoegen of wisselen.</string>
+    <string name="setup__provider__local_recommended">Aanbevolen voor jouw taal</string>
+    <string name="setup__provider__local_bigger">Nauwkeuriger, maar een veel grotere download</string>
+    <string name="setup__provider__local_download_btn">Model downloaden</string>
+    <string name="setup__provider__local_use_btn">Dit model gebruiken</string>
+    <string name="setup__provider__local_all_models">Alle modellen tonen</string>
+    <string name="setup__provider__intro">Dictate zet je spraak om in tekst met behulp van een online AI-dienst. Om het te gebruiken heb je je eigen persoonlijke sleutel voor zo\'n dienst nodig.</string>
+    <string name="setup__provider__what_is_key">Een API-sleutel is als een persoonlijk wachtwoord waarmee Dictate de dienst voor je kan gebruiken. Er een aanmaken is gratis en duurt ongeveer twee minuten.</string>
+    <string name="setup__provider__recommended">We raden <b>Groq</b> aan: snel en gratis voor dagelijks dicteren.</string>
+    <string name="setup__provider__steps_groq">1. Tik op de knop hieronder om Groq te openen.\n2. Meld je aan met Google of je e-mailadres.\n3. Tik op «Create API Key», geef hem een willekeurige naam en bevestig.\n4. Kopieer de sleutel (begint met «gsk_»).\n5. Kom hier terug en tik hieronder op «API-sleutel plakken».</string>
+    <string name="setup__provider__steps_generic">1. Tik op de knop hieronder om {provider} te openen.\n2. Maak een account aan als je er nog geen hebt.\n3. Maak een nieuwe API-sleutel aan en kopieer hem.\n4. Kom hier terug en tik hieronder op «API-sleutel plakken».</string>
+    <string name="setup__provider__open_btn">{provider} openen en een sleutel aanmaken</string>
+    <string name="setup__provider__paste_btn">API-sleutel plakken</string>
+    <string name="setup__provider__clipboard_empty">Je klembord lijkt leeg te zijn. Kopieer eerst je sleutel op de pagina van de aanbieder en tik daarna nogmaals op «API-sleutel plakken».</string>
+    <string name="setup__provider__key_detected">Sleutel toegevoegd: {key} ✓</string>
+    <string name="setup__provider__enter_manually">Of voer de sleutel handmatig in</string>
+    <string name="setup__provider__key_field">Plak hier je API-sleutel</string>
+    <string name="setup__provider__save_btn">Opslaan en doorgaan</string>
+    <string name="setup__provider__skip_btn">Later instellen</string>
+    <string name="setup__provider__other_provider">Een andere AI-aanbieder gebruiken</string>
+    <string name="setup__provider__other_provider_hint">Geavanceerd: kies een andere dienst dan Groq. Je hebt een API-sleutel van die aanbieder nodig.</string>
+    <string name="setup__finish_up__add_key_hint">Tip: je hebt nog geen AI-sleutel toegevoegd. Voeg er op elk moment een toe via Instellingen → Dictate → AI-aanbieders om te beginnen met dicteren.</string>
+    <string name="crash_dialog__bug_report_template">Crashrapport</string>
+    <string name="enum__swipe_action__toggle_compact_layout">Compacte lay-out in-/uitschakelen</string>
+    <string name="unit__hours__symbol">{v} u</string>
+    <string name="unit__minutes__symbol">{v} min</string>
+    <string name="unit__seconds__symbol">{v} s</string>
+    <string name="unit__milliseconds__symbol">{v} ms</string>
+    <string name="unit__percent__symbol">{v} %</string>
+    <string name="unit__display_pixel__symbol">{v} dp</string>
+    <string name="unit__display_pixel_per_seconds__symbol">{v} dp/s</string>
+    <string name="dictate__accessibility_service_label">Zwevende knop van Dictate</string>
+    <string name="dictate__accessibility_service_summary">Toon een zwevende knop om in elk tekstveld te dicteren.</string>
+    <string name="dictate__accessibility_service_description">Dictate gebruikt deze service voor de zwevende dicteerknop. Wanneer ingeschakeld detecteert deze wanneer een tekstveld de focus heeft in een willekeurige app — zodat de knop kan verschijnen — en voegt je getranscribeerde spraak in dat veld in. Dictate leest alleen het gefocuste veld om je tekst op de cursor te plaatsen; het verzamelt, bewaart of deelt geen andere scherminhoud.</string>
+    <string name="dictate__overlay_notification_channel">Zwevende dicteerknop</string>
+    <string name="dictate__overlay_notification_recording">Bezig met opnemen — tik op de zwevende knop om te transcriberen</string>
+    <string name="dictate__overlay_notification_working">Bezig met transcriberen…</string>
+    <string name="dictate__floating_button_title">Zwevende knop</string>
+    <string name="dictate__floating_button_enable_title">Zwevende dicteerknop</string>
+    <string name="dictate__floating_button_enable_summary">Toon een zwevende knop om in elke app te dicteren, zelfs wanneer een ander toetsenbord actief is.</string>
+    <string name="dictate__floating_button_permission_group">Instellen</string>
+    <string name="dictate__floating_button_service_title">Toegankelijkheidsservice</string>
+    <string name="dictate__floating_button_service_enabled">Ingeschakeld · tik om systeeminstellingen te openen</string>
+    <string name="dictate__floating_button_service_disabled">Nog niet ingeschakeld · tik om in te stellen</string>
+    <string name="dictate__floating_button_disclosure_title">De zwevende knop inschakelen</string>
+    <string name="dictate__floating_button_disclosure_message">Om de zwevende knop te tonen heeft Dictate de toegankelijkheidsservice nodig. Deze detecteert wanneer een tekstveld de focus heeft in een willekeurige app — zodat de knop kan verschijnen — en voegt je getranscribeerde spraak in dat veld in. Dictate leest alleen het gefocuste veld om je tekst te plaatsen; het verzamelt, bewaart of deelt geen andere scherminhoud.\n\nZoek op het volgende scherm “Zwevende knop van Dictate” en schakel deze in.</string>
+    <string name="dictate__floating_button_disclosure_continue">Instellingen openen</string>
+    <string name="dictate__floating_button_mic_title">Microfoontoegang</string>
+    <string name="dictate__floating_button_mic_summary">Vereist om je stem op te nemen · tik om toe te staan</string>
+    <string name="dictate__floating_button_show_with_keyboard_title">Tonen bij Dictate-toetsenbord</string>
+    <string name="dictate__floating_button_show_with_keyboard_summary_on">De knop verschijnt ook terwijl het Dictate-toetsenbord actief is.</string>
+    <string name="dictate__floating_button_show_with_keyboard_summary_off">Verborgen terwijl het Dictate-toetsenbord actief is, omdat dat al een microfoontoets heeft.</string>
+    <string name="dictate__action_continue_recording">Opname voortzetten</string>
+    <string name="dictate__floating_button_auto_dim_summary_off">Blijft altijd volledig zichtbaar.</string>
+    <string name="dictate__floating_button_auto_dim_summary_on">Krimpt na enkele seconden tot een klein puntje; tik om te herstellen.</string>
+    <string name="dictate__floating_button_auto_dim_title">Vervagen bij inactiviteit</string>
+    <string name="dictate__floating_button_color_title">Knopkleur</string>
+    <string name="dictate__floating_button_design_orb">Bol</string>
+    <string name="dictate__floating_button_design_orb_summary">Een massieve bol die gloeit en pulseert met je stem tijdens het opnemen.</string>
+    <string name="dictate__floating_button_design_cloud">Wolk</string>
+    <string name="dictate__floating_button_design_cloud_summary">Een vloeiende wolkbol die beweegt en op je stem reageert tijdens het opnemen.</string>
+    <string name="dictate__floating_button_design_aurora">Aurora</string>
+    <string name="dictate__floating_button_design_aurora_summary">Licht in een bol: het beweegt tijdens opnemen en kolkt tijdens verwerken</string>
+    <string name="dictate__floating_button_design_lattice">Raster</string>
+    <string name="dictate__floating_button_design_lattice_summary">Een bol van punten: verbindt zich in rust, golft met je stem en draait tijdens verwerken</string>
+    <string name="dictate__floating_button_design_pill">Pil</string>
+    <string name="dictate__floating_button_design_pill_summary">Klapt uit wanneer actief om een timer en een live golfvorm te tonen.</string>
+    <string name="dictate__floating_button_design_ring">Ring</string>
+    <string name="dictate__floating_button_design_ring_summary">Compacte cirkel met een ring die animeert tijdens opnemen en transcriberen.</string>
+    <string name="dictate__floating_button_design_title">Knopstijl</string>
+    <string name="dictate__floating_button_haptic_summary_off">Geen trilling bij tikken.</string>
+    <string name="dictate__floating_button_haptic_summary_on">Een korte tril wanneer je op de knop tikt.</string>
+    <string name="dictate__floating_button_haptic_title">Trillen bij tikken</string>
+    <string name="dictate__floating_button_no_prompts">Nog geen herformuleer-prompts — voeg er enkele toe in de Dictate-instellingen.</string>
+    <string name="dictate__floating_button_remember_position_summary_off">Eén gedeelde positie voor alle apps.</string>
+    <string name="dictate__floating_button_remember_position_summary_on">Elke app houdt zijn eigen knoppositie.</string>
+    <string name="dictate__floating_button_remember_position_title">Positie per app onthouden</string>
+    <string name="dictate__floating_button_size_large">Groot</string>
+    <string name="dictate__floating_button_size_medium">Gemiddeld</string>
+    <string name="dictate__floating_button_size_small">Klein</string>
+    <string name="dictate__floating_button_size_title">Knopgrootte</string>
+    <string name="dictate__floating_button_snap_summary_off">De knop blijft waar je hem loslaat.</string>
+    <string name="dictate__floating_button_snap_summary_on">De knop klikt na het slepen vast aan de dichtstbijzijnde zijde.</string>
+    <string name="dictate__floating_button_snap_title">Aan rand vastklikken</string>
+    <string name="dictate__interrupted_recording">Onderbroken ({time})</string>
+    <string name="dictate__providers_summary_both">Transcriptie: {transcription} · Herformulering: {rewording}</string>
+    <string name="dictate__remember_last_dictation_summary">Bewaart je laatste dictaat zodat je het opnieuw kunt invoegen met de knop Opnieuw invoegen op de Smartbar.</string>
+    <string name="dictate__remember_last_dictation_title">Laatste dictaat onthouden</string>
+    <string name="changelog__v4_2_0">• NIEUW: zwevende dicteerknop — dicteer rechtstreeks in elke app, zelfs met een ander toetsenbord actief. Kies uit drie stijlen (Pil, Ring, Bol), zie een live golfvorm terwijl je praat, sleep hem overal heen met randmagnetisme, stel kleur en grootte in en houd ingedrukt om te herformuleren. Schakel hem in via Instellingen ▸ Dictate ▸ Zwevende knop.\n• NIEUW: Google Gemini — gebruik je eigen AI Studio-API-sleutel voor transcriptie en herformuleren.\n• Prompts verschijnen nu standaard in een vaste rij boven de toetsen.\n• Betrouwbaardere tekstinvoer in apps, inclusief browsers en andere toetsenborden.</string>
+    <string name="dictate__promo_floating_button_message">Nieuw: overal dicteren</string>
+    <string name="dictate__promo_floating_button_action">Proberen</string>
+    <string name="setup__floating_button__btn">Zwevende knop instellen</string>
+    <string name="setup__nav_back">Terug</string>
+    <string name="setup__nav_next">Volgende</string>
+    <string name="setup__floating_button__title">Overal dicteren (optioneel)</string>
+    <string name="setup__floating_button__intro">De zwevende knop plaatst een kleine dicteerbel over elke app, zodat je in elk tekstveld kunt spreken zonder van toetsenbord te wisselen.</string>
+    <string name="setup__floating_button__accessibility_note">Hiervoor gebruikt {app_name} de toegankelijkheidsinstellingen van Android — zo kan de bel over andere apps verschijnen en de getranscribeerde tekst voor je invoegen. Het volgende scherm helpt je bij het inschakelen.</string>
+    <string name="setup__floating_button__optional_note">Dit is volledig optioneel — sla het over als je {app_name} gewoon als volledig toetsenbord wilt gebruiken. Je kunt het later altijd instellen in de instellingen.</string>
+    <string name="setup__floating_button__skip_btn">Overslaan — ik gebruik het toetsenbord</string>
+    <string name="dictate__floating_button_badge_new">Nieuw</string>
+    <string name="dictate__panel_title">AI-prompts</string>
+    <string name="dictate__panel_no_prompts">Nog geen prompts. Voeg er enkele toe in de Dictate-instellingen onder «Herformulering».</string>
+    <string name="dictate__prompts_layout_title">Prompt-lay-out</string>
+    <string name="dictate__prompts_layout_panel_label">Eigen paneel</string>
+    <string name="dictate__prompts_layout_panel_description">Open de prompts in een eigen paneel via de toverstaf-knop.</string>
+    <string name="dictate__prompts_layout_row_label">Altijd zichtbare rij</string>
+    <string name="dictate__prompts_layout_row_description">Zet de prompts vast in een extra rij boven het toetsenbord.</string>
+    <string name="dictate__status_idle">Tik om te dicteren</string>
+    <string name="dictate__status_recording">Opnemen – tik om te stoppen</string>
+    <string name="dictate__status_transcribing">Transcriberen…</string>
+    <string name="dictate__status_transcribing_local">Transcriberen op apparaat…</string>
+    <string name="dictate__back_to_keyboard">Terug naar toetsenbord</string>
+    <string name="dictate__error_recording_failed">Opname mislukt – verleen de microfoontoestemming. (%s)</string>
+    <string name="dictate__error_no_audio">Geen opname gedetecteerd – spreek wat langer.</string>
+    <string name="dictate__no_speech_detected">Geen spraak gedetecteerd</string>
+    <string name="dictate__voice_input_listening">Aan het luisteren…</string>
+    <string name="dictate__voice_input_transcribing">Transcriberen…</string>
+    <string name="dictate__voice_input_stop">Klaar</string>
+    <string name="dictate__voice_input_hint">Tik om te verzenden</string>
+    <string name="dictate__voice_ime_label">Dictate spraakinvoer</string>
+    <string name="dictate__error_no_api_key">Geen API-sleutel ingesteld – stel deze in via de Dictate-instellingen.</string>
+    <string name="dictate__error_transcription_failed">Transcriptie mislukt.</string>
+    <string name="dictate__error_unknown">Onbekende fout tijdens de transcriptie.</string>
+    <string name="dictate__error_rewording_failed">Herformulering mislukt.</string>
+    <string name="dictate__error_rewording_default_model">%1$s is het ingebouwde standaardmodel van %2$s, niet een model dat je hebt gekozen. Kies een herformuleermodel bij AI-providers.</string>
+    <string name="dictate__notice_rewording_failed">Herformulering mislukt – onbewerkte tekst ingevoegd</string>
+    <string name="dictate__error_overlay_insert_clipboard">Deze app accepteerde de tekst niet. Hij staat op het klembord — houd het veld ingedrukt en plak.</string>
+    <string name="dictate__error_invalid_api_key">Controleer je API-sleutel</string>
+    <string name="dictate__error_quota_exceeded">Quotum of limiet bereikt</string>
+    <string name="dictate__error_content_size_limit">Opname te lang of te groot</string>
+    <string name="dictate__error_text_size_limit">Tekst te lang om te herformuleren</string>
+    <string name="dictate__error_format_not_supported">Audioformaat niet ondersteund</string>
+    <string name="dictate__error_timeout">Time-out van verzoek</string>
+    <string name="dictate__error_network">Geen internetverbinding</string>
+    <string name="dictate__error_server">Aanbieder niet beschikbaar – probeer het opnieuw</string>
+    <string name="dictate__error_try_on_device">Geen verbinding – probeer op apparaat</string>
+    <string name="dictate__error_try_on_device_detail">Transcriptie op het apparaat heeft helemaal geen verbinding nodig — handig als een aanbieder geblokkeerd is én als er geen bereik is. Stel het in bij AI-aanbieders en zet Offline terugval aan, zodat het vanzelf overneemt.</string>
+    <string name="dictate__action_settings">Instellingen openen</string>
+    <string name="dictate__action_error_details">Foutdetails tonen</string>
+    <string name="dictate__error_details_title">Foutdetails</string>
+    <string name="dictate__status_rewording">Herformuleren…</string>
+    <string name="dictate__status_formatting">Opmaken…</string>
+    <string name="dictate__status_retrying">Opnieuw proberen… ({attempt})</string>
+    <string name="dictate__action_cancel">Opname annuleren</string>
+    <string name="dictate__action_pause">Opname pauzeren</string>
+    <string name="dictate__action_next_segment">Volgend segment</string>
+    <string name="dictate__action_resume">Opname hervatten</string>
+    <string name="dictate__action_resend">Opnieuw proberen</string>
+    <string name="dictate__action_dismiss">Negeren</string>
+    <string name="dictate__action_yes">Ja</string>
+    <string name="dictate__action_no">Nee, bedankt</string>
+    <string name="dictate__promo_rate_message">Vind je Dictate leuk?</string>
+    <string name="dictate__promo_donate_message">Dictate steunen?</string>
+    <string name="dictate__promo_rate_action">Beoordelen</string>
+    <string name="dictate__promo_donate_action">Doneren</string>
+    <string name="dictate__promo_changelog_message">Dictate is bijgewerkt</string>
+    <string name="dictate__promo_changelog_action">Details</string>
+    <string name="dictate__title">Dictate</string>
+    <string name="dictate__provider_title">Transcriptie-aanbieder</string>
+    <string name="dictate__provider__openai">OpenAI</string>
+    <string name="dictate__provider__groq">Groq</string>
+    <string name="dictate__provider__custom">Aangepast (OpenAI-compatibel)</string>
+    <string name="dictate__api_key_title">API-sleutel</string>
+    <string name="dictate__api_key_placeholder">sk-…</string>
+    <string name="dictate__api_key_not_set">Niet ingesteld – tik om te configureren</string>
+    <string name="dictate__model_title">Transcriptiemodel</string>
+    <string name="dictate__model_placeholder">laat leeg voor de standaard van de aanbieder</string>
+    <string name="dictate__model_default_summary">Standaard van de aanbieder</string>
+    <string name="dictate__custom_server_title">Aangepaste server</string>
+    <string name="dictate__base_url_title">Basis-URL</string>
+    <string name="dictate__base_url_placeholder">https://jouw-server/v1/</string>
+    <string name="dictate__base_url_required">Vereist voor de aangepaste aanbieder</string>
+    <string name="dictate__value_not_set">Niet ingesteld</string>
+    <string name="dictate__providers_title">AI-aanbieders</string>
+    <string name="dictate__providers_summary">Actief: {provider}</string>
+    <string name="dictate__providers_active_group">Actieve aanbieders</string>
+    <string name="dictate__providers_active_transcription">Transcriptie</string>
+    <string name="dictate__providers_active_rewording">Herformulering</string>
+    <string name="dictate__providers_manage_group">Aanbieders configureren</string>
+    <string name="dictate__providers_status_key_set">Sleutel ingesteld</string>
+    <string name="dictate__providers_status_no_key">Geen sleutel</string>
+    <string name="dictate__providers_status_unconfigured">Niet geconfigureerd</string>
+    <string name="dictate__providers_cap_stt">Transcriptie</string>
+    <string name="dictate__providers_cap_chat">Herformulering</string>
+    <string name="dictate__providers_add_custom">Je eigen server toevoegen</string>
+    <string name="dictate__providers_add_custom_summary">Zelf gehost of elk OpenAI-compatibel endpoint — voor spraakherkenning en herformuleren</string>
+    <string name="dictate__providers_ollama_no_stt">Ollama heeft geen endpoint voor spraakherkenning en kan dus alleen herformuleren. Wil je dicteren via een eigen server, draai dan een spraakserver (zoals Speaches, faster-whisper-server of whisper.cpp) en voeg die toe via “Je eigen server toevoegen” — of gebruik de herkenning op het toestel, waarvoor helemaal geen server nodig is.</string>
+    <string name="dictate__providers_custom_title">Aangepaste server</string>
+    <string name="dictate__providers_field_name">Naam</string>
+    <string name="dictate__providers_field_transcription_model">Transcriptiemodel</string>
+    <string name="dictate__providers_field_chat_model">Herformuleringsmodel</string>
+    <string name="dictate__providers_test">Verbinding testen</string>
+    <string name="dictate__providers_test_success">Verbonden · {count} modellen</string>
+    <string name="dictate__providers_test_failed">Verbinding mislukt</string>
+    <string name="dictate__providers_network_group">Netwerk</string>
+    <string name="dictate__request_timeout_title">Time-out voor aanvragen</string>
+    <string name="dictate__request_timeout_summary">{v} s · verhoog dit voor een trage eigen server</string>
+    <string name="dictate__proxy_title">Proxy</string>
+    <string name="dictate__proxy_summary_off">Uit · directe verbinding</string>
+    <string name="dictate__proxy_enabled_title">Een proxy gebruiken</string>
+    <string name="dictate__proxy_enabled_summary">Alle API-verbindingen van aanbieders via een proxy leiden</string>
+    <string name="dictate__proxy_server_group">Proxyserver</string>
+    <string name="dictate__proxy_type_title">Type</string>
+    <string name="dictate__proxy_type_http">HTTP</string>
+    <string name="dictate__proxy_type_socks5">SOCKS5</string>
+    <string name="dictate__proxy_host_title">Host</string>
+    <string name="dictate__proxy_host_placeholder">proxy.example.com</string>
+    <string name="dictate__proxy_port_title">Poort</string>
+    <string name="dictate__proxy_port_placeholder">8080</string>
+    <string name="dictate__proxy_auth_group">Authenticatie (optioneel)</string>
+    <string name="dictate__proxy_username_title">Gebruikersnaam</string>
+    <string name="dictate__proxy_password_title">Wachtwoord</string>
+    <string name="dictate__model_picker_title">Kies een model</string>
+    <string name="dictate__model_picker_search">Zoek of typ een model-id</string>
+    <string name="dictate__model_picker_loading">Modellen laden…</string>
+    <string name="dictate__model_picker_count">{count} modellen</string>
+    <string name="dictate__model_picker_refresh">Vernieuwen</string>
+    <string name="dictate__model_picker_use_custom">«{model}» gebruiken</string>
+    <string name="dictate__recording_group">Opname</string>
+    <string name="dictate__audio_focus_title">Andere audio pauzeren</string>
+    <string name="dictate__audio_focus_summary">Muziek en andere apps pauzeren tijdens het opnemen</string>
+    <string name="dictate__bluetooth_mic_title">Bluetooth-microfoon</string>
+    <string name="dictate__bluetooth_mic_summary">Opnemen via een verbonden Bluetooth-headset indien beschikbaar</string>
+    <string name="dictate__keep_screen_awake_title">Scherm aan houden</string>
+    <string name="dictate__keep_screen_awake_summary">Voorkomen dat het scherm uitgaat tijdens het opnemen</string>
+    <string name="dictate__push_to_talk_title">Ingedrukt houden om op te nemen</string>
+    <string name="dictate__push_to_talk_summary">Houd de microfoon ingedrukt, laat los om te verzenden</string>
+    <string name="dictate__push_to_talk_summary_off">Uit — de microfoon ingedrukt houden transcribeert in plaats daarvan een audiobestand</string>
+    <string name="dictate__push_to_talk_slide_cancel">Veeg om te annuleren</string>
+    <string name="dictate__recording_animation_title">Opname-indicator</string>
+    <string name="dictate__recording_animation_static_label">Geen animatie</string>
+    <string name="dictate__recording_animation_static_description">Blijft tijdens het opnemen een effen rode stip</string>
+    <string name="dictate__recording_animation_pulse_label">Pulserend</string>
+    <string name="dictate__recording_animation_pulse_description">Pulseert in een gelijkmatig tempo</string>
+    <string name="dictate__recording_animation_level_label">Volgt je stem</string>
+    <string name="dictate__recording_animation_level_description">Reageert op het microfoonniveau en laat zien dat de mic je hoort</string>
+    <string name="dictate__skip_silent_title">Stille opnames overslaan</string>
+    <string name="dictate__skip_silent_summary">Voorkomt gehallucineerde tekst en overbodige API-aanroepen bij stille audio</string>
+    <string name="dictate__trim_silent_gaps_title">Lange pauzes inkorten</string>
+    <string name="dictate__trim_silent_gaps_summary">Knipt lange pauzes weg vóór verzenden — sneller uploaden, lagere kosten</string>
+    <string name="dictate__speed_up_title">Audio versnellen</string>
+    <string name="dictate__speed_up_off">Uit</string>
+    <string name="dictate__speed_up_value">{rate}×</string>
+    <string name="dictate__speed_up_summary_off">Wordt verstuurd op de snelheid waarop je sprak</string>
+    <string name="dictate__speed_up_summary">Dezelfde woorden, dezelfde toonhoogte — ongeveer {percent} % minder audio om te betalen</string>
+    <string name="dictate__speed_up_summary_caution">Ongeveer {percent} % minder audio om te betalen, maar zo snel zijn de woorden lastiger te herkennen</string>
+    <string name="dictate__paragraph_split_title">In alinea\'s opsplitsen</string>
+    <string name="dictate__paragraph_split_off">Uit</string>
+    <string name="dictate__paragraph_split_value">Na {n} woorden</string>
+    <string name="dictate__realtime_title">Realtime-transcriptie</string>
+    <string name="dictate__realtime_summary">Toont tekst live terwijl je spreekt, voor providers die dit ondersteunen</string>
+    <string name="dictate__longform_title">Lange dictaten</string>
+    <string name="dictate__longform_summary">Transcribeer lange dictaten op de achtergrond, deel voor deel terwijl je blijft praten — tik tijdens het opnemen op Volgende om het huidige deel te versturen, zodat er aan het eind geen lange wachttijd is.</string>
+    <string name="dictate__longform_autosplit_title">Slim automatisch splitsen</string>
+    <string name="dictate__longform_autosplit_summary">Silero detecteert pauzes, daarna controleert Smart Turn of je gedachte compleet is. Aanhoudende stilte gebruikt de maximale pauze als terugval.</string>
+    <string name="dictate__longform_autosplit_threshold_title">Maximale pauze</string>
+    <string name="dictate__longform_pause_length_title">Pauzelengte</string>
+    <string name="dictate__longform_autosplit_value">{seconds} s</string>
+    <string name="dictate__smart_turn_title">Smart Turn-segmentatie</string>
+    <string name="dictate__smart_turn_summary">Knip bij voltooide gedachten met een model op het apparaat, niet alleen bij pauzes. Downloadt ongeveer 8 MB.</string>
+    <string name="dictate__smart_turn_downloading">Model downloaden… {percent}%</string>
+    <string name="dictate__smart_turn_download_failed">Downloaden mislukt — tik om opnieuw te proberen.</string>
+    <string name="dictate__longform_mode_off">Uit</string>
+    <string name="dictate__longform_mode_off_summary">Eén keer transcriberen aan het einde.</string>
+    <string name="dictate__longform_mode_manual">Volgend segment</string>
+    <string name="dictate__longform_mode_manual_summary">Verstuur elk deel met “Volgend segment” tijdens het opnemen.</string>
+    <string name="dictate__providers_field_realtime_model">Realtimemodel</string>
+    <string name="dictate__providers_custom_realtime">Realtime streamen</string>
+    <string name="dictate__providers_custom_realtime_summary">Deze server spreekt het OpenAI-realtimeprotocol op /v1/realtime</string>
+    <string name="dictate__providers_custom_warm_up">Wekken vóór herformuleren</string>
+    <string name="dictate__providers_custom_warm_up_summary">Benadert de server vroeg, zodat een slapende machine kan opstarten</string>
+    <string name="dictate__providers_realtime_model_default">Standaard</string>
+    <string name="dictate__instant_recording_title">Direct opnemen</string>
+    <string name="dictate__instant_recording_summary">Automatisch beginnen met opnemen wanneer het toetsenbord wordt geopend</string>
+    <string name="dictate__instant_recording_info_title">Let op</string>
+    <string name="dictate__instant_recording_info_message">Zolang direct opnemen aanstaat, is het herstellen van een onderbroken opname uitgeschakeld — telkens als het toetsenbord opent, start er een nieuwe opname. Zet direct opnemen weer uit om het herstel terug te krijgen.</string>
+    <string name="dictate__output_group">Uitvoer</string>
+    <string name="dictate__auto_enter_title">Automatisch Enter</string>
+    <string name="dictate__auto_enter_summary">Automatisch op Enter drukken nadat een transcriptie is ingevoegd</string>
+    <string name="dictate__instant_output_title">Directe uitvoer</string>
+    <string name="dictate__instant_output_summary">De hele tekst in één keer invoegen; schakel uit om hem geleidelijk te typen</string>
+    <string name="dictate__output_speed_title">Typsnelheid</string>
+    <string name="dictate__output_speed_value">{v}</string>
+    <string name="dictate__resend_button_title">Opnieuw-verzenden-knop</string>
+    <string name="dictate__resend_button_summary">Als de transcriptie mislukt, een knop tonen om het opnieuw te proberen met dezelfde opname</string>
+    <string name="dictate__transcription_group">Transcriptie (spraak → tekst)</string>
+    <string name="dictate__formatting_title">Opmaak &amp; woordenschat</string>
+    <string name="dictate__formatting_menu_summary">Stijlprompt, aangepaste woorden, vervangingen</string>
+    <string name="dictate__recording_menu_summary">Realtime, audiobron, direct opnemen</string>
+    <string name="dictate__output_menu_summary">Auto-enter, typesnelheid, opnieuw verzenden</string>
+    <string name="dictate__layout_title">Dicteerindeling</string>
+    <string name="dictate__layout_menu_summary">Klassieke indeling en uiterlijk van toetsenbord</string>
+    <string name="dictate__languages_group">Talen</string>
+    <string name="dictate__languages_title">Transcriptietalen</string>
+    <string name="dictate__languages_summary">Kies de talen waarin je dicteert. Wissel er snel tussen via de opnamebalk.</string>
+    <string name="dictate__language_detect">Automatisch detecteren</string>
+    <string name="dictate__languages_active_title">Actieve taal</string>
+    <string name="dictate__prompt_selection_none">Geen</string>
+    <string name="dictate__prompt_selection_predefined">Standaard</string>
+    <string name="dictate__prompt_selection_custom">Aangepast</string>
+    <string name="dictate__style_prompt_title">Interpunctie en stijl</string>
+    <string name="dictate__style_prompt_custom_title">Aangepaste stijlprompt</string>
+    <string name="dictate__style_prompt_custom_placeholder">bijv. Hallo. Hartelijk dank.</string>
+    <string name="dictate__style_prompt_info_title">Standaardvoorbeeld bekijken</string>
+    <string name="dictate__style_prompt_info_description">Deze voorbeeldzin wordt met elke transcriptie meegestuurd om het model richting correct hoofdlettergebruik en interpunctie te sturen. Hij past zich automatisch aan de taal aan waarin je dicteert.</string>
+    <string name="dictate__style_prompt_info_none">Deze taal heeft nog geen voorbeeldzin, dus er wordt er geen meegestuurd. De transcriptie volgt nog steeds de taal die je hebt gekozen.</string>
+    <string name="dictate__custom_words_title">Aangepaste woorden</string>
+    <string name="dictate__custom_words_summary_empty">Voeg namen of vaktermen toe die correct gespeld moeten worden</string>
+    <string name="dictate__custom_words_placeholder">bv. FlorisBoard, Kubernetes, Renée, OAuth, Anthropic</string>
+    <string name="dictate__rewording_group">Herformulering (AI-bewerking)</string>
+    <string name="dictate__rewording_title">Herformulering (AI)</string>
+    <string name="dictate__rewording_summary_on">Aan – herformuleren, vertalen en opmaken met AI</string>
+    <string name="dictate__rewording_summary_off">Uit</string>
+    <string name="dictate__rewording_enabled_title">Herformulering inschakelen</string>
+    <string name="dictate__rewording_enabled_summary">Herformuleer, vertaal en maak je tekst op met een AI-model</string>
+    <string name="dictate__rewording_provider_group">AI-aanbieder</string>
+    <string name="dictate__rewording_provider_title">Herformuleringsaanbieder</string>
+    <string name="dictate__rewording_api_key_title">API-sleutel voor herformulering</string>
+    <string name="dictate__rewording_api_key_reuse">Dezelfde als de transcriptiesleutel</string>
+    <string name="dictate__rewording_model_title">Herformuleringsmodel</string>
+    <string name="dictate__manage_prompts_title">Prompts beheren</string>
+    <string name="dictate__manage_prompts_summary">{count} prompts</string>
+    <string name="dictate__manage_prompts_summary_loading">Voeg je prompts toe, bewerk en verwijder ze</string>
+    <string name="dictate__auto_formatting_title">Automatische opmaak</string>
+    <string name="dictate__auto_formatting_summary">Gesproken opmaakaanwijzingen omzetten naar Markdown (koppen, lijsten, …)</string>
+    <string name="dictate__system_prompt_title">Herformuleringsinstructie</string>
+    <string name="dictate__system_prompt_custom_title">Aangepaste systeemprompt</string>
+    <string name="dictate__system_prompt_custom_placeholder">Aanwijzing die aan elk herformuleringsverzoek wordt toegevoegd</string>
+    <string name="dictate__system_prompt_info_title">Standaardinstructie bekijken</string>
+    <string name="dictate__system_prompt_info_description">Deze instructie wordt aan elk herformuleringsverzoek toegevoegd zodat de AI alleen het gevraagde resultaat teruggeeft, zonder extra tekst ervoor of erna.</string>
+    <string name="dictate__prompts_title">Prompts</string>
+    <string name="dictate__prompts_empty">Nog geen prompts. Tik op de knop hieronder om er een toe te voegen.</string>
+    <string name="dictate__prompt_add">Prompt toevoegen</string>
+    <string name="dictate__prompt_edit">Prompt bewerken</string>
+    <string name="dictate__prompt_name_title">Naam</string>
+    <string name="dictate__prompt_name_placeholder">bv. Grammatica corrigeren</string>
+    <string name="dictate__prompt_text_title">Prompt</string>
+    <string name="dictate__prompt_text_placeholder">Instructie voor de AI — of [tekst tussen haken] om die letterlijk in te voegen</string>
+    <string name="dictate__prompt_trigger_title">Typsnelkoppeling (optioneel)</string>
+    <string name="dictate__prompt_trigger_placeholder">bijv. ;sig</string>
+    <string name="dictate__prompt_trigger_error_invalid">Een snelkoppeling is één woord zonder spaties, maximaal 32 tekens.</string>
+    <string name="dictate__prompt_trigger_error_duplicate">Al in gebruik door ‘{name}’.</string>
+    <string name="dictate__prompt_requires_selection_title">Vereist selectie</string>
+    <string name="dictate__prompt_requires_selection_summary">Werkt op de geselecteerde tekst en vervangt deze</string>
+    <string name="dictate__prompt_auto_apply_title">Automatisch toepassen</string>
+    <string name="dictate__prompt_auto_apply_summary">Deze prompt automatisch op elke transcriptie uitvoeren</string>
+    <string name="dictate__prompt_reasoning_title">Redeneren</string>
+    <string name="dictate__prompt_reasoning_default">Standaard</string>
+    <string name="dictate__prompt_badge_selection">Vereist selectie</string>
+    <string name="dictate__prompt_badge_auto">Wordt automatisch toegepast</string>
+    <string name="dictate__example_prompt_fix_grammar_name">Grammatica corrigeren</string>
+    <string name="dictate__example_prompt_fix_grammar_prompt">Corrigeer alle spel-, grammatica- en interpunctiefouten in de tekst. Behoud zoveel mogelijk de oorspronkelijke formulering, toon en taal en voeg geen nieuwe informatie toe. Geef alleen de gecorrigeerde tekst terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_improve_name">Schrijfstijl verbeteren</string>
+    <string name="dictate__example_prompt_improve_prompt">Herschrijf de tekst zodat hij duidelijker leest en beter loopt, met behoud van betekenis, toon en taal. Voeg geen nieuwe informatie toe. Geef alleen de verbeterde tekst terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_formal_name">Formeel maken</string>
+    <string name="dictate__example_prompt_formal_prompt">Herschrijf de tekst in een beleefde, professionele en formele toon. Behoud de betekenis en taal en voeg geen nieuwe informatie toe. Geef alleen de herschreven tekst terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_friendly_name">Vriendelijk maken</string>
+    <string name="dictate__example_prompt_friendly_prompt">Herschrijf de tekst in een warme, vriendelijke en informele toon. Behoud de betekenis en taal en voeg geen nieuwe informatie toe. Geef alleen de herschreven tekst terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_shorter_name">Korter maken</string>
+    <string name="dictate__example_prompt_shorter_prompt">Maak de tekst merkbaar korter en bondiger met behoud van alle belangrijke informatie, de toon en de taal. Geef alleen de ingekorte tekst terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_translate_name">Naar het Engels vertalen</string>
+    <string name="dictate__example_prompt_translate_prompt">Vertaal de tekst naar natuurlijk, vloeiend Engels. Behoud de oorspronkelijke betekenis en toon. Geef alleen de vertaling terug, zonder aanhalingstekens of uitleg.</string>
+    <string name="dictate__example_prompt_quote_name">Inspirerende quote</string>
+    <string name="dictate__example_prompt_quote_prompt">Genereer één korte, originele en inspirerende quote. Geef alleen de quote terug, zonder auteur, aanhalingstekens of enige uitleg.</string>
+    <string name="dictate__example_prompt_funfact_name">Leuk weetje</string>
+    <string name="dictate__example_prompt_funfact_prompt">Deel één verrassend en echt waar weetje in één zin. Geef alleen het weetje terug, zonder inleiding of uitleg.</string>
+    <string name="dictate__example_prompt_shrug_name">Schouderophalen</string>
+    <string name="dictate__example_prompt_shrug_prompt">[¯\\_(ツ)_/¯]</string>
+    <string name="dictate__example_prompt_signoff_name">Afsluiting</string>
+    <string name="dictate__example_prompt_signoff_prompt">[Met vriendelijke groet,]</string>
+    <string name="dictate__prompt_reorder_hint">Houd een prompt ingedrukt en sleep om de volgorde te wijzigen.</string>
+    <string name="dictate__prompts_export">Prompts exporteren</string>
+    <string name="dictate__prompts_import">Prompts importeren</string>
+    <string name="dictate__prompts_export_filename">dictate_prompts.json</string>
+    <string name="dictate__prompts_export_success">Prompts geëxporteerd</string>
+    <string name="dictate__prompts_export_failed">Exporteren mislukt</string>
+    <string name="dictate__prompts_import_success">Prompts geïmporteerd</string>
+    <string name="dictate__prompts_import_failed">Importeren mislukt</string>
+    <string name="dictate__prompts_import_no_prompts">Geen prompts gevonden in bestand</string>
+    <string name="dictate__prompts_import_mode_title">Prompts importeren</string>
+    <string name="dictate__prompts_import_mode_message">Je bestaande prompts vervangen of de geïmporteerde toevoegen?</string>
+    <string name="dictate__prompts_import_mode_replace">Vervangen</string>
+    <string name="dictate__prompts_import_mode_add">Toevoegen</string>
+    <string name="dictate__prompt_library_title">Communitybibliotheek</string>
+    <string name="dictate__prompt_library_menu">Communitybibliotheek doorbladeren</string>
+    <string name="dictate__prompt_library_search">Prompts zoeken</string>
+    <string name="dictate__prompt_library_all">Alles</string>
+    <string name="dictate__prompt_library_add">Toevoegen</string>
+    <string name="dictate__prompt_library_added">Toegevoegd</string>
+    <string name="dictate__prompt_library_add_again">Opnieuw toevoegen</string>
+    <string name="dictate__prompt_library_empty">Geen prompts komen overeen met je zoekopdracht.</string>
+    <string name="dictate__prompt_library_error">Kan de communitybibliotheek niet laden. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="dictate__prompt_library_retry">Opnieuw proberen</string>
+    <string name="dictate__prompt_library_close">Sluiten</string>
+    <string name="dictate__prompt_library_author">door {author}</string>
+    <string name="dictate__prompt_share_title">Delen met de community</string>
+    <string name="dictate__prompt_share_message">Hiermee wordt GitHub in je browser geopend met je prompt al ingevuld als inzending. Meld je aan en bevestig om een pull request te openen die deze aan de communitybibliotheek toevoegt. Een gratis GitHub-account is vereist; er wordt niets geüpload totdat je op GitHub bevestigt.</string>
+    <string name="dictate__prompt_share_continue">GitHub openen</string>
+    <string name="dictate__prompt_share_category">Categorie (optioneel)</string>
+    <string name="dictate__prompt_share_description">Beschrijving (optioneel)</string>
+    <string name="dictate__prompt_share_description_placeholder">bijv. Corrigeert de grammatica zonder de betekenis te wijzigen</string>
+    <string name="dictate__file_preparing">Bestand voorbereiden…</string>
+    <string name="dictate__file_too_large">Bestand is te groot – de aanbieder accepteert maximaal 25 MB.</string>
+    <string name="dictate__file_read_error">Kan het geselecteerde bestand niet lezen.</string>
+    <string name="dictate__import_share_label">Transcriberen</string>
+    <string name="dictate__import_title">Bestand transcriberen</string>
+    <string name="dictate__import_menu">Een bestand transcriberen</string>
+    <string name="dictate__import_menu_summary">Kies een audio- of videobestand en lees wat erin gezegd wordt</string>
+    <string name="dictate__import_step_copy">Bestand ontvangen</string>
+    <string name="dictate__import_step_extract">Audio uitpakken</string>
+    <string name="dictate__import_step_prepare">Audio voorbereiden</string>
+    <string name="dictate__import_step_upload">Uploaden</string>
+    <string name="dictate__import_step_transcribe">Transcriberen met {provider}</string>
+    <string name="dictate__import_step_transcribe_local">Transcriberen op dit apparaat</string>
+    <string name="dictate__import_step_finish">Afronden</string>
+    <string name="dictate__import_step_percent">{v}%</string>
+    <string name="dictate__import_step_part">Deel {current} van {total}</string>
+    <string name="dictate__import_result_label">Transcript</string>
+    <string name="dictate__import_prompt_button">Herschrijven</string>
+    <string name="dictate__import_revert">Ongedaan maken</string>
+    <string name="dictate__import_copy">Kopiëren</string>
+    <string name="dictate__import_copied">Gekopieerd!</string>
+    <string name="dictate__import_save">Opslaan als bestand</string>
+    <string name="dictate__import_saved">Transcript opgeslagen.</string>
+    <string name="dictate__import_save_failed">Het transcript kon niet worden opgeslagen.</string>
+    <string name="dictate__import_search">Zoeken in transcript</string>
+    <string name="dictate__import_search_hits">{current}/{total}</string>
+    <string name="dictate__import_search_none">0/0</string>
+    <string name="dictate__import_retry">Opnieuw proberen</string>
+    <string name="dictate__import_no_file">Er is geen audiobestand gedeeld.</string>
+    <string name="dictate__import_not_audio">Dit bestand bevat geen audio.</string>
+    <string name="dictate__import_only_first">Alleen het eerste bestand wordt getranscribeerd – {count} andere zijn overgeslagen.</string>
+    <string name="dictate__setup_description">Stel je AI-aanbieder en API-sleutel in zodat je met de microfoon kunt dicteren.</string>
+    <string name="dictate__setup_configure_btn">Dictate instellen</string>
+    <string name="setup__grant_mic_permission__title">Microfoontoegang</string>
+    <string name="setup__grant_mic_permission__description">Dictate heeft toegang tot de microfoon nodig om je stem op te nemen voor transcriptie.</string>
+    <string name="setup__grant_mic_permission__btn">Microfoontoestemming verlenen</string>
+    <string name="changelog__dialog_title">Wat is er nieuw</string>
+    <string name="changelog__view_all">Alle wijzigingen bekijken</string>
+    <string name="changelog__intro">Dictate is bijgewerkt. Dit is er nieuw:</string>
+    <string name="changelog__version_header">Versie {version}</string>
+    <string name="changelog__donate">Vind je Dictate leuk? Tik hier om de ontwikkeling te steunen ♥</string>
+    <string name="changelog__current">• Gloednieuw toetsenbord: Dictate is nu een volwaardig meertalig lay-outtoetsenbord met een eigen microfoontoets die het spraakpaneel opent.\n• Gebruik je eigen AI: kies een willekeurige OpenAI-compatibele aanbieder en voer je API-sleutel in via Instellingen → Dictate.\n• Slimme opmaak en herformulering met het model van jouw keuze.\n• Je instellingen van de vorige Dictate-app worden automatisch geïmporteerd.</string>
+    <string name="changelog__v4_1_0">• Nieuw: zoek emoji\'s rechtstreeks vanaf het toetsenbord.\n• Nieuwe transcriptieprovider: Soniox.\n• Voeg je laatste dictaat opnieuw in en herstel opnames die werden onderbroken toen het toetsenbord sloot.\n• De promptbalk wordt nu live bijgewerkt: houd een prompt ingedrukt om die te bewerken.\n• Het scherm met AI-providers toont nu zowel je actieve transcriptie- als herformuleringsprovider.\n• Grotere opnameknop die makkelijker te raken is.\n• Oplossingen: een ondersteuningsmelding kon blijven hangen en de balk blokkeren in sommige talen; back-up mislukt niet meer wanneer prompts, toetsenbord of thema zijn geselecteerd; opgeslagen API-sleutels blijven behouden bij het updaten.</string>
+    <string name="changelog__v4_1_1">• Oplossing: de accentkleur kon op sommige apparaten groen lijken; toetsen en knoppen zijn weer Dictate-blauw.</string>
+    <!-- Dictate on-device (offline) models -->
+    <string name="dictate__local_models_header">Draait op je apparaat — er wordt geen audio verzonden. Download een model om te beginnen.</string>
+    <string name="dictate__local_models_live_header">Live (streaming)</string>
+    <string name="dictate__local_models_live_summary">Ze typen terwijl je praat. Zet “Realtime-transcriptie” aan onder Opname om ze te gebruiken.</string>
+    <string name="dictate__local_longpress_send_title">Verzenden ingedrukt houden voor lokaal model</string>
+    <string name="dictate__local_longpress_send_summary">Houd verzenden ingedrukt tijdens opnemen — of stoppen tijdens uploaden — om dit model te gebruiken i.p.v. de cloud.</string>
+    <string name="dictate__local_unload_after">Inactief model na {n} min ontladen</string>
+    <string name="dictate__local_unload_pressure">Inactief model alleen bij geheugendruk ontladen</string>
+    <string name="dictate__local_model_status_active">Actief</string>
+    <string name="dictate__local_model_status_installed">Geïnstalleerd · tik om te gebruiken</string>
+    <string name="dictate__local_model_action_install">Downloaden</string>
+    <string name="dictate__local_model_action_delete">Verwijderen</string>
+    <string name="dictate__local_model_action_cancel">Annuleren</string>
+    <string name="dictate__local_model_downloading">Downloaden… {percent}%</string>
+    <string name="dictate__local_model_download_failed">Downloaden mislukt — probeer het opnieuw</string>
+    <string name="dictate__local_model_download_background">Downloaden op de achtergrond — je kunt de app verlaten.</string>
+    <string name="dictate__local_model_notif_channel_name">Modeldownloads</string>
+    <string name="dictate__local_model_notif_title">{model} downloaden</string>
+    <string name="dictate__local_model_notif_title_multi">{count} modellen downloaden</string>
+    <string name="dictate__local_model_none_selected">Nog geen model gedownload</string>
+    <string name="dictate__local_model_delete_confirm">“{model}” verwijderen? Je kunt het later opnieuw downloaden.</string>
+    <string name="dictate__local_model_not_installed_error">Geen lokaal model gedownload</string>
+    <string name="dictate__local_fallback_title">Offline terugval</string>
+    <string name="dictate__local_fallback_summary">Offline transcriberen op het apparaat met het gedownloade model nadat de provider faalt</string>
+    <string name="backup_and_restore__back_up__files_dictate_prompts">Opgeslagen herformuleerprompts</string>
+    <string name="dictate__floating_button_undo_failed">Ongedaan maken mislukt — de tekst is mogelijk gewijzigd.</string>
+    <string name="dictate__floating_button_copy_to_clipboard_title">Elk dictaat naar klembord kopiëren</string>
+    <string name="dictate__floating_button_copy_to_clipboard_summary_on">Elk dictaat wordt ook naar het klembord gekopieerd, zodat je het handmatig kunt plakken als invoegen mislukt. Kan op sommige telefoons een klembordmelding tonen.</string>
+    <string name="dictate__floating_button_copy_to_clipboard_summary_off">Dictaten worden alleen ingevoegd, niet naar het klembord gekopieerd.</string>
+    <string name="dictate__floating_button_undo_summary_off">Geen knop voor ongedaan maken weergegeven.</string>
+    <string name="dictate__floating_button_undo_summary_on">Na een dictaat verschijnt er een knop voor ongedaan maken naast de knop om de ingevoegde tekst met één tik te verwijderen.</string>
+    <string name="dictate__floating_button_undo_title">Knop voor ongedaan maken</string>
+    <string name="dictate__mappings_add">Toewijzing toevoegen</string>
+    <string name="dictate__mappings_editor_title">Toewijzing</string>
+    <string name="dictate__mappings_empty_summary">Voeg een regel toe om woorden of zinnen in elk transcript automatisch te vervangen — exact, zonder AI-tokens.</string>
+    <string name="dictate__mappings_empty_title">Nog geen toewijzingen</string>
+    <string name="dictate__mappings_entry_summary">Zoek-en-vervangregels toegepast op het transcript</string>
+    <string name="dictate__mappings_field_from">Vervang</string>
+    <string name="dictate__mappings_field_from_placeholder">bijv. github</string>
+    <string name="dictate__mappings_field_to">Door</string>
+    <string name="dictate__mappings_field_to_placeholder">bijv. GitHub</string>
+    <string name="dictate__mappings_group">Vervangregels</string>
+    <string name="dictate__mappings_matchcase_summary">Alleen vervangen wanneer de hoofdletters exact overeenkomen.</string>
+    <string name="dictate__mappings_matchcase_title">Hoofdlettergevoelig</string>
+    <string name="dictate__mappings_opt_caseinsensitive">Negeert hoofdletters</string>
+    <string name="dictate__mappings_opt_casesensitive">Hoofdlettergevoelig</string>
+    <string name="dictate__mappings_opt_substring">Overal</string>
+    <string name="dictate__mappings_opt_wholeword">Heel woord</string>
+    <string name="dictate__mappings_title">Aangepaste toewijzingen</string>
+    <string name="dictate__mappings_wholeword_summary">Alleen losstaande woorden vervangen, niet binnen langere woorden.</string>
+    <string name="dictate__mappings_wholeword_title">Alleen heel woord</string>
+    <string name="dictate__wear_standalone_summary">Stuur je API-sleutel naar het horloge zodat het zonder telefoon kan dicteren.</string>
+    <string name="dictate__wear_standalone_title">Sleutel synchroniseren met horloge</string>
+    <string name="emoji__search__hint">Emoji zoeken</string>
+    <string name="emoji__row__open_panel">Alle emoji openen</string>
+    <string name="emoji__search__no_results">Geen overeenkomende emoji</string>
+    <string name="pref__suggestion__api30_inline_suggestions_enabled__label">Suggesties voor automatisch invullen van systeem</string>
+    <string name="pref__suggestion__block_possibly_offensive__summary">Voorkomt dat mogelijk aanstootgevende woorden worden voorgesteld terwijl je typt</string>
+    <string name="quick_action__dictate_reinsert">Geschiedenis</string>
+    <string name="quick_action__dictate_reinsert__tooltip">Open je dicteergeschiedenis</string>
+
+    <string name="dictate__providers_field_transcription_rewording_model">Model voor transcriptie en herformulering</string>
+    <string name="dictate__providers_single_call_title">Eén multimodale aanroep</string>
+    <string name="dictate__providers_single_call_summary">Eén audiogeschikt model transcribeert en formatteert in één verzoek.</string>
+    <string name="dictate__providers_rewording_single_call_note">Wordt nu niet gebruikt — je transcriptieprovider doet de herformulering in zijn enkele aanroep.</string>
+    <string name="dictate__wear_title">Wear OS</string>
+    <string name="dictate__wear_summary">Opties voor dicteren vanaf een gekoppeld horloge</string>
+    <string name="dictate__wear_install_title">Dictate op je horloge installeren</string>
+    <string name="dictate__wear_install_summary">Opent de Play Store — kies op een gekoppeld Wear OS 3+-horloge je horloge als doel.</string>
+    <string name="dictate__wear_auto_rewording_title">Horlogedictaten automatisch herformuleren</string>
+    <string name="dictate__wear_auto_rewording_summary">Herformuleer dictaten vanaf het horloge, net als op de telefoon.</string>
+    <string name="quick_action__system_prev_input_method">Toetsenbord wisselen</string>
+    <string name="quick_action__system_prev_input_method__tooltip">Terug naar je vorige toetsenbord</string>
+    <string name="quick_action__system_input_method_picker">Toetsenbord kiezen</string>
+    <string name="quick_action__system_input_method_picker__tooltip">De toetsenbordkiezer van het systeem openen</string>
+    <string name="changelog__v4_3_0">• NIEUW: Transcriptie op het apparaat — dicteer volledig offline. Geen internet nodig en niets verlaat je telefoon. Download eenmalig een spraakmodel via Instellingen ▸ Dictate ▸ Providers. 📴\n• NIEUW: Wear OS-toetsenbord — dicteer rechtstreeks vanaf je horloge, via je telefoon of zelfstandig. ⌚\n• NIEUW: Zoek- en vervangregels — corrigeer automatisch terugkerende woorden, namen of zinnen in elke transcriptie. Stel ze in via Instellingen ▸ Dictate ▸ Aangepaste toewijzingen. 🔁\n• NIEUW: Modus met één aanroep — één capabel AI-model transcribeert en formatteert in één verzoek, sneller en vaak goedkoper. Schakel het per provider in. ⚡\n• NIEUW: Smartbar-acties om terug te gaan naar je vorige toetsenbord of de toetsenbordkiezer van het systeem te openen. ⌨️\n• De accentkleur van het toetsenbord volgt nu de kleur die je kiest in Instellingen ▸ Thema. 🎨\n• Een optionele ongedaan-maken-knop toegevoegd aan de zwevende dicteerknop. ↩️\n• Diverse fixes en stabiliteitsverbeteringen. 🛠️</string>
+    <string name="dictate__audio_source_title">Audio-invoerbron</string>
+    <string name="dictate__audio_source_default">Standaardmicrofoon</string>
+    <string name="dictate__audio_source_default_summary">Standaardmicrofoon, met de ingebouwde audioverwerking van de telefoon</string>
+    <string name="dictate__audio_source_voice_recognition">Spraakherkenning</string>
+    <string name="dictate__audio_source_voice_recognition_summary">Afgestemd op spraak met minder verwerking — probeer dit als de transcriptie onnauwkeurig is</string>
+    <string name="dictate__audio_source_unprocessed">Onverwerkt (ruw)</string>
+    <string name="dictate__audio_source_unprocessed_summary">Helemaal geen verwerking; valt terug op Spraakherkenning als je telefoon het niet ondersteunt</string>
+    <string name="dictate__security_group">Beveiliging</string>
+    <string name="dictate__trust_user_certs_title">Gebruikerscertificaten vertrouwen</string>
+    <string name="dictate__trust_user_certs_summary">Vertrouw CA-certificaten die je hebt geïnstalleerd, voor zelf-gehoste eindpunten achter een privé-CA.</string>
+    <string name="dictate__stats_title">Statistieken</string>
+    <string name="dictate__stats_menu_summary">Woorden, bespaarde tijd, reeks en meer</string>
+    <string name="dictate__history_title">Geschiedenis</string>
+    <string name="dictate__history_original">Origineel</string>
+    <string name="dictate__history_result">Resultaat</string>
+    <string name="dictate__history_hold_for_original">houd ingedrukt voor origineel</string>
+    <string name="dictate__history_menu_summary">Vorige dictaten afspelen, opnieuw invoegen en beheren</string>
+    <string name="dictate__history_empty">Nog geen dictaten — je recente dictaten verschijnen hier.</string>
+    <string name="dictate__history_enable_title">Geschiedenis bijhouden</string>
+    <string name="dictate__history_enable_summary">Dictaten vastleggen om ze later opnieuw in te voegen of te bekijken.</string>
+    <string name="dictate__history_audio_title">Audio bewaren</string>
+    <string name="dictate__history_audio_summary">Afspelen en opnieuw transcriberen (~1,9 MB/min).</string>
+    <string name="dictate__history_retention_title">Opslaglimieten</string>
+    <string name="dictate__history_max_entries_title">Maximum aantal items</string>
+    <string name="dictate__history_max_age_title">Automatisch verwijderen na</string>
+    <string name="dictate__history_audio_budget_title">Opslaglimiet voor audio</string>
+    <string name="dictate__history_age_days">{days} dagen</string>
+    <string name="dictate__history_age_never">Geen limiet</string>
+    <string name="dictate__history_failed">Transcriptie mislukt — transcribeer opnieuw om het nogmaals te proberen</string>
+    <string name="dictate__history_search">Geschiedenis doorzoeken</string>
+    <string name="dictate__history_disk_usage">Bewaarde audio: {size}</string>
+    <string name="dictate__history_audio_missing">Opname is niet meer beschikbaar.</string>
+    <string name="dictate__history_copied">Gekopieerd naar klembord</string>
+    <string name="dictate__history_play">Opname afspelen</string>
+    <string name="dictate__history_copy">Transcriptie kopiëren</string>
+    <string name="dictate__history_delete">Item verwijderen</string>
+    <string name="dictate__history_clear_title">Geschiedenis wissen?</string>
+    <string name="dictate__history_clear_message">Hiermee worden alle geschiedenisitems en alle bewaarde audio permanent verwijderd.</string>
+    <string name="dictate__history_clear_confirm">Alles wissen</string>
+    <string name="dictate__stats_empty">Nog geen dictaten — je statistieken verschijnen hier zodra je begint te dicteren.</string>
+    <string name="dictate__stats_time_saved">Bespaarde tijd</string>
+    <string name="dictate__stats_time_saved_sub">t.o.v. typen</string>
+    <string name="dictate__stats_dictations">Dictaten</string>
+    <string name="dictate__stats_words">Woorden</string>
+    <string name="dictate__stats_chars">Tekens</string>
+    <string name="dictate__stats_spoken">Spreektijd</string>
+    <string name="dictate__stats_avg_words">Gem. woorden/dictaat</string>
+    <string name="dictate__stats_pace">Spreektempo</string>
+    <string name="dictate__stats_pace_unit">wpm</string>
+    <string name="dictate__stats_rewordings">Herformuleringen</string>
+    <string name="dictate__stats_streak">Dagreeks</string>
+    <string name="dictate__stats_streak_best">Beste: %d</string>
+    <string name="dictate__stats_activity">Laatste 7 dagen</string>
+    <string name="dictate__stats_since">Bijgehouden sinds %s</string>
+    <string name="dictate__stats_reset">Statistieken wissen</string>
+    <string name="dictate__stats_reset_confirm_title">Statistieken wissen?</string>
+    <string name="dictate__stats_reset_confirm_msg">Dit wist permanent al je dicteerstatistieken.</string>
+    <string name="dictate__stats_share">Delen</string>
+    <string name="dictate__stats_share_text">Ik heb %1$s bespaard met Dictate — %2$s dictaten, %3$s woorden. 🎤</string>
+    <string name="dictate__stats_view">Statistieken bekijken</string>
+    <string name="dictate__stats_milestones_title">Mijlpaalvieringen</string>
+    <string name="dictate__stats_milestones_summary">Vier één keer bij een mijlpaal voor bespaarde tijd of dictaten</string>
+    <string name="dictate__stats_milestone_title">Mijlpaal bereikt 🎉</string>
+    <string name="dictate__stats_milestone_time">Je hebt %s bespaard met Dictate — goed bezig!</string>
+    <string name="dictate__stats_milestone_count">Je hebt %s dictaten bereikt met Dictate!</string>
+    <string name="dictate__promo_milestone_time">%s bespaard met Dictate! 🎉</string>
+    <string name="dictate__promo_milestone_count">%s dictaten met Dictate! 🎉</string>
+    <string name="dictate__promo_milestone_action">Statistieken</string>
+    <string name="dictate__reasoning_effort_title">Redeneerinspanning</string>
+    <string name="dictate__reasoning_effort_off">Uit</string>
+    <string name="dictate__reasoning_effort_off_summary">Standaard van provider — laat uit voor niet-redenerende modellen</string>
+    <string name="dictate__reasoning_effort_minimal">Minimaal</string>
+    <string name="dictate__reasoning_effort_minimal_summary">Snelst, minst nadenken</string>
+    <string name="dictate__reasoning_effort_low">Laag</string>
+    <string name="dictate__reasoning_effort_low_summary">Minder nadenken, sneller</string>
+    <string name="dictate__reasoning_effort_medium">Gemiddeld</string>
+    <string name="dictate__reasoning_effort_medium_summary">Balans tussen nadenken en snelheid</string>
+    <string name="dictate__reasoning_effort_high">Hoog</string>
+    <string name="dictate__reasoning_effort_high_summary">Meest nadenken, langzamer</string>
+    <string name="dictate__reasoning_effort_custom">Aangepast</string>
+    <string name="dictate__action_save_audio">Audio opslaan</string>
+    <string name="dictate__audio_saved">Audio opgeslagen in Downloads/Dictate: %s</string>
+    <string name="dictate__audio_save_failed">Kan de audio niet opslaan</string>
+    <string name="dictate__instant_recording_mode_off">Uit</string>
+    <string name="dictate__instant_recording_mode_always">Elke keer als het toetsenbord opent</string>
+    <string name="dictate__instant_recording_mode_after_switch">Alleen na overschakelen naar {app_name}</string>
+    <string name="dictate__instant_recording_in_numeric">Ook in numerieke velden</string>
+    <string name="dictate__instant_recording_skip_numeric_title">Numerieke velden overslaan</string>
+    <string name="dictate__instant_recording_skip_numeric_summary">Niet automatisch starten bij cijfer-, telefoon- of pinvelden</string>
+    <string name="settings__localization__subtype_status_words">Suggesties</string>
+    <string name="settings__localization__subtype_no_word_list_title">Geen woordenlijst voor deze taal</string>
+    <string name="settings__localization__subtype_no_word_list_message">Woordsuggesties, autocorrectie en veegtypen blijven uit voor deze taal zolang er geen woordenlijst voor bestaat. Typen, dicteren en herformuleren werken gewoon.</string>
+    <string name="settings__localization__subtype_status_context">Context</string>
+    <string name="pref__suggestion__auto_correct__label">Autocorrectie</string>
+    <string name="pref__suggestion__auto_correct__summary">Typefouten automatisch corrigeren bij een spatie</string>
+    <string name="pref__correction__auto_correct_strength__label">Sterkte van autocorrectie</string>
+    <string name="enum__auto_correct_strength__cautious">Voorzichtig</string>
+    <string name="enum__auto_correct_strength__cautious__description">Corrigeert alleen een duidelijke uitschieter van de vinger. Ongewone spellingen blijven onaangeroerd.</string>
+    <string name="enum__auto_correct_strength__balanced">Gebalanceerd</string>
+    <string name="enum__auto_correct_strength__balanced__description">Corrigeert alledaagse typefouten, ook de toets ernaast. Aanbevolen.</string>
+    <string name="enum__auto_correct_strength__aggressive">Agressief</string>
+    <string name="enum__auto_correct_strength__aggressive__description">Corrigeert ook woorden die verder afliggen — en vervangt af en toe een woord dat je bedoelde.</string>
+    <string name="pref__suggestion__multilingual_typing__label">Meertalig typen</string>
+    <string name="pref__suggestion__multilingual_typing__summary">Woorden uit al je toetsenbordtalen accepteren</string>
+    <string name="pref__suggestion__next_word_prediction__label">Suggesties voor volgend woord</string>
+    <string name="pref__suggestion__next_word_prediction__summary">Stelt waarschijnlijke volgende woorden voor zodra een woord af is</string>
+    <string name="pref__suggestion__ignore_app_suggestion_block__label">Apps negeren die suggesties uitschakelen</string>
+    <string name="pref__suggestion__ignore_app_suggestion_block__summary">Toon ze toch, behalve in wachtwoordvelden</string>
+    <string name="suggestion__added_to_dictionary">\"{word}\" toegevoegd aan je woordenboek</string>
+    <string name="suggestion__already_in_dictionary">\"{word}\" staat al in je woordenboek</string>
+    <string name="dictate__legacy_record">Opnemen</string>
+    <string name="dictate__legacy_stop">Stoppen</string>
+    <string name="dictate__legacy_switch_keyboard">Toetsenbord wisselen</string>
+    <string name="dictate__legacy_space">Spatie</string>
+    <string name="dictate__legacy_enter">Enter</string>
     <string name="dictate__legacy_backspace">Backspace</string>
     <string name="dictate__legacy_emoji">Emoji</string>
     <string name="dictate__legacy_numbers">Cijfers</string>
