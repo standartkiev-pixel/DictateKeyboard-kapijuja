@@ -12,7 +12,7 @@ No stage should combine structural movement with a new feature.
 
 1. Freeze controller growth and reject corrupted source in CI.
 2. Extract request timeout and cancellation orchestration with deterministic tests. (Completed.)
-3. Extract the long-form session coordinator while preserving ordered output and rescue audio. (Ordered queue and file/job ownership extracted; lifecycle orchestration pending.)
+3. Extract the long-form session coordinator while preserving ordered output and rescue audio. (Queue, file/job ownership, and lifecycle state extracted; Android orchestration pending.)
 4. Extract stopped-session recovery and retained-audio ownership.
 5. Extract recording lifecycle and audio-route observation. (Input switching extracted; lifecycle pending.)
 6. Extract provider request construction and response normalization.

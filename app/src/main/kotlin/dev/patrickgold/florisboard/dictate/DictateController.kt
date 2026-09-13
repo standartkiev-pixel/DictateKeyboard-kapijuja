@@ -319,17 +319,13 @@ object DictateController {
     // text to the field as a live preview (reusing [realtimeShown] as the shown-text buffer, since
     // segmented and realtime are mutually exclusive). All formatting/rewording runs ONCE at the end via
     // finalizeAndCommit(finalizeViaComposing=true), which replaces the preview with the finished text.
-    private var segmentedActive = false
-    private val segmentQueue = LongFormSegmentQueue()
-    private val segmentResources = LongFormSessionResources()
+    private val segmentSession = LongFormSession()
     private val segmentMutex = Mutex()        // orders index assignment + rotate + the commit drain
-    private var segmentCancellationPending = false // manual Stop/watchdog is collecting a rescue WAV
-    private var segmentRecordedSeconds = 0L
     private var segmentVad: LiveSpeechSplitter? = null  // live VAD auto-split, when enabled (Phase 2)
     // Every segment WAV stays in cache until the long-form session ends. This is temporary ownership,
     // independent of History retention: it lets Stop/watchdog reconstruct a rescue recording even when
-    // permanent audio history is disabled. [segmentKeepAudio] only decides whether success is copied to History.
-    private var segmentKeepAudio = false                  // whether successful session audio is retained in History
+    // permanent audio history is disabled. The session's keepAudio flag only decides whether success is
+    // copied to History.
     private val _segmentFlushCount = MutableStateFlow(0)
     /** Monotonic count of segment cuts — the recording bar flashes the Next button on each change (#170). */
     val segmentFlushCount: StateFlow<Int> = _segmentFlushCount.asStateFlow()
@@ -1154,9 +1150,9 @@ object DictateController {
         recorder = null
         // Long-form segmented (#170): abort the background segment transcriptions; the realtime cleanup
         // below removes the progressively-shown preview text (segmented reuses realtimeShown/Context).
-        if (segmentedActive) {
-            segmentResources.cancelJobs()
-            segmentResources.discardAudio()
+        if (segmentSession.isActive) {
+            segmentSession.cancelJobs()
+            segmentSession.discardAudio()
             resetSegmentedState()
         }
         // Tear down any realtime stream (#128) and remove the live provisional text from the field. Set the
@@ -1261,7 +1257,7 @@ object DictateController {
         stalled: Boolean = false,
     ) {
         if (_state.value !is UiState.Transcribing) return
-        if (segmentedActive || segmentCancellationPending) {
+        if (segmentSession.isActive || segmentSession.cancellationPending) {
             cancelSegmentedTranscription(context, stalled)
             return
         }
@@ -1563,7 +1559,7 @@ object DictateController {
      * installed → open settings" feedback (it never crashes), which is friendlier than silently ignoring.
      */
     fun canLongPressSendLocal(): Boolean =
-        _state.value is UiState.Recording && !segmentedActive && realtimeSession == null
+        _state.value is UiState.Recording && !segmentSession.isActive && realtimeSession == null
 
     /**
      * True while a cloud transcription is in flight that could still be handed to the on-device model
@@ -1613,7 +1609,7 @@ object DictateController {
     private fun stopAndTranscribe(context: Context, forceLocal: Boolean = false) {
         setPushToTalk(phase = PushToTalkPhase.NONE)
         // Long-form segmented (#170): finish the segment queue instead of uploading one big file.
-        if (segmentedActive) {
+        if (segmentSession.isActive) {
             stopSegmentedAndFinalize(context)
             return
         }
@@ -2543,14 +2539,10 @@ object DictateController {
             !transcriptionAccount().transcriptionViaChat
 
     private fun initSegmented(appContext: Context) {
-        segmentedActive = true
-        segmentQueue.reset()
-        segmentResources.clearAudioReferences()
-        segmentCancellationPending = false
-        segmentRecordedSeconds = 0L
+        segmentSession.begin(
+            keepAudio = prefs.dictate.historyEnabled.get() && prefs.dictate.historyAudioRetention.get(),
+        )
         _segmentFlushCount.value = 0
-        // Keep + merge the segment audio only when the history feature would actually store it.
-        segmentKeepAudio = prefs.dictate.historyEnabled.get() && prefs.dictate.historyAudioRetention.get()
         realtimeShown.setLength(0)
         // Reuse the realtime shown-text context so the existing cancel/interrupt cleanup clears the preview.
         realtimeContext = WeakReference(appContext)
@@ -2560,10 +2552,8 @@ object DictateController {
     }
 
     private fun resetSegmentedState() {
-        segmentedActive = false
-        segmentQueue.reset()
-        segmentResources.clearAudioReferences() // finalize/cancel takes or deletes the files first
-        // Cancellation keeps segmentCancellationPending armed across this reset while its rescue WAV is
+        segmentSession.resetRuntimeState() // finalize/cancel takes or deletes the files first
+        // Cancellation keeps the session guard armed across this reset while its rescue WAV is
         // assembled; cancelSegmentedTranscription clears it only after every cancelled source file has
         // been consumed. Normal successful sessions entered with the flag false and keep it false.
         segmentVad?.release()
@@ -2582,18 +2572,18 @@ object DictateController {
     }
 
     private fun flushSegment(context: Context, splitterAlreadyReset: Boolean) {
-        if (!segmentedActive || _state.value !is UiState.Recording) return
+        if (!segmentSession.isActive || _state.value !is UiState.Recording) return
         val appContext = context.applicationContext
         // Manual cuts reset the analyzer at call time so audio queued after this point belongs to the next
         // turn. Automatic cuts already reset atomically inside LiveSpeechSplitter before invoking us.
         if (!splitterAlreadyReset) segmentVad?.notifyCut()
         scope.launch {
             val assigned = segmentMutex.withLock {
-                if (!segmentedActive || _state.value !is UiState.Recording) return@withLock null
-                val i = segmentQueue.reserve()
+                if (!segmentSession.isActive || _state.value !is UiState.Recording) return@withLock null
+                val i = segmentSession.reserveSegment()
                 val w = withContext(Dispatchers.IO) { recorder?.rotate() }
-                if (w != null) segmentResources.trackAudio(i, w)
-                _segmentsInFlight.value = segmentQueue.inFlightCount
+                if (w != null) segmentSession.trackAudio(i, w)
+                _segmentsInFlight.value = segmentSession.inFlightCount
                 _segmentFlushCount.value = _segmentFlushCount.value + 1
                 i to w
             } ?: return@launch
@@ -2616,7 +2606,7 @@ object DictateController {
      * the legacy layout so the trash button behaves consistently.
      */
     fun cancelOrDiscardSegment(context: Context) {
-        if (segmentedActive && _state.value is UiState.Recording) {
+        if (segmentSession.isActive && _state.value is UiState.Recording) {
             stopSegmentedAndFinalize(context, discardFinal = true)
         } else {
             cancelRecording()
@@ -2636,14 +2626,14 @@ object DictateController {
         val appContext = context.applicationContext
         _livePromptActive.value = false
         unregisterScreenOffReceiver()
-        segmentRecordedSeconds = recordedSecondsOf(_state.value)
+        segmentSession.rememberRecordedSeconds(recordedSecondsOf(_state.value))
         _segmentedRecording.value = false
         _state.value = UiState.Transcribing()
         startTranscriptionWatchdog(appContext)
         scope.launch {
             val assigned = segmentMutex.withLock {
-                if (segmentCancellationPending) return@withLock null
-                val i = segmentQueue.reserveFinal()
+                if (segmentSession.cancellationPending) return@withLock null
+                val i = segmentSession.reserveFinalSegment()
                 val activeRecorder = recorder
                 recorder = null
                 val w = withContext(Dispatchers.IO) { activeRecorder?.stop() }
@@ -2652,9 +2642,9 @@ object DictateController {
                     // Deleted chunk: drop its audio so it lands in neither the transcript nor the history WAV.
                     withContext(Dispatchers.IO) { runCatching { w?.delete() } }
                 } else if (w != null && w.exists() && w.length() > 0L) {
-                    segmentResources.trackAudio(i, w)
+                    segmentSession.trackAudio(i, w)
                 }
-                _segmentsInFlight.value = segmentQueue.inFlightCount
+                _segmentsInFlight.value = segmentSession.inFlightCount
                 i to w
             }
             val (idx, wav) = assigned ?: return@launch
@@ -2677,8 +2667,7 @@ object DictateController {
      * a stopped session is force-archived only as a recovery entry when History itself is enabled.
      */
     private fun cancelSegmentedTranscription(context: Context, stalled: Boolean) {
-        if (segmentCancellationPending) return
-        segmentCancellationPending = true
+        if (!segmentSession.beginCancellation()) return
         stopTranscriptionWatchdog()
 
         val appContext = context.applicationContext
@@ -2694,11 +2683,11 @@ object DictateController {
             replayHistoryId = null,
             sensitive = isSensitiveDictationField(appContext),
         )
-        val seconds = segmentRecordedSeconds
+        val seconds = segmentSession.recordedSeconds
 
         // Stop every tracked segment first. Network calls are cancellable through OkHttp; native local
         // decode may finish its current native call, but cancellation prevents its late text from landing.
-        segmentResources.cancelJobs()
+        segmentSession.cancelJobs()
 
         scope.launch {
             val files = segmentMutex.withLock {
@@ -2709,11 +2698,11 @@ object DictateController {
                 val tail = withContext(Dispatchers.IO) { activeRecorder?.stop() }
                 cleanupAudioRouting()
                 if (tail != null && tail.exists() && tail.length() > 0L &&
-                    !segmentResources.containsAudio(tail)
+                    !segmentSession.containsAudio(tail)
                 ) {
-                    segmentResources.trackAudio(segmentQueue.reserveRescueTail(), tail)
+                    segmentSession.trackAudio(segmentSession.reserveRescueTail(), tail)
                 }
-                val snapshot = segmentResources.takeOrderedAudio()
+                val snapshot = segmentSession.takeOrderedAudio()
                 resetSegmentedState()
                 snapshot
             }
@@ -2745,7 +2734,7 @@ object DictateController {
             // All cancelled segment jobs are now stopped and their source files have been consumed. Clear
             // the guard before exposing the resend UI, otherwise a later ordinary resend could be mistaken
             // for the old long-form session by cancelTranscription().
-            segmentCancellationPending = false
+            segmentSession.finishCancellation()
 
             if (rescue != null) {
                 val previous = retained
@@ -2796,7 +2785,7 @@ object DictateController {
             currentCoroutineContext().ensureActive()
             onSegmentResult(appContext, idx, text ?: "")
         }
-        segmentResources.trackJob(job)
+        segmentSession.trackJob(job)
     }
 
     /**
@@ -2804,9 +2793,9 @@ object DictateController {
      * segment to the field's live preview. When the last segment lands after a stop, runs the end finalize.
      */
     private suspend fun onSegmentResult(appContext: Context, idx: Int, text: String) {
-        if (segmentCancellationPending) return
+        if (segmentSession.cancellationPending) return
         val shouldFinish = segmentMutex.withLock {
-            val drain = segmentQueue.complete(idx, text)
+            val drain = segmentSession.completeSegment(idx, text)
             for (raw in drain.readyText) {
                 if (raw.isNotEmpty()) {
                     val prev = realtimeShown.toString()
@@ -2827,17 +2816,17 @@ object DictateController {
      * post-processing once and replace the preview with the finished (formatted/reworded) text.
      */
     private suspend fun finalizeSegmentedEnd(appContext: Context) {
-        if (segmentCancellationPending) return
+        if (segmentSession.cancellationPending) return
         stopTranscriptionWatchdog()
         val account = transcriptionAccount()
         val preset = presetFor(account)
         val model = transcriptionModelFor(appContext, account, preset)
         val assembled = realtimeShown.toString().trim()
-        val recordedSeconds = segmentRecordedSeconds
+        val recordedSeconds = segmentSession.recordedSeconds
         // Snapshot the kept segment files (in cut order) before resetting; merge them into one WAV so the
         // whole dictation has a single retained-audio file in the history (issue #170 / #140 reuse).
-        val keepAudio = segmentKeepAudio
-        val audioFiles = segmentResources.takeOrderedAudio()
+        val keepAudio = segmentSession.keepAudio
+        val audioFiles = segmentSession.takeOrderedAudio()
         resetSegmentedState()
         val mergedWav = if (keepAudio && audioFiles.isNotEmpty()) {
             val merged = File(
