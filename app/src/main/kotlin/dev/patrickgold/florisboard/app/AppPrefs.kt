@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 21807)
+Total output lines: 1847
+
 /*
  * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
@@ -637,12 +640,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         // --- Long-form segmented dictation (issue #170) ------------------------------------------
         // Transcribe long dictations segment-by-segment in the background while you keep talking, so you
-        // don't wait for one big upload at the end. OFF by default; MANUAL shows the "Next" button, AUTO
-        // additionally uses Silero VAD + Smart Turn v3 at speech pauses. Keyboard-only, not for realtime /
-        // live-prompt / multimodal.
+        // don't wait for one big upload at the end. AUTO is the clean-install default; an explicitly stored
+        // OFF or MANUAL choice still overrides it. AUTO uses Silero VAD + Smart Turn v3 at speech pauses.
+        // Keyboard-only, not for realtime / live-prompt / multimodal.
         val longformMode = enum(
             key = "dictate__longform_mode",
-            default = DictateLongformMode.OFF,
+            default = DictateLongformMode.AUTO,
         )
         // Maximum silence (Pipecat Smart Turn stop_secs fallback) before AUTO mode cuts even when the
         // semantic classifier says the current thought may be incomplete.
@@ -747,129 +750,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val statsStreakCurrent = int(key = "dictate__stats_streak_current", default = 0)
         val statsStreakBest = int(key = "dictate__stats_streak_best", default = 0)
         // Compact rolling per-day word counts for the 7-day chart: "epochDay:words;epochDay:words;…".
-        val statsDaily = string(key = "dictate__stats_daily", default = "")
-        // One-time milestone celebrations (issue #142). Only saved-time and dictation-count milestones,
-        // shown once each in the app (never on the keyboard). Toggle lives on the stats screen.
-        val statsMilestonesEnabled = boolean(key = "dictate__stats_milestones_enabled", default = true)
-        val statsMilestoneTimeShown = long(key = "dictate__stats_milestone_time_shown", default = 0L)
-        val statsMilestoneCountShown = long(key = "dictate__stats_milestone_count_shown", default = 0L)
-        // A crossed-but-not-yet-shown milestone, consumed on next app open: "time:<min>" | "count:<n>".
-        val statsPendingMilestone = string(key = "dictate__stats_pending_milestone", default = "")
-
-        // --- Rate / Donate nudges (roadmap 9.7/9.8) ----------------------------------------------
-        // Cumulative seconds of successfully transcribed *recorded* audio, used to gate the one-time
-        // rate/donate prompts. Replaces the legacy usage DB (which was dropped); only this counter
-        // remains. Incremented after each successful mic transcription.
-        val totalAudioSeconds = long(
-            key = "dictate__total_audio_seconds",
-            default = 0L,
-        )
-        // Set once the user has acted on the rate prompt (accepted or declined), so it never reappears.
-        val hasRated = boolean(
-            key = "dictate__has_rated",
-            default = false,
-        )
-        // Set once the user has acted on the donate prompt; accepting/declining donate also sets
-        // hasRated, so a donor is never asked to rate afterwards (mirrors the legacy behavior).
-        val hasDonated = boolean(
-            key = "dictate__has_donated",
-            default = false,
-        )
-        // The app version whose "Dictate was updated" changelog nudge has already been shown on the
-        // keyboard (Smartbar). Set when the user taps or dismisses that nudge, so it appears only once
-        // per update. Empty until the first post-update nudge. Independent of the in-app dialog's
-        // versionLastChangelog bookkeeping, so the two surfaces never suppress each other.
-        val changelogNudgeVersion = string(
-            key = "dictate__changelog_nudge_version",
-            default = "",
-        )
-        // Comma-separated dictation language codes the user cycles through on the recording bar
-        // (see DictateLanguages; "detect" = auto-detect). Default mirrors the legacy app.
-        val inputLanguages = string(
-            key = "dictate__input_languages",
-            default = "detect,en",
-        )
-        // The currently active dictation language code; persists across sessions and is switched
-        // from the recording bar's language chip.
-        val activeInputLanguage = string(
-            key = "dictate__active_input_language",
-            default = "detect",
-        )
-        // Guard so the one-time seeding of the device/system dictation language (added on top of the
-        // default detect,en) runs only once on a fresh install. See
-        // DictateLegacyMigrator.seedDeviceLanguageIfNeeded.
-        val inputLanguagesSeeded = boolean(
-            key = "dictate__input_languages_seeded",
-            default = false,
-        )
-        // Guard so the one-time import from the legacy Dictate SharedPreferences runs only once.
-        val legacyImported = boolean(
-            key = "dictate__legacy_imported",
-            default = false,
-        )
-        // Guard for the one-time injection of the live-prompt Smartbar action into arrangements that
-        // were saved before the action existed (otherwise upgrading users never see it).
-        val livePromptActionMigrated = boolean(
-            key = "dictate__live_prompt_action_migrated",
-            default = false,
-        )
-        // Same one-time injection for the AI prompt-panel Smartbar action (DICTATE_PROMPTS).
-        val promptsActionMigrated = boolean(
-            key = "dictate__prompts_action_migrated",
-            default = false,
-        )
-        // Guard for the one-time *removal* of the live-prompt Smartbar action: the live prompt is now a
-        // chip inside the prompt panel/row, so it no longer ships as a separate Smartbar button. Strips
-        // any previously-injected DICTATE_LIVE_PROMPT action from saved arrangements exactly once.
-        val livePromptActionRemoved = boolean(
-            key = "dictate__live_prompt_action_removed",
-            default = false,
-        )
-        // Historical guard for the short-lived migration that forced the always-on prompt row. Keep it
-        // so the corrective migration can distinguish affected installations from fresh PANEL installs.
-        val promptsLayoutRowMigrated = boolean(
-            key = "dictate__prompts_layout_row_migrated",
-            default = false,
-        )
-        // One-time correction for installations that received the forced ROW migration. Returning those
-        // users to PANEL removes the permanent chip row while keeping rewording available from the
-        // magic-wand Smartbar action. See DictateLegacyMigrator.restorePromptsPanelIfNeeded.
-        val promptsLayoutPanelRestored = boolean(
-            key = "dictate__prompts_layout_panel_restored",
-            default = false,
-        )
-        // Guard for the one-time re-engagement reset shipped with the 4.0.0 relaunch: existing users
-        // (who had already rated/donated, or whose audio counter was long past the thresholds) are
-        // given the rate & donate nudges one more time so they can react to the new app. Clears
-        // hasRated/hasDonated and resets totalAudioSeconds exactly once. See
-        // DictateLegacyMigrator.reofferRateAndDonateIfNeeded.
-        val promoReengagementDone = boolean(
-            key = "dictate__promo_reengagement_done",
-            default = false,
-        )
-
-        // --- Rewording / GPT (roadmap section 4) -------------------------------------------------
-        // Master switch for the rewording feature (prompt chips, auto-apply, live prompt). Default
-        // on, mirroring the legacy app.
-        val rewordingEnabled = boolean(
-            key = "dictate__rewording_enabled",
-            default = true,
-        )
-        // Reasoning effort sent as OpenAI-compatible `reasoning_effort` on rewording chat calls for
-        // reasoning models (issue #141). OFF omits the field, so non-reasoning models are unaffected.
-        val rewordingReasoningEffort = enum(
-            key = "dictate__rewording_reasoning_effort",
-            default = DictateReasoningEffort.OFF,
-        )
-        // The wire value sent as `reasoning_effort` when the setting is CUSTOM (issue #186), e.g. a value
-        // a specific provider expects. Blank → the field is omitted.
-        val rewordingReasoningEffortCustom = string(
-            key = "dictate__rewording_reasoning_effort_custom",
-            default = "",
-        )
-        // How the rewording prompt chips are surfaced: a dedicated panel (PANEL) opened from the
-        // Smartbar, or an always-on extra row pinned above the Smartbar (ROW). See DictatePromptsLayout.
-        // PANEL matches the compact legacy interaction: the keyboard stays one row shorter and the
+…1807 tokens truncated…L matches the compact legacy interaction: the keyboard stays one row shorter and the
         // magic-wand Smartbar action opens every prompt on demand. ROW remains an explicit user option.
         val promptsLayout = enum(
             key = "dictate__prompts_layout",

@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.app
 
+import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
@@ -80,5 +81,11 @@ class KapijujaDefaultPreferencesTest : FunSpec({
             prefs.glide.showPreview.get() shouldBe false
             prefs.glide.immediateBackspaceDeletesWord.get() shouldBe false
         }
+    }
+
+    test("long-form dictation defaults to automatic splitting") {
+        val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+
+        prefs.dictate.longformMode.get() shouldBe DictateLongformMode.AUTO
     }
 })
