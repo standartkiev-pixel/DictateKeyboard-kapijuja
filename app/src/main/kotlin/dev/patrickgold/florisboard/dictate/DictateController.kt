@@ -2712,8 +2712,8 @@ object DictateController {
             if (preview.isNotEmpty()) runCatching { sink(appContext).clearDictationPreview(preview) }
             realtimeShown.setLength(0)
 
-            val rescue = if (files.isNotEmpty()) {
-                val dest = if (!meta.sensitive) {
+            val rescueDestination = if (files.isNotEmpty()) {
+                if (!meta.sensitive) {
                     newRecoveryFile(appContext, "wav", seconds, wasLive = false)
                 } else {
                     File(
@@ -2721,15 +2721,12 @@ object DictateController {
                         "dictate_cancelled_long_${SystemClock.elapsedRealtime()}.wav",
                     )
                 }
-                val ok = withContext(Dispatchers.IO) {
-                    dest.delete()
-                    AudioConcat.concat(files, dest)
-                }
-                if (ok && dest.exists() && dest.length() > 0L) dest else null
             } else {
                 null
             }
-            withContext(Dispatchers.IO) { files.forEach { runCatching { it.delete() } } }
+            val rescue = withContext(Dispatchers.IO) {
+                LongFormAudioAssembly.consume(files, rescueDestination)
+            }
 
             // All cancelled segment jobs are now stopped and their source files have been consumed. Clear
             // the guard before exposing the resend UI, otherwise a later ordinary resend could be mistaken
@@ -2828,15 +2825,17 @@ object DictateController {
         val keepAudio = segmentSession.keepAudio
         val audioFiles = segmentSession.takeOrderedAudio()
         resetSegmentedState()
-        val mergedWav = if (keepAudio && audioFiles.isNotEmpty()) {
-            val merged = File(
+        val mergedDestination = if (keepAudio && audioFiles.isNotEmpty()) {
+            File(
                 appContext.cacheDir,
                 "dictate_seg_merged_${SystemClock.elapsedRealtime()}.wav",
             )
-            merged.delete()
-            if (withContext(Dispatchers.IO) { AudioConcat.concat(audioFiles, merged) } && merged.exists() && merged.length() > 0L) merged else null
-        } else null
-        withContext(Dispatchers.IO) { audioFiles.forEach { runCatching { it.delete() } } }
+        } else {
+            null
+        }
+        val mergedWav = withContext(Dispatchers.IO) {
+            LongFormAudioAssembly.consume(audioFiles, mergedDestination)
+        }
         if (assembled.isEmpty()) {
             runCatching { sink(appContext).clearDictationPreview(realtimeShown.toString()) }
             realtimeShown.setLength(0)
