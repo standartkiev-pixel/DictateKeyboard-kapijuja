@@ -353,6 +353,8 @@ Implemented on `main`:
 - Long-form no longer multiplies retries outside the provider client.
 - Long-form segment WAVs remain temporary cache-owned files until terminal success/cancel, even if permanent
   History audio retention is off. This lets Stop/watchdog reconstruct one merged rescue WAV.
+- AUTO long-form uses natural pause cuts first and a model-independent three-minute hard boundary for
+  uninterrupted speech, so a ten-minute recording cannot become one oversized provider request.
 - Long-form final drain starts the same heartbeat watchdog and cancels all segment jobs as one operation.
 - Realtime keeps its existing ~1.2 s finalize watchdog; failed/empty realtime falls back to the protected
   batch path.

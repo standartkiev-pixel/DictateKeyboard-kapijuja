@@ -17,6 +17,7 @@ import com.k2fsa.sherpa.onnx.VadModelConfig
 import java.util.concurrent.Executors
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Pipecat-compatible Smart Turn v3 pipeline for long-form segmentation (issue #170): Silero VAD first
@@ -30,13 +31,15 @@ import java.util.concurrent.TimeUnit
  * If Smart Turn is unavailable, the VAD silence fallback and manual Next button remain functional.
  *
  * @param pauseThresholdMs how long a pause must last (after speech) before a cut is fired.
- * @param onPause invoked (on the worker thread) when a qualifying pause is detected; must be cheap and
- *   thread-safe (e.g. it hands off to a coroutine).
+ * @param hardSegmentMs maximum captured duration without a pause before a safety cut is fired.
+ * @param onPause invoked on the worker for a qualifying pause, or on the capture thread for the hard
+ *   duration limit; it must be cheap and thread-safe (e.g. it hands off to a coroutine).
  */
 class LiveSpeechSplitter(
     context: Context,
     private val pauseThresholdMs: Int,
     private val useSmartTurn: Boolean,
+    hardSegmentMs: Int = HARD_SEGMENT_MS,
     private val onPause: () -> Unit,
 ) {
     private val appContext = context.applicationContext
@@ -48,6 +51,10 @@ class LiveSpeechSplitter(
     private val inferenceExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "dictate-smart-turn").apply { isDaemon = true }
     }
+    private val durationPolicy = SegmentDurationPolicy(
+        maxSamples = AudioDecode.TARGET_SAMPLE_RATE.toLong() * hardSegmentMs.coerceAtLeast(1) / 1000L,
+    )
+    private val hardCutAwaitingVadReset = AtomicBoolean(false)
     @Volatile private var running = false
     private var worker: Thread? = null
 
@@ -71,10 +78,19 @@ class LiveSpeechSplitter(
             i += 2
         }
         queue.offer(Event.Audio(shorts))
+        if (durationPolicy.onSamples(j)) {
+            // The hard limit cannot depend on the VAD worker: model setup may fail or analysis may lag.
+            // Drop stale analysis frames and suppress a simultaneous pause cut until Reset lands.
+            hardCutAwaitingVadReset.set(true)
+            queue.clear()
+            offerControl(Event.Reset)
+            runCatching { onPause() }
+        }
     }
 
     /** After a cut (manual or auto), require fresh speech before the next auto-cut can fire. */
     fun notifyCut() {
+        durationPolicy.reset()
         offerControl(Event.Reset)
     }
 
@@ -130,7 +146,10 @@ class LiveSpeechSplitter(
                 }
                 SmartTurnPausePolicy.Action.Cut -> {
                     resetDetector()
-                    runCatching { onPause() }
+                    if (!hardCutAwaitingVadReset.get()) {
+                        durationPolicy.reset()
+                        runCatching { onPause() }
+                    }
                 }
                 is SmartTurnPausePolicy.Action.Analyze -> {
                     if (!useSmartTurn) {
@@ -162,6 +181,7 @@ class LiveSpeechSplitter(
                 if (event is Event.Reset) {
                     policy.reset()
                     resetDetector()
+                    hardCutAwaitingVadReset.set(false)
                     continue
                 }
                 if (event is Event.Prediction) {
@@ -209,6 +229,8 @@ class LiveSpeechSplitter(
         const val SMART_TURN_VAD_STOP_MS = 200
         const val PRE_SPEECH_MS = 500 + 200
         const val PRE_SPEECH_SAMPLES = AudioDecode.TARGET_SAMPLE_RATE * PRE_SPEECH_MS / 1000
+        /** Continuous speech is uploaded in bounded chunks even when it contains no detectable pause. */
+        const val HARD_SEGMENT_MS = 3 * 60 * 1000
         /** Roughly twelve seconds of ordinary capture frames; hard cap is the important property. */
         const val MAX_QUEUED_EVENTS = 120
     }

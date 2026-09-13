@@ -402,6 +402,7 @@ Important changes:
 
 - every segment WAV stays temporarily owned in cache until terminal success/cancel;
 - this temporary cache retention is independent of permanent History retention;
+- AUTO mode cuts continuous audio at a hard three-minute boundary even without a VAD pause or model;
 - final drain starts the common watchdog;
 - segment provider/local progress refreshes heartbeat.
 
