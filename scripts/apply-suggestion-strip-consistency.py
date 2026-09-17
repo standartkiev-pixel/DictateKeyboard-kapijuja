@@ -1,81 +1,123 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+NLP = ROOT / "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt"
 
 
-def replace_exact(text: str, old: str, new: str, label: str) -> str:
-    count = text.count(old)
-    if count != 1:
-        raise SystemExit(f"{label}: expected exactly one match, found {count}\n--- pattern ---\n{old}")
-    return text.replace(old, new, 1)
+def require_count(text: str, needle: str, count: int, label: str) -> None:
+    actual = text.count(needle)
+    if actual != count:
+        raise SystemExit(f"{label}: expected {count} match(es), found {actual}: {needle!r}")
 
 
-nlp = "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt"
-path = ROOT / nlp
-text = path.read_text(encoding="utf-8")
+text = NLP.read_text(encoding="utf-8")
 
 # Candidate refreshes can be issued several times in the same millisecond: cursor movement,
 # the first keypress and a Smartbar state change may all arrive back-to-back. uptimeMillis()
-# gave those requests the same id, so whichever asynchronous request finished first could
-# become impossible for the actually newer request to replace. Use an explicit monotonic
-# sequence instead, and serialize every publication through the same mutex.
-text = replace_exact(
-    text,
-    "import android.os.SystemClock\n",
-    "",
-    "SystemClock import",
-)
-text = replace_exact(
-    text,
+# therefore cannot be a request id. It can even equal the timestamp used to initialise the
+# state, which makes the very first result fail the strict 'older < newer' test.
+require_count(text, "import android.os.SystemClock\n", 1, "SystemClock import")
+text = text.replace("import android.os.SystemClock\n", "", 1)
+
+require_count(text, "import java.util.concurrent.atomic.AtomicBoolean\n", 1, "AtomicBoolean import")
+text = text.replace(
     "import java.util.concurrent.atomic.AtomicBoolean\n",
     "import java.util.concurrent.atomic.AtomicBoolean\nimport java.util.concurrent.atomic.AtomicLong\n",
-    "AtomicLong import",
-)
-text = replace_exact(
-    text,
-    'private const val BLANK_STR_PATTERN = "^\\\\s*$"\n',
-    '''private const val BLANK_STR_PATTERN = "^\\\\s*$"\n\n/**\n * Strictly increasing ids for candidate refreshes. Wall/uptime clocks are deliberately not used here:\n * cursor movement and a first keypress can legitimately enqueue more than one refresh in one millisecond.\n */\ninternal class SuggestionRequestSequence {\n    private val counter = AtomicLong(0L)\n\n    fun next(): Long = counter.incrementAndGet()\n}\n''',
-    "request sequence insertion point",
-)
-text = replace_exact(
-    text,
-    '''    private val internalSuggestionsGuard = Mutex()\n    private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->\n        scope.launch { assembleCandidates() }\n    }\n''',
-    '''    private val suggestionRequestSequence = SuggestionRequestSequence()\n    private val internalSuggestionsGuard = Mutex()\n    private var internalSuggestions by Delegates.observable(0L to listOf<SuggestionCandidate>()) { _, _, _ ->\n        scope.launch { assembleCandidates() }\n    }\n''',
-    "internal suggestion generation state",
+    1,
 )
 
-# There are exactly three request-id allocations: asynchronous suggest(), glide/direct publish,
-# and clearSuggestions(). Keep them all in one ordering domain.
-old_alloc = "val reqTime = SystemClock.uptimeMillis()"
-count = text.count(old_alloc)
-if count != 3:
-    raise SystemExit(f"{nlp}: expected three uptime request ids, found {count}")
-text = text.replace(old_alloc, "val reqGeneration = suggestionRequestSequence.next()")
-text = text.replace("internalSuggestions.first < reqTime", "internalSuggestions.first < reqGeneration")
-text = text.replace("internalSuggestions = reqTime to when", "internalSuggestions = reqGeneration to when")
+sequence_marker = "private const val BLANK_STR_PATTERN"
+require_count(text, sequence_marker, 1, "request sequence insertion marker")
+sequence_class = '''/**
+ * Strictly increasing ids for candidate refreshes. A clock is not an ordering primitive here: cursor
+ * movement and a first keypress can legitimately enqueue more than one refresh in one millisecond.
+ */
+internal class SuggestionRequestSequence {
+    private val counter = AtomicLong(0L)
 
-text = replace_exact(
-    text,
-    '''        runBlocking {\n            internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n        }\n''',
-    '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n                }\n            }\n        }\n''',
-    "direct suggestion publication",
+    fun next(): Long = counter.incrementAndGet()
+}
+
+'''
+text = text.replace(sequence_marker, sequence_class + sequence_marker, 1)
+
+state_marker = "    private val internalSuggestionsGuard = Mutex()\n"
+require_count(text, state_marker, 1, "internal suggestion state marker")
+text = text.replace(
+    state_marker,
+    "    private val suggestionRequestSequence = SuggestionRequestSequence()\n" + state_marker,
+    1,
 )
-text = replace_exact(
-    text,
-    '''        runBlocking {\n            internalSuggestions = reqGeneration to emptyList()\n        }\n''',
-    '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to emptyList()\n                }\n            }\n        }\n''',
-    "clear suggestion publication",
+
+initial_clock = "Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>())"
+require_count(text, initial_clock, 1, "initial suggestion generation")
+text = text.replace(
+    initial_clock,
+    "Delegates.observable(0L to listOf<SuggestionCandidate>())",
+    1,
+)
+
+allocation = "val reqTime = SystemClock.uptimeMillis()"
+require_count(text, allocation, 3, "candidate request-id allocation")
+text = text.replace(allocation, "val reqGeneration = suggestionRequestSequence.next()")
+
+# Rename the remaining references belonging to those three allocations. There are no other reqTime
+# values in this file; fail below if one ever appears so the patch cannot silently become partial.
+text = text.replace("reqTime", "reqGeneration")
+
+# Async suggest() already publishes under the mutex. Direct glide publications and clears must use the
+# same mutex too, otherwise an async producer can pass its generation check and be overwritten midway.
+direct_line = "            internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n"
+require_count(text, direct_line, 1, "direct suggestion publication")
+text = text.replace(
+    direct_line,
+    '''            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqGeneration) {
+                    internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()
+                }
+            }
+''',
+    1,
+)
+
+clear_line = "            internalSuggestions = reqGeneration to emptyList()\n"
+require_count(text, clear_line, 1, "clear suggestion publication")
+text = text.replace(
+    clear_line,
+    '''            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqGeneration) {
+                    internalSuggestions = reqGeneration to emptyList()
+                }
+            }
+''',
+    1,
 )
 
 if "SystemClock" in text or "reqTime" in text:
-    raise SystemExit(f"{nlp}: stale timestamp request ordering remains")
-path.write_text(text, encoding="utf-8")
+    raise SystemExit("stale timestamp-based candidate ordering remains")
+require_count(text, "suggestionRequestSequence.next()", 3, "monotonic request-id allocation")
+require_count(text, "internalSuggestions.first < reqGeneration", 3, "generation guard")
+NLP.write_text(text, encoding="utf-8")
 
-# Small characterization test: the invariant we need is not elapsed time, only strict ordering.
+# Characterization test: elapsed time is irrelevant; every back-to-back refresh must still be strictly newer.
 test = ROOT / "app/src/test/kotlin/dev/patrickgold/florisboard/ime/nlp/SuggestionRequestSequenceTest.kt"
 test.parent.mkdir(parents=True, exist_ok=True)
 test.write_text(
-    '''package dev.patrickgold.florisboard.ime.nlp\n\nimport io.kotest.core.spec.style.FunSpec\nimport io.kotest.matchers.shouldBe\n\nclass SuggestionRequestSequenceTest : FunSpec({\n    test("back-to-back candidate refreshes always have distinct increasing generations") {\n        val sequence = SuggestionRequestSequence()\n        val ids = List(1024) { sequence.next() }\n\n        ids.toSet().size shouldBe ids.size\n        ids.zipWithNext().all { (older, newer) -> newer > older } shouldBe true\n    }\n})\n''',
+    '''package dev.patrickgold.florisboard.ime.nlp
+
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+
+class SuggestionRequestSequenceTest : FunSpec({
+    test("back-to-back candidate refreshes always have distinct increasing generations") {
+        val sequence = SuggestionRequestSequence()
+        val ids = List(1024) { sequence.next() }
+
+        ids.toSet().size shouldBe ids.size
+        ids.zipWithNext().all { (older, newer) -> newer > older } shouldBe true
+    }
+})
+''',
     encoding="utf-8",
 )
 
