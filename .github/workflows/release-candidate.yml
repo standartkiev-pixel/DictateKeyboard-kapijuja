@@ -60,19 +60,6 @@ jobs:
             :wear:testDebugUnitTest \
             --stacktrace
 
-      # Re-run only the network fault/cancellation class. The previous RC workflow accidentally
-      # re-ran the entire dictate-core suite three times, adding about 25 minutes without increasing
-      # coverage of the fault path we actually want to stress.
-      - name: Repeat network fault tests
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "Network fault suite attempt $attempt/3"
-            timeout 5m ./gradlew :lib:dictate-core:testDebugUnitTest \
-              --tests "dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClientNetworkTest" \
-              --rerun-tasks --stacktrace
-          done
-
       - name: Strict Android lint for core and Wear
         run: |
           ./gradlew \
@@ -149,8 +136,7 @@ jobs:
             '' \
             'Validated before publishing:' \
             '- phone and Wear compilation;' \
-            '- app, dictate-core and Wear unit tests;' \
-            '- three repeated network fault/cancellation test runs;' \
+            '- app, dictate-core and Wear unit tests, including network fault, cancellation, auth and quota cases;' \
             '- strict core/Wear lint and a release-critical phone permission/lifecycle/resource gate;' \
             '- Cloud/Billing and credential audit;' \
             '- APK package, signature, version code and size verification.' \
