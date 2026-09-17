@@ -32,6 +32,18 @@ Recommended initial budget for a focused task:
 
 ## Route by task
 
+### AI provider switches, automatic rewording, learned words, candidate strip
+
+Read `AI_REWORDING_AND_SUGGESTIONS.md`.
+This is the active handoff for:
+
+- Real-time ON/OFF beside the realtime model;
+- Automatic rewording ON/OFF without removing the manual magic wand/translation prompts;
+- existing learned-word/email/bigram behavior and its currently-off-by-default preference;
+- suggestion/candidate strip visibility around typing, cursor moves and competing Smartbar surfaces.
+
+Do not build a second learning store: the topic document names the existing `LearnedWords` / `WordLearningGate` implementation and the paths that must be traced first.
+
 ### Voice pauses, automatic chunking, long dictation
 
 Read `VOICE_LONGFORM.md`.
@@ -61,6 +73,7 @@ Never generate a replacement permanent signing key merely because an old chat ca
 ### UI / Smartbar / prompt panel / History
 
 Start from the concrete screen/composable involved. Do not load provider internals unless the UI bug crosses that boundary.
+For the current learned-candidate/Smartbar visibility task, use `AI_REWORDING_AND_SUGGESTIONS.md` instead of this generic route.
 
 ## Documentation policy
 
