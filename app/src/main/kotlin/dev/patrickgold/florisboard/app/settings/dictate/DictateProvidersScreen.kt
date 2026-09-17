@@ -280,8 +280,14 @@ fun DictateProvidersScreen() = FlorisScreen {
                     activateOnSave = false
                     localFromSetup = false
                 },
-                onSave = { updated, makeActive ->
+                onSave = { updated, makeActive, realtimeEnabled, automaticRewordingEnabled ->
                     writeKeyring(accounts.put(updated))
+                    // The dialog disappears immediately after Save, so persist its global runtime modes
+                    // from this screen-owned scope rather than a dialog scope that would be cancelled.
+                    scope.launch {
+                        prefs.dictate.realtimeTranscription.set(realtimeEnabled)
+                        prefs.dictate.automaticRewordingEnabled.set(automaticRewordingEnabled)
+                    }
                     // A server of the user's own speaks both halves of the OpenAI API, and someone who
                     // added one during setup meant it to be the way the app works from now on.
                     if (activateOnSave) {
@@ -545,11 +551,15 @@ private fun ProviderEditorDialog(
      * [makeActive] means the user chose an on-device model in this dialog (issue #343), which is a
      * decision about who transcribes and not only about which model — the caller acts on it.
      */
-    onSave: (account: ProviderAccount, makeActive: Boolean) -> Unit,
+    onSave: (
+        account: ProviderAccount,
+        makeActive: Boolean,
+        realtimeEnabled: Boolean,
+        automaticRewordingEnabled: Boolean,
+    ) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
     val prefs by FlorisPreferenceStore
-    val scope = rememberCoroutineScope()
     val realtimePreference by prefs.dictate.realtimeTranscription.collectAsState()
     val automaticRewordingPreference by prefs.dictate.automaticRewordingEnabled.collectAsState()
     val isCustom = preset == null
@@ -644,10 +654,6 @@ private fun ProviderEditorDialog(
         dismissLabel = stringRes(R.string.action__cancel),
         neutralLabel = if (onDelete != null) stringRes(R.string.action__delete) else null,
         onConfirm = {
-            scope.launch {
-                prefs.dictate.realtimeTranscription.set(realtimeEnabled)
-                prefs.dictate.automaticRewordingEnabled.set(automaticRewordingEnabled)
-            }
             onSave(
                 account.copy(
                     displayName = displayName.trim(),
@@ -669,6 +675,8 @@ private fun ProviderEditorDialog(
                     },
                 ),
                 chosenOnDevice,
+                realtimeEnabled,
+                automaticRewordingEnabled,
             )
         },
         onDismiss = onDismiss,
