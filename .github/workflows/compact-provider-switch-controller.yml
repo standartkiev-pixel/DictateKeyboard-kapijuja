@@ -1,0 +1,32 @@
+name: Compact provider switch controller patch
+
+on:
+  push:
+    branches:
+      - kapijuja/provider-runtime-switches
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: kapijuja/provider-runtime-switches
+          fetch-depth: 0
+      - name: Apply patch
+        run: python3 scripts/compact-provider-switch-controller.py
+      - name: Verify architecture before commit
+        run: bash scripts/architecture-audit.sh
+      - name: Commit source changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt \
+                  app/src/main/kotlin/dev/patrickgold/florisboard/dictate/DictateController.kt
+          git diff --cached --check
+          git commit -m "Keep automatic rewording gate outside controller"
+          git push origin HEAD:kapijuja/provider-runtime-switches
