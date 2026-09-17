@@ -202,6 +202,24 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             .map { it.selection.isSelectionMode && it.selectedText.isNotBlank() }
             .distinctUntilChanged()
     }.collectAsState(initial = false)
+    // A cursor move into an already existing word is followed by an asynchronous NLP lookup. During the
+    // small gap before candidates arrive NlpManager legitimately sees an empty list and expands the quick
+    // actions. Reserve the candidate surface for that word instead, so the toolbar cannot cover the
+    // suggestions merely because they are still being calculated. This does not manufacture suggestions:
+    // it only keeps their place stable until the provider answers.
+    val hasCurrentWord by remember(editorInstance) {
+        editorInstance.activeContentFlow
+            .map { !it.selection.isSelectionMode && it.currentWordText.isNotBlank() }
+            .distinctUntilChanged()
+    }.collectAsState(initial = false)
+    val wordSuggestionsEnabled by prefs.suggestion.enabled.collectAsState()
+    val reserveCandidatesForCurrentWord = hasCurrentWord && wordSuggestionsEnabled
+    LaunchedEffect(reserveCandidatesForCurrentWord) {
+        if (reserveCandidatesForCurrentWord && prefs.smartbar.sharedActionsExpanded.get()) {
+            prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
+            prefs.smartbar.sharedActionsExpanded.set(false)
+        }
+    }
     // Reload prompts whenever a selection starts, so the strip reflects edits made in settings.
     LaunchedEffect(hasDictateSelection) {
         if (hasDictateSelection) DictateController.refreshPrompts(context)
@@ -267,7 +285,9 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
         // chevron turns with it and tapping it brings the buttons back. Overriding the state here instead
         // would show the count while the arrow still claimed the row was open, and that tap would do
         // nothing anyone could see.
-        val expanded = sharedActionsExpanded && smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED
+        val expanded = sharedActionsExpanded &&
+            smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED &&
+            !reserveCandidatesForCurrentWord
         Box(
             modifier = Modifier
                 .weight(1f)
