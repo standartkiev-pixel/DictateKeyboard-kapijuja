@@ -2,13 +2,13 @@ name: Dictate Kapijuja RC release
 
 on:
   push:
-    branches: ['release-v0.1.0-rc.6*']
+    branches: ['release-v0.1.0-rc.7*']
 
 permissions:
   contents: write
 
 concurrency:
-  group: dictate-kapijuja-v0.1.0-rc.6
+  group: dictate-kapijuja-v0.1.0-rc.7
   cancel-in-progress: false
 
 jobs:
@@ -90,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           source_apk="app/build/outputs/apk/debug/app-debug.apk"
-          release_apk="dictate-kapijuja-v0.1.0-rc.6-test.apk"
+          release_apk="dictate-kapijuja-v0.1.0-rc.7-test.apk"
           test -f "$source_apk"
           cp "$source_apk" "$release_apk"
 
@@ -98,7 +98,7 @@ jobs:
           "$build_tools/apksigner" verify --verbose --print-certs "$release_apk" | tee apk-signature.txt
           grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
           "$build_tools/aapt" dump badging "$release_apk" | tee apk-badging.txt
-          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='6'" apk-badging.txt
+          grep -q "package: name='net.kapijuja.dictate.debug' versionCode='7'" apk-badging.txt
 
           size="$(stat -c '%s' "$release_apk")"
           test "$size" -lt 157286400
@@ -117,21 +117,17 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' \
-            'Sixth public test candidate of Dictate Kapijuja Keyboard.' \
+            'Seventh public test candidate of Dictate Kapijuja Keyboard.' \
             '' \
             'This prerelease uses the dedicated public Kapijuja test identity. It installs as net.kapijuja.dictate.debug and does not consume the future stable update/signing identity.' \
             '' \
-            'Updates RC2 through RC5 in place using the same pinned public test certificate. Export settings and retained audio before any one-time migration from older incompatible debug builds; do not uninstall an existing compatible RC.' \
+            'Updates RC2 through RC6 in place using the same pinned public test certificate. Export settings and retained audio before any one-time migration from older incompatible debug builds; do not uninstall an existing compatible RC.' \
             '' \
-            'The shrinking transcription timeout bar now changes color as the remaining no-progress budget becomes urgent. Its countdown belongs to one request and can no longer restart indefinitely after a terminal network failure.' \
+            'AI provider settings now separate model selection from runtime behavior. Real-time transcription can be switched off without erasing the selected real-time model, and Automatic rewording can be switched off while keeping the manual magic-wand prompts and translation tools available.' \
             '' \
-            'During recording, tap the microphone source indicator to switch between allowing Bluetooth capture and forcing the phone microphone. Preference changes are serialized so rapid taps cannot leave overlapping audio-route operations.' \
+            'Candidate refresh ordering is now monotonic instead of millisecond-clock based. Cursor movement, the first keypress, direct glide suggestions and clears can no longer collide on the same timestamp and leave the Smartbar suggestion strip stale or empty.' \
             '' \
-            'Long-form dictation now keeps transcription results in recording order and hard-cuts continuous speech into bounded three-minute segments, including when pause detection or its model is unavailable. Ten uninterrupted minutes are handled as 3 + 3 + 3 + 1 minutes.' \
-            '' \
-            'Automatic long-form splitting is the default only when the preference has never been set. Existing explicit Off, Manual or Auto choices remain unchanged.' \
-            '' \
-            'The long-form session, ordered queue, retained resources, audio assembly, transcription watchdog and recording-input router are now separately tested components. DictateController remains protected by an architecture size gate.' \
+            'The long-form dictation, recording-input routing, retained-audio recovery and transcription watchdog work from RC6 remain intact. Development handoff material is now split into bounded task-specific context files so maintenance changes do not require loading the full project history.' \
             '' \
             'Validated before publishing:' \
             '- phone and Wear compilation;' \
@@ -139,15 +135,15 @@ jobs:
             '- three repeated stalled-request cancellation tests;' \
             '- strict core/Wear lint and a release-critical phone permission/lifecycle/resource gate;' \
             '- Cloud/Billing and credential audit;' \
-            '- APK package, signature and size verification.' \
+            '- APK package, signature, version code and size verification.' \
             '' \
             "APK size: $APK_SIZE bytes" \
             "SHA-256: $APK_SHA" \
             > release-notes.txt
 
-          gh release create v0.1.0-rc.6 "$APK_FILE" \
+          gh release create v0.1.0-rc.7 "$APK_FILE" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title 'Dictate Kapijuja 0.1.0 RC6 — bounded long dictation' \
+            --title 'Dictate Kapijuja 0.1.0 RC7 — provider controls and stable suggestions' \
             --notes-file release-notes.txt \
             --prerelease
