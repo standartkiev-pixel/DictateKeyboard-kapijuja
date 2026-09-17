@@ -25,6 +25,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.outlined.Info
@@ -131,25 +132,14 @@ fun DictateProvidersScreen() = FlorisScreen {
         val activeTranscriptionId by prefs.dictate.transcriptionProviderId.collectAsState()
         val scope = rememberCoroutineScope()
 
-        // The provider currently being edited in the dialog (null = closed).
         var editingId by remember { mutableStateOf<String?>(null) }
-        // Set when the editor was opened by the setup wizard to *create* an endpoint. Someone who adds a
-        // server while being asked how the app should transcribe means to use it, so saving it makes it
-        // active instead of leaving them to go and select it by hand.
         var activateOnSave by remember { mutableStateOf(false) }
-        // Set when the wizard sent the user here to pick an on-device model from the full list, which is
-        // the only situation where choosing one also switches the engine (issue #343). During setup that
-        // is the whole question being asked. Later it would move a working configuration underneath
-        // someone who only came to download a second model — quietly, on a screen they may not look at
-        // again.
         var localFromSetup by remember { mutableStateOf(false) }
 
         fun writeKeyring(updated: ProviderAccounts) {
             scope.launch { prefs.dictate.providerAccounts.set(updated) }
         }
 
-        // Arriving from the setup wizard: open the requested editor straight away, and consume the
-        // request so a later visit to this screen is an ordinary one.
         LaunchedEffect(Unit) {
             when (val target = ProviderSetupHandoff.openEditorFor) {
                 null -> Unit
@@ -165,28 +155,20 @@ fun DictateProvidersScreen() = FlorisScreen {
             ProviderSetupHandoff.openEditorFor = null
         }
 
-        // All custom endpoints stored in the keyring (built-ins are taken from the registry).
         val customAccounts = accounts.accounts.values
             .filter { it.isCustom }
             .sortedBy { it.displayName.lowercase() }
 
         PreferenceGroup(title = stringRes(R.string.dictate__providers_active_group)) {
-            // Custom picker (issue #104): the transcription provider list, plus an offline-fallback
-            // checkbox as an extra item at the bottom of the same dialog (hidden when the chosen
-            // provider is already the on-device one, where a fallback makes no sense).
             TranscriptionProviderPreference(
                 entries = buildList {
                     ProviderRegistry.presets
                         .filter { it.capabilities.transcription }
-                        // On-device (offline) first in the picker, above the cloud providers (issue #228).
                         .sortedByDescending { it.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE }
                         .forEach { add(it.id to it.displayName) }
                     customAccounts.forEach { add(it.providerId to customLabel(it)) }
                 },
             )
-            // When the active transcription provider runs single-call multimodal (#130), rewording happens
-            // inside that one call, so the rewording provider here is currently unused — surfaced as a
-            // trailing info "i" on this row (same pattern as the Punctuation/Style prompt info).
             RewordingProviderPreference(
                 entries = buildList {
                     ProviderRegistry.presets
@@ -196,14 +178,31 @@ fun DictateProvidersScreen() = FlorisScreen {
                 },
                 showInfo = accounts.getOrEmpty(activeTranscriptionId).transcriptionViaChat,
             )
+            // These switches deliberately live beside the active rewording provider/model rather than on
+            // the separate prompt editor screen. "Rewording available" and "run it automatically" are
+            // different decisions: keeping the first on preserves the wand/translation prompts, while the
+            // second can stay off so ordinary speech is inserted untouched.
+            SwitchPreference(
+                prefs.dictate.rewordingEnabled,
+                icon = Icons.Default.SmartToy,
+                modifier = Modifier.settingsSearchAnchor("dictate__rewording_enabled_title"),
+                title = stringRes(R.string.dictate__rewording_enabled_title),
+                summary = stringRes(R.string.dictate__rewording_enabled_summary),
+            )
+            SwitchPreference(
+                prefs.dictate.autoFormattingEnabled,
+                icon = Icons.Default.AutoFixHigh,
+                modifier = Modifier.settingsSearchAnchor("dictate__auto_reword_after_transcription_title"),
+                title = stringRes(R.string.dictate__auto_reword_after_transcription_title),
+                summary = stringRes(R.string.dictate__auto_reword_after_transcription_summary),
+                enabledIf = { prefs.dictate.rewordingEnabled isEqualTo true },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.dictate__providers_manage_group)) {
             val keySet = stringRes(R.string.dictate__providers_status_key_set)
             val noKey = stringRes(R.string.dictate__providers_status_no_key)
 
-            // On-device (offline) provider first, above the cloud providers like OpenAI (issue #228);
-            // the rest keep their registry display order (sortedByDescending is stable).
             val orderedPresets = ProviderRegistry.presets
                 .sortedByDescending { it.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE }
             orderedPresets.forEach { preset ->
@@ -254,9 +253,6 @@ fun DictateProvidersScreen() = FlorisScreen {
                 },
                 onClick = { navController.navigate(Routes.Settings.DictateProxy) },
             )
-            // One user-facing "no progress" budget. It configures the network timeout and Kapijuja's
-            // controller-level heartbeat watchdog; slow self-hosted models can raise it without disabling
-            // recovery for genuinely stuck Transcribing states.
             DialogSliderPreference(
                 pref = prefs.dictate.requestTimeout,
                 icon = Icons.Default.Timer,
@@ -282,23 +278,12 @@ fun DictateProvidersScreen() = FlorisScreen {
                 },
                 onSave = { updated, makeActive ->
                     writeKeyring(accounts.put(updated))
-                    // A server of the user's own speaks both halves of the OpenAI API, and someone who
-                    // added one during setup meant it to be the way the app works from now on.
                     if (activateOnSave) {
                         scope.launch {
                             prefs.dictate.transcriptionProviderId.set(id)
                             prefs.dictate.rewordingProviderId.set(id)
                         }
                     } else if (makeActive && localFromSetup) {
-                        // Coming out of the setup wizard, picking an on-device model *is* answering "how
-                        // should this app transcribe" — the wizard's own two recommendations already work
-                        // that way, and the full list, one tap further on, used to leave the user with a
-                        // downloaded model and a "no API key" error (issue #343).
-                        //
-                        // Only there. Anywhere else this would switch a working configuration under
-                        // someone who came to try a second model, on a screen they might not look at
-                        // again. Rewording is left alone in any case: the on-device engine has no chat
-                        // side to offer.
                         scope.launch { prefs.dictate.transcriptionProviderId.set(id) }
                     }
                     editingId = null
@@ -317,10 +302,8 @@ fun DictateProvidersScreen() = FlorisScreen {
                 },
             )
         }
-
     }
 }
-
 
 @Composable
 private fun RewordingProviderPreference(entries: List<Pair<String, String>>, showInfo: Boolean) {
@@ -335,7 +318,6 @@ private fun RewordingProviderPreference(entries: List<Pair<String, String>>, sho
         modifier = Modifier.settingsSearchAnchor("dictate__providers_active_rewording"),
         title = stringRes(R.string.dictate__providers_active_rewording),
         summary = entries.firstOrNull { it.first == selectedId }?.second ?: selectedId,
-        // Trailing info "i" (only while single-call is active), mirroring the Punctuation/Style prompt.
         trailing = if (showInfo) {
             {
                 IconButton(onClick = { infoOpen = true }) {
@@ -400,12 +382,6 @@ private fun RewordingProviderPreference(entries: List<Pair<String, String>>, sho
     }
 }
 
-/**
- * Active-transcription-provider picker (issue #104). Opens a dialog listing the transcription-capable
- * providers as radio options, with the **offline fallback** toggle as an extra checkbox item at the
- * bottom of the same dialog. The checkbox is hidden when the chosen provider is the on-device one (a
- * local fallback is meaningless there). Both the selection and the toggle are committed on confirm.
- */
 @Composable
 private fun TranscriptionProviderPreference(entries: List<Pair<String, String>>) {
     val prefs by FlorisPreferenceStore
@@ -462,7 +438,6 @@ private fun TranscriptionProviderPreference(entries: List<Pair<String, String>>)
                         }
                     }
                 }
-                // Extra item at the bottom: offline fallback (only when the choice isn't already local).
                 if (!selectionIsLocal) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     Row(
@@ -488,11 +463,9 @@ private fun TranscriptionProviderPreference(entries: List<Pair<String, String>>)
     }
 }
 
-/** Label for a custom endpoint: its user-given name, or a generic fallback. */
 private fun customLabel(account: ProviderAccount): String =
     account.displayName.ifBlank { "Custom server" }
 
-/** One-line status for a built-in provider row: key state + its capabilities. */
 @Composable
 private fun providerSummary(
     preset: ProviderPreset,
@@ -501,9 +474,6 @@ private fun providerSummary(
     noKey: String,
 ): String {
     if (preset.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
-        // On-device provider: surface the active downloaded models instead of an API-key state. There can
-        // be two — a one-shot and a live/streaming one (#233) — and both are worth showing, otherwise the
-        // row claims only half of what is set up.
         val context = LocalContext.current
         fun installedName(id: String?): String? = id?.takeIf { it.isNotBlank() }
             ?.let { LocalModelCatalog.byId(it) }
@@ -512,7 +482,7 @@ private fun providerSummary(
         val names = listOfNotNull(
             installedName(account?.transcriptionModel),
             installedName(account?.realtimeModel),
-        ).distinct() // a pre-split setup can have the same streaming model in both slots
+        ).distinct()
         return if (names.isEmpty()) {
             stringRes(R.string.dictate__local_model_none_selected)
         } else {
@@ -521,7 +491,6 @@ private fun providerSummary(
     }
     val caps = buildList {
         if (preset.capabilities.transcription) {
-            // Note streaming support (issue #128) right on the transcription capability.
             val stt = stringRes(R.string.dictate__providers_cap_stt)
             add(if (preset.supportsRealtime) "$stt (+ Realtime)" else stt)
         }
@@ -531,65 +500,34 @@ private fun providerSummary(
     return "$keyState · $caps"
 }
 
-/**
- * Multi-field editor for a single provider. Built-in providers ([preset] != null) expose only the key
- * and the relevant model fields; custom endpoints additionally edit a display name and base URL and can
- * be deleted ([onDelete] != null). All fields are committed together on confirm.
- */
 @Composable
 private fun ProviderEditorDialog(
     preset: ProviderPreset?,
     account: ProviderAccount,
     onDismiss: () -> Unit,
-    /**
-     * [makeActive] means the user chose an on-device model in this dialog (issue #343), which is a
-     * decision about who transcribes and not only about which model — the caller acts on it.
-     */
     onSave: (account: ProviderAccount, makeActive: Boolean) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
     val prefs by FlorisPreferenceStore
     val isCustom = preset == null
-    // A base-URL-editable built-in (e.g. Ollama, #136) also shows the base URL field, pre-filled with the
-    // preset's default (localhost) so the user can point it at a LAN server.
     val allowsBaseUrl = isCustom || preset?.allowsCustomBaseUrl == true
     val showTranscription = preset?.capabilities?.transcription ?: true
     val showChat = preset?.capabilities?.chat ?: true
 
     var displayName by remember { mutableStateOf(account.displayName) }
     var apiKey by remember { mutableStateOf(account.apiKey) }
-    // Whether an on-device model was actually chosen in here, as opposed to merely looked at or deleted
-    // (issue #343). Reported on confirm, because that is when the choice of model is stored too — the
-    // two are one decision and must not be able to land separately.
     var chosenOnDevice by remember { mutableStateOf(false) }
     var baseUrl by remember {
         mutableStateOf(
             account.customBaseUrl.ifBlank { if (preset?.allowsCustomBaseUrl == true) preset.baseUrl else "" },
         )
     }
-    // Model fields hold what the *user* chose and nothing else; the preset default appears greyed out
-    // behind an empty one, which says what is running without pretending someone picked it. Filling the
-    // default in as a value was the older answer to the same question, and it cost more than it gave: it
-    // came back after the user cleared the field, and it made the single-call switch look broken, because
-    // Gemini's default transcription model is a speech-to-text model that cannot serve rewording.
-    //
-    // So blank means what it has always meant in storage — follow the preset — and it now means the same
-    // on screen. Nothing converts a value back to blank on confirm any more: what stands in the box is
-    // what gets stored, including a deliberate pick of the model that is currently the default, which is
-    // then pinned and no longer moves with an app update. That is the trade this way round, and it is the
-    // one #313 asked for: what you choose is what is used.
-    //
-    // On-device: a streaming model stored in the one-shot slot predates the two-slot split (#233) — move
-    // it across on open so the dialog shows it under "Live" where it belongs, instead of as the one-shot
-    // pick it was never meant to be.
     val isLocalProvider = preset?.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE
     val legacyStreamingPick = isLocalProvider && LocalModelCatalog.isStreaming(account.transcriptionModel)
     var transcriptionModel by remember {
         mutableStateOf(
             when {
                 legacyStreamingPick -> ""
-                // The one field that is a list rather than a text box, so it has no placeholder to grey
-                // out: blank there would read as "no model selected" instead of "the default applies".
                 isLocalProvider -> account.transcriptionModel.ifBlank { preset?.defaultTranscriptionModel.orEmpty() }
                 else -> account.transcriptionModel
             },
@@ -600,36 +538,22 @@ private fun ProviderEditorDialog(
         mutableStateOf(if (legacyStreamingPick) account.transcriptionModel else account.realtimeModel)
     }
     var showRealtimePicker by remember { mutableStateOf(false) }
-    // Live catalog cache, updated when the picker fetches; persisted together with the rest on confirm.
     var cachedModels by remember { mutableStateOf(account.cachedModels) }
     var cachedAudioModels by remember { mutableStateOf(account.cachedAudioModels) }
     var cachedTranscriptionModels by remember { mutableStateOf(account.cachedTranscriptionModels) }
     var transcriptionViaChat by remember { mutableStateOf(account.transcriptionViaChat) }
-    // Self-hosted streaming (#249): whether this endpoint speaks the OpenAI realtime protocol. Nothing in
-    // a catalog reveals that, so the user says so.
     var customRealtime by remember { mutableStateOf(account.customRealtime) }
-    // Wake-on-demand (#189): whether this endpoint sits in front of a machine that sleeps between jobs.
     var customWarmUp by remember { mutableStateOf(account.customWarmUp) }
     var pickerKind by remember { mutableStateOf<ModelKind?>(null) }
 
-    // Effective preset to drive the model picker / connection test. Custom endpoints get a base-URL-only
-    // preset; a base-URL-editable built-in (Ollama, #136) uses the edited URL over its localhost default.
     val effectivePreset = when {
         preset == null -> ProviderRegistry.custom(baseUrl, realtime = customRealtime)
         preset.allowsCustomBaseUrl -> preset.copy(baseUrl = baseUrl.ifBlank { preset.baseUrl })
         else -> preset
     }
 
-    // Nothing here asks what a model can do. Which fields are shown is the switch's business alone, and
-    // what belongs in the merged field is the user's — the app cannot know, and a version that guessed
-    // both refused to merge and said nothing about why (#313). There used to be a catalog fetch on open
-    // whose only job was that guess; the picker loads the catalog itself when it is opened, so the
-    // dialog no longer sends a request nobody asked for.
-
     JetPrefAlertDialog(
         title = preset?.displayName ?: stringRes(R.string.dictate__providers_custom_title),
-        // The whole body scrolls as one — the on-device model list makes this dialog the tallest in the
-        // app, and pinning the intro/checkbox/slider while only the list moved read as two panes.
         scrollModifier = florisDialogScroll(),
         confirmLabel = stringRes(R.string.action__ok),
         dismissLabel = stringRes(R.string.action__cancel),
@@ -662,10 +586,6 @@ private fun ProviderEditorDialog(
         onNeutral = { onDelete?.invoke() },
     ) {
         if (preset?.transcriptionApi == TranscriptionApi.LOCAL_ONDEVICE) {
-            // On-device provider: no key/remote model — manage downloadable models instead (#104).
-            // Two independent picks (#233): the one-shot model lives in `transcriptionModel`, the live
-            // streaming one in `realtimeModel` — which is otherwise unused for this provider and means
-            // exactly that. Both stay selected at once, so choosing a live model never drops the one-shot.
             LocalModelSection(
                 activeModelId = transcriptionModel,
                 activeStreamingModelId = realtimeModel,
@@ -675,10 +595,6 @@ private fun ProviderEditorDialog(
             )
         } else {
         Column {
-            // Ollama is chat-only, and correctly so — it serves no /v1/audio/transcriptions. But someone
-            // who already has a local host answering for rewording reasonably expects dictation to follow,
-            // and the reporter of #273 read the dead end as "the app cannot do self-hosted transcription".
-            // The answer is a second server, or no server at all, and it belongs where the confusion is.
             if (preset?.id == ProviderRegistry.OLLAMA.id) {
                 Text(
                     text = stringRes(R.string.dictate__providers_ollama_no_stt),
@@ -713,11 +629,6 @@ private fun ProviderEditorDialog(
             ConnectionTestRow(preset = effectivePreset, apiKey = apiKey)
             if (showTranscription) {
                 EditorField(
-                    // When single-call is on, this one model does both transcription and rewording (#130),
-                    // and since #313 the rewording path reads this field rather than its own. Whether the
-                    // model in it can do both is the user's call: the app has no reliable way to know, and
-                    // the version that tried to work it out refused to merge the fields and left the
-                    // switch looking broken.
                     label = stringRes(
                         if (transcriptionViaChat) {
                             R.string.dictate__providers_field_transcription_rewording_model
@@ -731,11 +642,6 @@ private fun ProviderEditorDialog(
                         ?: stringRes(R.string.dictate__model_placeholder),
                     onBrowse = { pickerKind = ModelKind.TRANSCRIPTION },
                 )
-                // Streaming runs over a different endpoint and protocol than batch STT, so it gets its own
-                // field rather than being folded into the picker above (#248, based on #243). It used to be
-                // hidden on the assumption that each provider has exactly one usable streaming model, which
-                // stopped being true once OpenAI shipped a second generation of them — and until now the
-                // stored realtimeModel had no way of ever being set.
                 if (preset?.supportsRealtime == true && preset.curatedRealtimeModels.isNotEmpty()) {
                     EditorField(
                         label = stringRes(R.string.dictate__providers_field_realtime_model),
@@ -746,9 +652,6 @@ private fun ProviderEditorDialog(
                         onBrowse = { showRealtimePicker = true },
                     )
                 }
-                // A server of the user's own can stream too (#249), if it speaks the OpenAI realtime
-                // protocol under /v1/realtime — which several self-hosted transcription servers do. There
-                // is no way to tell without connecting, so this is a switch rather than a guess.
                 if (isCustom) {
                     Row(
                         modifier = Modifier
@@ -770,8 +673,6 @@ private fun ProviderEditorDialog(
                         }
                         Switch(checked = customRealtime, onCheckedChange = { customRealtime = it })
                     }
-                    // Optional: many self-hosted servers serve whatever model they were started with, so a
-                    // blank box means "whatever you have".
                     if (customRealtime) {
                         EditorField(
                             label = stringRes(R.string.dictate__providers_field_realtime_model),
@@ -782,7 +683,6 @@ private fun ProviderEditorDialog(
                     }
                 }
             }
-            // Rewording model is unused while single-call multimodal is on (one model does both, #130).
             if (showChat && !transcriptionViaChat) {
                 EditorField(
                     label = stringRes(R.string.dictate__providers_field_chat_model),
@@ -792,9 +692,6 @@ private fun ProviderEditorDialog(
                         ?: stringRes(R.string.dictate__model_placeholder),
                     onBrowse = { pickerKind = ModelKind.CHAT },
                 )
-                // Wake-on-demand (#189): a GPU box that sleeps between jobs only starts waking when
-                // something reaches it, so the first rewording otherwise pays for the whole boot. Offered
-                // only for endpoints of the user's own — nowhere else is there a machine to wake.
                 if (isCustom) {
                     Row(
                         modifier = Modifier
@@ -818,14 +715,6 @@ private fun ProviderEditorDialog(
                     }
                 }
             }
-            // Single-call multimodal (issue #130): kept at the bottom; when on, this one model transcribes
-            // and formats in a single request and the rewording field above is folded into it. Offered for
-            // any provider with a chat endpoint, which is the prerequisite for input_audio.
-            //
-            // It used to warn when the catalog said the chosen model accepted no audio, and the model list
-            // marked the audio-capable ones. Both are gone: the classification was wrong often enough to
-            // mislead, and a wrong warning about a model that works is worse than none. Picking a model
-            // that can do both is the user's job here, and it is one the app cannot do for them.
             if (showTranscription && showChat) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -882,14 +771,6 @@ private fun ProviderEditorDialog(
     }
 }
 
-/**
- * Picker for a provider's curated realtime models — a short radio list rather than the searchable
- * catalogue used for batch models, because streaming models are few and never appear in `/models`.
- *
- * Always writes the chosen id into the field, including for the default, so the box never sits empty
- * while a model is in fact running. Turning that back into an empty stored value is [modelToStore]'s job
- * on confirm.
- */
 @Composable
 private fun RealtimeModelPickerDialog(
     models: List<String>,
@@ -935,23 +816,16 @@ private fun RealtimeModelPickerDialog(
     }
 }
 
-/**
- * A "Test connection" action with an inline result. Performs a lightweight `listModels()` call against
- * the provider's base URL with the currently entered key, so the user can verify the endpoint + key are
- * reachable before saving. A model count on success doubles as proof the catalog loads.
- */
 @Composable
 private fun ConnectionTestRow(preset: ProviderPreset, apiKey: String) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val prefs by FlorisPreferenceStore
     var testing by remember { mutableStateOf(false) }
-    // null = not run yet; Pair(ok, message) once a test finished.
     var result by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
     val okColor = MaterialTheme.colorScheme.primary
     val errColor = MaterialTheme.colorScheme.error
     val failedFallback = stringRes(R.string.dictate__providers_test_failed)
-    // Resolved here (composable scope) so the background coroutine can format without touching Compose.
     val successTemplate = context.getString(R.string.dictate__providers_test_success)
 
     Row(
@@ -975,9 +849,6 @@ private fun ConnectionTestRow(preset: ProviderPreset, apiKey: String) {
                 result = null
                 scope.launch {
                     result = try {
-                        // Left on the default two minutes even when the user raised their own limit
-                        // (#337): the point of a test button is a quick verdict, and one that can sit
-                        // there for ten minutes answers a different question than the one being asked.
                         val count = OpenAiCompatibleClient
                             .from(
                                 preset, apiKey.trim(),
@@ -1004,10 +875,6 @@ private fun ConnectionTestRow(preset: ProviderPreset, apiKey: String) {
     }
 }
 
-/**
- * A single labeled text field inside the provider editor dialog. When [onBrowse] is set, a trailing
- * button opens the model picker (the field still accepts free-text input).
- */
 @Composable
 private fun EditorField(
     label: String,
@@ -1018,7 +885,6 @@ private fun EditorField(
     keyboardType: KeyboardType = KeyboardType.Text,
     onBrowse: (() -> Unit)? = null,
 ) {
-    // Secret fields (API keys) start masked but can be revealed with the eye toggle (issue #195).
     var reveal by remember { mutableStateOf(false) }
     OutlinedTextField(
         modifier = Modifier.padding(top = 8.dp),
