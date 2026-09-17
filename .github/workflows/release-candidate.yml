@@ -60,11 +60,16 @@ jobs:
             :wear:testDebugUnitTest \
             --stacktrace
 
-      - name: Repeat cancellation fault test
+      # Re-run only the network fault/cancellation class. The previous RC workflow accidentally
+      # re-ran the entire dictate-core suite three times, adding about 25 minutes without increasing
+      # coverage of the fault path we actually want to stress.
+      - name: Repeat network fault tests
         run: |
+          set -euo pipefail
           for attempt in 1 2 3; do
             echo "Network fault suite attempt $attempt/3"
-            timeout 10m ./gradlew :lib:dictate-core:testDebugUnitTest \
+            timeout 5m ./gradlew :lib:dictate-core:testDebugUnitTest \
+              --tests "dev.patrickgold.florisboard.dictate.provider.OpenAiCompatibleClientNetworkTest" \
               --rerun-tasks --stacktrace
           done
 
@@ -107,6 +112,16 @@ jobs:
           echo "size=$size" >> "$GITHUB_OUTPUT"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
+      # Keep a short-lived Actions copy as a recovery path if GitHub's release-asset service has a
+      # transient outage. This is the same verified APK that is uploaded to the public prerelease.
+      - name: Preserve verified APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dictate-kapijuja-v0.1.0-rc.7-test
+          path: dictate-kapijuja-v0.1.0-rc.7-test.apk
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Publish minimal tested prerelease
         env:
           GH_TOKEN: ${{ github.token }}
@@ -116,6 +131,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          tag="v0.1.0-rc.7"
+          title='Dictate Kapijuja 0.1.0 RC7 — provider controls and stable suggestions'
+
           printf '%s\n' \
             'Seventh public test candidate of Dictate Kapijuja Keyboard.' \
             '' \
@@ -132,7 +150,7 @@ jobs:
             'Validated before publishing:' \
             '- phone and Wear compilation;' \
             '- app, dictate-core and Wear unit tests;' \
-            '- three repeated stalled-request cancellation tests;' \
+            '- three repeated network fault/cancellation test runs;' \
             '- strict core/Wear lint and a release-critical phone permission/lifecycle/resource gate;' \
             '- Cloud/Billing and credential audit;' \
             '- APK package, signature, version code and size verification.' \
@@ -141,9 +159,46 @@ jobs:
             "SHA-256: $APK_SHA" \
             > release-notes.txt
 
-          gh release create v0.1.0-rc.7 "$APK_FILE" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title 'Dictate Kapijuja 0.1.0 RC7 — provider controls and stable suggestions' \
-            --notes-file release-notes.txt \
-            --prerelease
+          # Creating the release and uploading a ~124 MiB APK are deliberately separate operations.
+          # GitHub's uploads service can return a transient 5xx after the release metadata has already
+          # been accepted; separating them makes a retry idempotent instead of failing the whole RC.
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            created=false
+            for attempt in 1 2 3; do
+              echo "Release metadata attempt $attempt/3"
+              if gh release create "$tag" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --target "$GITHUB_SHA" \
+                  --title "$title" \
+                  --notes-file release-notes.txt \
+                  --prerelease; then
+                created=true
+                break
+              fi
+              sleep $((attempt * 10))
+            done
+            test "$created" = true
+          else
+            gh release edit "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "$title" \
+              --notes-file release-notes.txt \
+              --prerelease
+          fi
+
+          uploaded=false
+          for attempt in 1 2 3 4 5; do
+            echo "APK upload attempt $attempt/5"
+            if timeout 5m gh release upload "$tag" "$APK_FILE" \
+                --repo "$GITHUB_REPOSITORY" --clobber; then
+              uploaded=true
+              break
+            fi
+            sleep $((attempt * 15))
+          done
+          test "$uploaded" = true
+
+          # Do not call the run successful until the public release actually exposes the expected APK.
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name' | grep -Fx "$APK_FILE"
