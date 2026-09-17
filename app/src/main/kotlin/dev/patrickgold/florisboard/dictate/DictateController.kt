@@ -4027,7 +4027,10 @@ object DictateController {
      * far so the user never loses their dictation. Returns the text to commit.
      */
     private suspend fun postProcessTranscript(context: Context, transcript: String): String {
-        if (!prefs.dictate.rewordingEnabled.get() || transcript.isBlank()) return transcript
+        if (!prefs.dictate.rewordingEnabled.get() ||
+            !prefs.dictate.automaticRewordingEnabled.get() ||
+            transcript.isBlank()
+        ) return transcript
         // Punctuation-only transcripts ("...") are not blank but hold nothing to reword, and a model
         // asked to format them answers the *request* instead of the text. See [hasNoWords].
         if (DictatePromptDefaults.hasNoWords(transcript)) return transcript
@@ -4151,6 +4154,7 @@ object DictateController {
      */
     private fun rewordingWillFollow(): Boolean =
         prefs.dictate.rewordingEnabled.get() &&
+            prefs.dictate.automaticRewordingEnabled.get() &&
             (prefs.dictate.autoFormattingEnabled.get() || _prompts.value.any { it.autoApply })
 
     private suspend fun requestReword(
@@ -4264,7 +4268,7 @@ object DictateController {
         transcriptionStylePrompt()?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
         // Formatting/rewording is folded in only when the user has rewording enabled (mirrors
         // postProcessTranscript's gating), so single-call output matches the two-call output.
-        if (prefs.dictate.rewordingEnabled.get()) {
+        if (prefs.dictate.rewordingEnabled.get() && prefs.dictate.automaticRewordingEnabled.get()) {
             if (prefs.dictate.autoFormattingEnabled.get()) {
                 parts.add(DictatePromptDefaults.AUTO_FORMATTING_PROMPT)
             }
