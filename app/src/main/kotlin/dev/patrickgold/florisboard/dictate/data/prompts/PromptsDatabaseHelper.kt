@@ -15,6 +15,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.DictateReasoningEffort
 
 /**
@@ -41,6 +42,7 @@ class PromptsDatabaseHelper private constructor(
     // Seeding needs localized strings, not a component. Retaining Resources avoids making the
     // process-wide database helper a static owner of an Activity, service, or other Context.
     private val resources = context.applicationContext.resources
+    private val prefs by FlorisPreferenceStore
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -144,7 +146,16 @@ class PromptsDatabaseHelper private constructor(
                 do { models.add(cursor.toPromptModel()) } while (cursor.moveToNext())
             }
         }
-        return models
+        // Kapijuja keeps the rewording feature itself separate from automatic post-processing. The
+        // controller intentionally reads getAll() for both the ordinary two-call path and multimodal
+        // single-call prompt folding, so masking AUTO_APPLY here gives both paths one reliable gate
+        // without touching the giant orchestration controller. The persisted flags are not changed:
+        // re-enabling automatic rewording restores the user's per-prompt choices exactly as they were.
+        return if (prefs.dictate.autoFormattingEnabled.get()) {
+            models
+        } else {
+            models.map { it.copy(autoApply = false) }
+        }
     }
 
     /**
@@ -162,6 +173,7 @@ class PromptsDatabaseHelper private constructor(
     }
 
     fun getAutoApplyIds(): List<Int> {
+        if (!prefs.dictate.autoFormattingEnabled.get()) return emptyList()
         val db = readableDatabase
         val ids = ArrayList<Int>()
         db.rawQuery("SELECT ID FROM PROMPTS WHERE AUTO_APPLY = 1 ORDER BY POS ASC", null).use { cursor ->
