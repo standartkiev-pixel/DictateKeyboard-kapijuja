@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dictate__auto_reword_after_transcription_title">Automatically reword after transcription</string>
+    <string name="dictate__auto_reword_after_transcription_summary">When off, speech is inserted as the raw transcript while manual AI prompts and translation remain available. When on, automatic formatting and prompts marked Auto-apply may run after transcription.</string>
+</resources>
