@@ -11,13 +11,9 @@
 package dev.patrickgold.florisboard.app.settings.dictate
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.ModelTraining
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.runtime.Composable
@@ -43,16 +39,16 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
 
 /**
- * Rewording (AI) settings: the master toggle, the dedicated chat provider/key/model, prompt
- * management and the system/auto-formatting options. The transcription provider is configured on the
- * main Dictate screen; this screen is purely about the rewording (GPT) side (roadmap section 4, P2).
+ * Rewording (AI) behaviour and prompt settings. Provider/model selection and the two switches which
+ * decide whether rewording is available and whether it runs automatically live together on the AI
+ * providers screen; keeping a second copy here made it too easy to change one setting and then wonder
+ * why the model behaved differently elsewhere.
  */
 @Composable
 fun DictateRewordingScreen() = FlorisScreen {
@@ -65,14 +61,6 @@ fun DictateRewordingScreen() = FlorisScreen {
     content {
         val navController = LocalNavController.current
         val context = LocalContext.current
-
-        SwitchPreference(
-            prefs.dictate.rewordingEnabled,
-            icon = Icons.Default.AutoFixHigh,
-            modifier = Modifier.settingsSearchAnchor("dictate__rewording_enabled_title"),
-            title = stringRes(R.string.dictate__rewording_enabled_title),
-            summary = stringRes(R.string.dictate__rewording_enabled_summary),
-        )
 
         ListPreference(
             prefs.dictate.promptsLayout,
@@ -109,14 +97,6 @@ fun DictateRewordingScreen() = FlorisScreen {
                 stringRes(R.string.dictate__manage_prompts_summary, "count" to promptCount)
             },
             onClick = { navController.navigate(Routes.Settings.DictatePrompts()) },
-        )
-
-        SwitchPreference(
-            prefs.dictate.autoFormattingEnabled,
-            icon = Icons.Default.AutoFixHigh,
-            modifier = Modifier.settingsSearchAnchor("dictate__auto_formatting_title"),
-            title = stringRes(R.string.dictate__auto_formatting_title),
-            summary = stringRes(R.string.dictate__auto_formatting_summary),
         )
 
         val reasoningScope = rememberCoroutineScope()
