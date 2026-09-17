@@ -3,13 +3,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def replace_one(rel: str, old: str, new: str) -> None:
-    path = ROOT / rel
-    text = path.read_text(encoding="utf-8")
+def replace_exact(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
     if count != 1:
-        raise SystemExit(f"{rel}: expected exactly one match, found {count}\n--- pattern ---\n{old}")
-    path.write_text(text.replace(old, new, 1), encoding="utf-8")
+        raise SystemExit(f"{label}: expected exactly one match, found {count}\n--- pattern ---\n{old}")
+    return text.replace(old, new, 1)
 
 
 nlp = "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt"
@@ -21,26 +19,29 @@ text = path.read_text(encoding="utf-8")
 # gave those requests the same id, so whichever asynchronous request finished first could
 # become impossible for the actually newer request to replace. Use an explicit monotonic
 # sequence instead, and serialize every publication through the same mutex.
-if "import android.os.SystemClock\n" not in text:
-    raise SystemExit(f"{nlp}: SystemClock import not found")
-text = text.replace("import android.os.SystemClock\n", "", 1)
-
-replace_one(
-    nlp,
+text = replace_exact(
+    text,
+    "import android.os.SystemClock\n",
+    "",
+    "SystemClock import",
+)
+text = replace_exact(
+    text,
     "import java.util.concurrent.atomic.AtomicBoolean\n",
     "import java.util.concurrent.atomic.AtomicBoolean\nimport java.util.concurrent.atomic.AtomicLong\n",
+    "AtomicLong import",
 )
-
-replace_one(
-    nlp,
+text = replace_exact(
+    text,
     'private const val BLANK_STR_PATTERN = "^\\\\s*$"\n',
     '''private const val BLANK_STR_PATTERN = "^\\\\s*$"\n\n/**\n * Strictly increasing ids for candidate refreshes. Wall/uptime clocks are deliberately not used here:\n * cursor movement and a first keypress can legitimately enqueue more than one refresh in one millisecond.\n */\ninternal class SuggestionRequestSequence {\n    private val counter = AtomicLong(0L)\n\n    fun next(): Long = counter.incrementAndGet()\n}\n''',
+    "request sequence insertion point",
 )
-
-replace_one(
-    nlp,
+text = replace_exact(
+    text,
     '''    private val internalSuggestionsGuard = Mutex()\n    private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->\n        scope.launch { assembleCandidates() }\n    }\n''',
     '''    private val suggestionRequestSequence = SuggestionRequestSequence()\n    private val internalSuggestionsGuard = Mutex()\n    private var internalSuggestions by Delegates.observable(0L to listOf<SuggestionCandidate>()) { _, _, _ ->\n        scope.launch { assembleCandidates() }\n    }\n''',
+    "internal suggestion generation state",
 )
 
 # There are exactly three request-id allocations: asynchronous suggest(), glide/direct publish,
@@ -53,22 +54,18 @@ text = text.replace(old_alloc, "val reqGeneration = suggestionRequestSequence.ne
 text = text.replace("internalSuggestions.first < reqTime", "internalSuggestions.first < reqGeneration")
 text = text.replace("internalSuggestions = reqTime to when", "internalSuggestions = reqGeneration to when")
 
-old_direct = '''        runBlocking {\n            internalSuggestions = reqTime to if (wanted) suggestions else emptyList()\n        }\n'''
-new_direct = '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n                }\n            }\n        }\n'''
-if old_direct not in text:
-    # The allocation rename above also renames the local variable in this exact block.
-    old_direct = old_direct.replace("reqTime", "reqGeneration")
-if text.count(old_direct) != 1:
-    raise SystemExit(f"{nlp}: direct suggestion publication block not found exactly once")
-text = text.replace(old_direct, new_direct, 1)
-
-old_clear = '''        runBlocking {\n            internalSuggestions = reqTime to emptyList()\n        }\n'''
-new_clear = '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to emptyList()\n                }\n            }\n        }\n'''
-if old_clear not in text:
-    old_clear = old_clear.replace("reqTime", "reqGeneration")
-if text.count(old_clear) != 1:
-    raise SystemExit(f"{nlp}: clear suggestion publication block not found exactly once")
-text = text.replace(old_clear, new_clear, 1)
+text = replace_exact(
+    text,
+    '''        runBlocking {\n            internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n        }\n''',
+    '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()\n                }\n            }\n        }\n''',
+    "direct suggestion publication",
+)
+text = replace_exact(
+    text,
+    '''        runBlocking {\n            internalSuggestions = reqGeneration to emptyList()\n        }\n''',
+    '''        runBlocking {\n            internalSuggestionsGuard.withLock {\n                if (internalSuggestions.first < reqGeneration) {\n                    internalSuggestions = reqGeneration to emptyList()\n                }\n            }\n        }\n''',
+    "clear suggestion publication",
+)
 
 if "SystemClock" in text or "reqTime" in text:
     raise SystemExit(f"{nlp}: stale timestamp request ordering remains")
