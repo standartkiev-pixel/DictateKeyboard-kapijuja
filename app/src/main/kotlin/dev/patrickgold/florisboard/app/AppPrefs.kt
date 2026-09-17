@@ -862,6 +862,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__automatic_rewording_enabled",
             default = true,
         )
+        fun autoRewordingOn(): Boolean = rewordingEnabled.get() && automaticRewordingEnabled.get()
         // Reasoning effort sent as OpenAI-compatible `reasoning_effort` on rewording chat calls for
         // reasoning models (issue #141). OFF omits the field, so non-reasoning models are unaffected.
         val rewordingReasoningEffort = enum(
