@@ -855,6 +855,14 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "dictate__rewording_enabled",
             default = true,
         )
+        // Independent automatic post-processing gate. Keep this separate from rewordingEnabled:
+        // turning automatic rewording off must leave the manual magic-wand prompts/translation available.
+        // Default true preserves the behaviour of existing installs and older stored preferences.
+        val automaticRewordingEnabled = boolean(
+            key = "dictate__automatic_rewording_enabled",
+            default = true,
+        )
+        fun autoRewordingOn(): Boolean = rewordingEnabled.get() && automaticRewordingEnabled.get()
         // Reasoning effort sent as OpenAI-compatible `reasoning_effort` on rewording chat calls for
         // reasoning models (issue #141). OFF omits the field, so non-reasoning models are unaffected.
         val rewordingReasoningEffort = enum(

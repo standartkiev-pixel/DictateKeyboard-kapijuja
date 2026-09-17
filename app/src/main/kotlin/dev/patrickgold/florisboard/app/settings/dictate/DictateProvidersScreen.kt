@@ -280,8 +280,14 @@ fun DictateProvidersScreen() = FlorisScreen {
                     activateOnSave = false
                     localFromSetup = false
                 },
-                onSave = { updated, makeActive ->
+                onSave = { updated, makeActive, realtimeEnabled, automaticRewordingEnabled ->
                     writeKeyring(accounts.put(updated))
+                    // The dialog disappears immediately after Save, so persist its global runtime modes
+                    // from this screen-owned scope rather than a dialog scope that would be cancelled.
+                    scope.launch {
+                        prefs.dictate.realtimeTranscription.set(realtimeEnabled)
+                        prefs.dictate.automaticRewordingEnabled.set(automaticRewordingEnabled)
+                    }
                     // A server of the user's own speaks both halves of the OpenAI API, and someone who
                     // added one during setup meant it to be the way the app works from now on.
                     if (activateOnSave) {
@@ -545,10 +551,17 @@ private fun ProviderEditorDialog(
      * [makeActive] means the user chose an on-device model in this dialog (issue #343), which is a
      * decision about who transcribes and not only about which model — the caller acts on it.
      */
-    onSave: (account: ProviderAccount, makeActive: Boolean) -> Unit,
+    onSave: (
+        account: ProviderAccount,
+        makeActive: Boolean,
+        realtimeEnabled: Boolean,
+        automaticRewordingEnabled: Boolean,
+    ) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
     val prefs by FlorisPreferenceStore
+    val realtimePreference by prefs.dictate.realtimeTranscription.collectAsState()
+    val automaticRewordingPreference by prefs.dictate.automaticRewordingEnabled.collectAsState()
     val isCustom = preset == null
     // A base-URL-editable built-in (e.g. Ollama, #136) also shows the base URL field, pre-filled with the
     // preset's default (localhost) so the user can point it at a LAN server.
@@ -611,6 +624,12 @@ private fun ProviderEditorDialog(
     // Wake-on-demand (#189): whether this endpoint sits in front of a machine that sleeps between jobs.
     var customWarmUp by remember { mutableStateOf(account.customWarmUp) }
     var pickerKind by remember { mutableStateOf<ModelKind?>(null) }
+    // These are global runtime modes, but they live here next to the models they control. Keep their
+    // model ids untouched when disabled, and commit the switch state only if the dialog is confirmed.
+    var realtimeEnabled by remember(account.providerId) { mutableStateOf(realtimePreference) }
+    var automaticRewordingEnabled by remember(account.providerId) {
+        mutableStateOf(automaticRewordingPreference)
+    }
 
     // Effective preset to drive the model picker / connection test. Custom endpoints get a base-URL-only
     // preset; a base-URL-editable built-in (Ollama, #136) uses the edited URL over its localhost default.
@@ -656,6 +675,8 @@ private fun ProviderEditorDialog(
                     },
                 ),
                 chosenOnDevice,
+                realtimeEnabled,
+                automaticRewordingEnabled,
             )
         },
         onDismiss = onDismiss,
@@ -672,6 +693,12 @@ private fun ProviderEditorDialog(
                 onActiveModelChange = { transcriptionModel = it },
                 onActiveStreamingModelChange = { realtimeModel = it },
                 onModelChosen = { chosenOnDevice = true },
+            )
+            EditorToggleRow(
+                title = stringRes(R.string.dictate__providers_realtime_enabled_title),
+                summary = stringRes(R.string.dictate__providers_realtime_enabled_summary),
+                checked = realtimeEnabled,
+                onCheckedChange = { realtimeEnabled = it },
             )
         } else {
         Column {
@@ -737,6 +764,12 @@ private fun ProviderEditorDialog(
                 // stopped being true once OpenAI shipped a second generation of them — and until now the
                 // stored realtimeModel had no way of ever being set.
                 if (preset?.supportsRealtime == true && preset.curatedRealtimeModels.isNotEmpty()) {
+                    EditorToggleRow(
+                        title = stringRes(R.string.dictate__providers_realtime_enabled_title),
+                        summary = stringRes(R.string.dictate__providers_realtime_enabled_summary),
+                        checked = realtimeEnabled,
+                        onCheckedChange = { realtimeEnabled = it },
+                    )
                     EditorField(
                         label = stringRes(R.string.dictate__providers_field_realtime_model),
                         value = realtimeModel,
@@ -773,6 +806,12 @@ private fun ProviderEditorDialog(
                     // Optional: many self-hosted servers serve whatever model they were started with, so a
                     // blank box means "whatever you have".
                     if (customRealtime) {
+                        EditorToggleRow(
+                            title = stringRes(R.string.dictate__providers_realtime_enabled_title),
+                            summary = stringRes(R.string.dictate__providers_realtime_enabled_summary),
+                            checked = realtimeEnabled,
+                            onCheckedChange = { realtimeEnabled = it },
+                        )
                         EditorField(
                             label = stringRes(R.string.dictate__providers_field_realtime_model),
                             value = realtimeModel,
@@ -817,6 +856,14 @@ private fun ProviderEditorDialog(
                         Switch(checked = customWarmUp, onCheckedChange = { customWarmUp = it })
                     }
                 }
+            }
+            if (showChat) {
+                EditorToggleRow(
+                    title = stringRes(R.string.dictate__providers_automatic_rewording_title),
+                    summary = stringRes(R.string.dictate__providers_automatic_rewording_summary),
+                    checked = automaticRewordingEnabled,
+                    onCheckedChange = { automaticRewordingEnabled = it },
+                )
             }
             // Single-call multimodal (issue #130): kept at the bottom; when on, this one model transcribes
             // and formats in a single request and the rewording field above is folded into it. Offered for
@@ -1001,6 +1048,32 @@ private fun ConnectionTestRow(preset: ProviderPreset, apiKey: String) {
             }
             Text(stringRes(R.string.dictate__providers_test))
         }
+    }
+}
+
+@Composable
+private fun EditorToggleRow(
+    title: String,
+    summary: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

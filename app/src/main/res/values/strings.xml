@@ -2344,4 +2344,9 @@
     <string name="dictate__input_usb">USB mic</string>
     <string name="dictate__input_other">Other mic</string>
     <string name="dictate__input_unknown">Mic ?</string>
+
+    <string name="dictate__providers_realtime_enabled_title">Real-time transcription</string>
+    <string name="dictate__providers_realtime_enabled_summary">Use the selected real-time model while recording. Turning this off keeps the model selected and uses normal batch transcription.</string>
+    <string name="dictate__providers_automatic_rewording_title">Automatic rewording</string>
+    <string name="dictate__providers_automatic_rewording_summary">Automatically run formatting and auto-apply prompts after dictation. Manual magic-wand prompts and translation stay available.</string>
 </resources>
