@@ -1,193 +1,174 @@
 # AI provider toggles, automatic rewording, and learned suggestions
 
-This is the current handoff for the next development chat. Read this file before touching provider/rewording or suggestion-learning code.
+Read this file before changing provider/rewording or suggestion-learning code.
 
-## Status
-
-The requests in this document are **active work, not yet implemented**. Do not assume that the switches or Smartbar fixes described below already exist just because they are documented here.
+## Current status
 
 Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
 
-The user currently prefers `gpt-4o-mini-transcribe` over `gpt-transcribe` because the larger/newer transcription option felt slower in everyday keyboard use. That is a user model choice, not a required code default change.
+Provider runtime switches are implemented and merged on `main` in PR #2, merge commit `2844aaa13e54d5263331da551921a23c1312fe37`.
 
-## 1. Provider editor: put behavior switches next to the model fields
+The candidate-strip refresh race is being fixed separately in PR #3, branch `kapijuja/suggestion-strip-consistency`. Until PR #3 is merged, treat that part as pending device/CI validation rather than established `main` behavior.
 
-The built-in provider editor currently shows, for OpenAI and compatible providers:
+The user currently prefers `gpt-4o-mini-transcribe` over `gpt-transcribe` for everyday keyboard use because it felt faster. That is a user model choice, not a required code default.
 
-- API key;
-- Transcription model;
-- Real-time model;
-- Rewording model;
-- Single-call multimodal.
+## 1. Provider editor invariants — implemented
 
-There is no obvious `Off` / `None` next to the Real-time or Rewording model fields. This is confusing because the user sees a model selected and cannot tell whether that model is merely configured or actively used.
-
-### Required UX
-
-Add explicit switches in the same provider editor dialog:
+The provider editor now exposes explicit runtime controls beside the model configuration:
 
 - **Real-time transcription** — ON/OFF;
 - **Automatic rewording** — ON/OFF.
 
-Keep the chosen model id when a switch is OFF. The model field may be disabled/greyed while OFF, but its saved value must not be erased. Turning the switch back on should restore the previous configuration immediately.
+Turning either switch OFF preserves the selected model id. The switch controls runtime behavior, not whether a model remains configured.
 
-`Single-call multimodal` remains a separate feature. Do not repurpose it as a realtime or rewording switch.
+`Single-call multimodal` remains a separate feature.
 
-### Rewording behavior that must be preserved
+### Rewording hierarchy
 
-The existing `prefs.dictate.rewordingEnabled` is a master capability/UI switch. When it is disabled, the manual rewording/prompt/magic-wand functionality disappears as well. The user relies on the magic wand for manual rewriting and translation, so this is **not** the switch requested here.
+Do not collapse these three levels into one switch:
 
-The new Automatic rewording switch must control only automatic post-processing after dictation. With Automatic rewording OFF:
+1. `rewordingEnabled` — master capability/UI switch for rewording and the manual magic-wand/prompt tools;
+2. `automaticRewordingEnabled` — permission for automatic post-processing after dictation;
+3. inside the automatic chain, `autoFormattingEnabled` and prompts marked `autoApply` decide what actually runs.
 
-- raw STT text should be committed without automatic GPT/rewording calls;
-- manual magic-wand rewording must still work;
-- manual translation prompts must still work;
-- saved prompt UI must remain available;
-- turning Automatic rewording ON later must restore the automatic chain.
+With Automatic rewording OFF:
 
-Current code facts to preserve/adjust:
+- batch/normal STT text is committed without automatic formatting or auto-apply prompt calls;
+- manual magic-wand rewriting still works;
+- manual translation prompts still work;
+- saved prompt UI remains available;
+- Single-call multimodal does not fold automatic rewording instructions into its request.
 
-- `DictateRewordingScreen.kt` exposes `prefs.dictate.rewordingEnabled` as the master rewording switch.
-- `DictateController.postProcessTranscript()` currently returns raw text immediately when `rewordingEnabled` is false, then otherwise runs automatic formatting and auto-apply prompts.
-- `DictateController.rewordingWillFollow()` currently checks the master switch plus `autoFormattingEnabled` or any `autoApply` prompt.
-- the single-call multimodal prompt builder similarly folds automatic formatting/auto-apply prompts into the request under the master rewording gate.
+Do not replace `automaticRewordingEnabled` with the master `rewordingEnabled`: disabling the master intentionally removes the manual tools too.
 
-A clean implementation should introduce a separate persistent preference such as `automaticRewordingEnabled` and gate **automatic** paths with it, while keeping manual prompt/rewording entry points governed by the existing master capability.
+### Realtime invariant
 
-Do not accidentally make `autoFormattingEnabled` or each prompt's `autoApply` setting meaningless. The intended hierarchy is:
-
-1. rewording feature available (`rewordingEnabled`);
-2. automatic post-processing allowed (`automaticRewordingEnabled`);
-3. within that automatic chain, run only enabled automatic features (`autoFormattingEnabled`, prompts marked `autoApply`).
-
-### Realtime behavior
-
-Before adding the realtime switch, trace the exact realtime session-start condition in `DictateController` and provider capability code. Do not implement a cosmetic switch that merely hides the field.
+The existing global `realtimeTranscription` runtime preference is exposed in the provider editor rather than inventing a second realtime state.
 
 With Real-time transcription OFF:
 
-- no realtime WebSocket/session/API path should start;
-- ordinary batch transcription must continue to work normally;
-- the selected realtime model must remain stored for later reuse;
-- fallback/recovery behavior must remain intact.
+- the normal controller gates prevent realtime session/WebSocket startup;
+- ordinary batch transcription remains available;
+- the selected realtime model remains stored for later reuse.
 
-With it ON, current realtime behavior should remain unchanged unless a separate bug is found.
+With it ON, the existing realtime path is unchanged.
 
-### Primary files
+### Provider implementation files
 
-- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictate/DictateProvidersScreen.kt`
-- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictate/DictateRewordingScreen.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt`
-- `app/src/main/kotlin/dev/patrickgold/florisboard/dictate/DictateController.kt` — only realtime/rewording sections
-- provider account/preset classes used by `ProviderEditorDialog`
-- relevant string resources and preference tests
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictate/DictateProvidersScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/dictate/DictateController.kt` — automatic/realtime gates only
+- `app/src/main/res/values/strings.xml`
+
+PR #2 passed the repository Android CI, architecture audit, phone/Wear builds and unit tests before merge.
 
 ## 2. Suggestions and personal vocabulary
 
-The user wants the keyboard to learn deliberate repeated typing so common personal words and email addresses become useful suggestions. A frequently typed email should rise toward the top when its prefix is typed.
+Do **not** build another learning database. The repository already has the personal-learning system.
 
-The user also reported inconsistent candidate-strip visibility:
-
-- placing the cursor inside a word before typing may leave the upper Smartbar/menu unchanged and show no word candidates;
-- after typing begins, candidates appear;
-- after the keyboard has entered that typing/candidate state, moving the cursor elsewhere can make candidates appear again;
-- sometimes another Smartbar surface appears to cover or replace the candidate strip.
-
-Investigate state transitions, not just candidate ranking. Suggestions should not silently disappear because of stale Smartbar mode/session state.
-
-### Important: automatic learning already exists
-
-Do **not** build a second learning database. Current code already contains a substantial personal-learning implementation:
-
-`ime/dictionary/LearnedWords.kt`
+`ime/dictionary/LearnedWords.kt` provides:
 
 - Room database `dictate_learned_words`;
-- learned words with count, last-used time, language and promotion state;
+- learned words with count, recency, language and promotion state;
 - learned bigrams for personal next-word prediction;
 - prefix lookup ordered by learned score;
-- address-like strings are intentionally supported.
+- support for address-like strings.
 
-`ime/nlp/latin/WordLearningGate.kt`
+`ime/nlp/latin/WordLearningGate.kt` provides the learning gate:
 
-- first accepted sighting: remembered, not shown;
-- second sighting: may appear in suggestions;
-- third sighting: promoted to personal dictionary;
-- rejecting/taking back an autocorrection has extra learning weight;
-- unpromoted entries decay slowly (60-day half-life);
-- likely slips are filtered using tap evidence and dictionary-neighbour evidence;
-- email/address-like forms can be learned;
-- private/incognito/password/no-suggestion contexts and non-typed origins are excluded.
+- first accepted sighting: remembered but not suggested;
+- second sighting: may become suggestible;
+- third sighting: eligible for promotion to the personal dictionary;
+- likely slips are filtered using tap/dictionary evidence;
+- unpromoted entries decay over time;
+- private/incognito/password and non-typed origins are excluded.
 
-`AppPrefs.kt` already has:
+`AppPrefs.kt` already contains `suggestion__learn_typed_words` / `learnTypedWords`; it remains opt-in by default. Do not change that privacy default casually.
 
-- `suggestion__learn_typed_words` / `learnTypedWords`;
-- current default: `false`.
+### Existing explicit dictionary controls
 
-So the next chat must first locate the existing UI for `learnTypedWords` and trace where typed words are recorded and where learned candidates are merged/ranked. Fix or expose the existing system instead of duplicating it.
+Do not add a duplicate Add-to-dictionary system without a new UX reason.
 
-### Desired behavior
+Current UI already has:
 
-- repeated deliberate words and email-like strings become candidates;
-- a frequently used matching personal candidate should outrank weaker generic candidates when appropriate;
-- learning must never run in password/private/incognito fields;
-- obvious typos must not be aggressively promoted merely because they were typed once;
-- manual personal-dictionary control should remain possible.
+- long-press a normal word candidate in `CandidatesRow.kt` → add it to the personal dictionary;
+- long-press a learned candidate → forget it;
+- `LearnedWordsScreen.kt` → **Add now** to promote a learned word manually;
+- dictionary settings for managing the internal personal dictionary and learned vocabulary.
 
-The user likes Gboard's idea of offering **Add to dictionary** for an unknown word that the keyboard tried to correct. Before adding a new popup, inspect existing candidate long-press, personal dictionary, undo-autocorrect, and learned-word affordances. Prefer one clear, non-intrusive path over another modal on every unknown word.
+These paths use the same existing dictionary/learning plumbing and should remain the source of truth.
 
-A reasonable UX is to make an explicit Add-to-dictionary action available when an unknown word is being challenged/corrected, while automatic learning continues quietly for repeated deliberate words. Do not interrupt normal typing for every unfamiliar token.
+## 3. Candidate-strip consistency — PR #3
 
-### Candidate-strip investigation
+The user reported that placing the cursor before typing can sometimes leave the Smartbar without word candidates, while the first keypress suddenly makes candidates appear. Cursor moves and later typing could also produce inconsistent candidate-strip state.
 
-Trace:
+The important trace is now known:
 
-- Smartbar candidate display mode and competing Smartbar surfaces;
-- cursor/selection update handling;
-- whether candidate recomputation is triggered on cursor moves before the first keypress;
-- composing-word ownership before and after typing starts;
-- whether candidate state is deliberately suppressed when no active composing word exists;
-- whether stale UI state survives moving the cursor after a typed word;
-- email/address tokenization and prefix matching.
+- `KeyboardManager` observes `editorInstance.activeContentFlow` and calls `resetSuggestions(content)` on cursor/content changes;
+- therefore cursor movement **does** request candidate recomputation;
+- `NlpManager.suggest()` computes candidates asynchronously;
+- the old code used `SystemClock.uptimeMillis()` as the request ordering id;
+- `internalSuggestions` was also initialized with `SystemClock.uptimeMillis()`;
+- a first request made in the same millisecond as initialization could fail `internalSuggestions.first < reqTime` and be discarded;
+- cursor movement and a first keypress can likewise enqueue multiple refreshes inside one millisecond, allowing equal request ids and stale/empty UI behavior.
 
-Do not force suggestions over every Smartbar state if another surface is intentionally higher priority (error, resend, dictation status, confirmation, etc.). The fix should distinguish intentional temporary overlays from a candidate strip that was simply never refreshed.
+PR #3 replaces timestamp ordering with a strictly monotonic `AtomicLong` generation. The same generation domain is used by:
 
-### Primary files
+- async `suggest()`;
+- glide/direct candidate publication;
+- `clearSuggestions()`.
 
-Start with these areas and expand only as dependencies require:
+All three publication paths use the existing `internalSuggestionsGuard`, so an older async result cannot overwrite a newer direct publication/clear after passing an unprotected race window.
 
+A characterization test, `SuggestionRequestSequenceTest.kt`, asserts that many back-to-back generations are distinct and strictly increasing.
+
+### What PR #3 deliberately does not change
+
+- candidate ranking;
+- learned-word scoring or promotion thresholds;
+- autocorrect thresholds;
+- Smartbar overlay priorities;
+- dictation UI;
+- long-form voice logic.
+
+If the physical-device issue remains after PR #3, continue by tracing composing-region ownership and intentional Smartbar overlays. Do not compensate by forcing candidates over dictation/error/resend/confirmation surfaces.
+
+### Candidate/suggestion files
+
+Start with:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/Smartbar.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/CandidatesRow.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/LatinLanguageProvider.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/LearnedWords.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/latin/WordLearningGate.kt`
-- `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt` — suggestion-learning prefs only
-- Smartbar/candidate composables and candidate display mode
-- Latin suggestion provider/ranking code that merges learned candidates
-- cursor/selection/composing-state controller code
-- existing personal dictionary UI/action code
 
-## Safety and regression checks
+## Regression checks
 
 Provider/rewording:
 
-- Automatic rewording OFF: one dictation produces STT text without an automatic chat/reword request.
-- Manual magic wand still rewrites/translates while Automatic rewording is OFF.
-- Automatic rewording ON: existing auto-format + auto-apply chain still works.
-- Realtime OFF: no realtime session/network startup; batch STT still works.
-- Realtime ON: current realtime flow still works.
-- Toggle OFF/ON must not erase the selected model id.
-- Single-call multimodal must obey the same automatic-rewording semantics.
+- Automatic rewording OFF → STT text without automatic chat/reword call;
+- manual magic wand/translation remains available while automatic rewording is OFF;
+- Automatic rewording ON → existing auto-format + auto-apply behavior;
+- Realtime OFF → no realtime startup, batch STT remains usable;
+- Realtime ON → existing realtime flow;
+- OFF/ON does not erase selected model ids;
+- Single-call multimodal obeys the automatic-rewording gate.
 
 Learning/suggestions:
 
-- second accepted sighting becomes suggestible;
-- third accepted sighting promotes as designed;
-- repeated email/address-like value is learnable and can rank by frequency;
-- private/password/incognito fields do not learn;
-- likely slip/typo gating still works;
-- learned-candidate frequency can affect ordering without making learned items unsafe auto-corrections too early;
-- cursor movement before and after typing refreshes candidate UI consistently where suggestions are applicable;
-- dictation/error/resend overlays still retain intentional priority over candidates.
+- repeated deliberate words and address-like values still learn only when learning is enabled;
+- password/private/incognito contexts still never learn;
+- likely slips are not promoted aggressively;
+- candidate long-press add/forget behavior remains intact;
+- first candidate refresh after opening/moving the cursor is not discarded by equal request ids;
+- older async candidate results cannot overwrite a newer clear/direct publication;
+- intentional dictation/error/resend overlays retain priority.
 
-Run focused unit tests, `scripts/architecture-audit.sh`, phone tests and Wear tests/CI required by the repository. Keep behavior changes small and separable. Do not use this task as an excuse for a wholesale Smartbar or `DictateController` rewrite.
+Run `scripts/architecture-audit.sh`, phone and Wear builds, and the repository unit-test suite/CI before merging runtime changes.
 
 ## Handoff rule
 
-When this work is implemented, replace the open-work statements in this file with the resulting invariants and commit/PR references. Do not append a chronological diary. Git history is the archive.
+Keep this file as current-state documentation. Replace stale pending-work statements when PR #3 lands; do not append a chronological diary. Git history is the archive.

@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.ime.nlp
 
 import android.content.Context
-import android.os.SystemClock
 import android.util.LruCache
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
@@ -56,7 +55,18 @@ import kotlinx.coroutines.sync.withLock
 import org.florisboard.lib.kotlin.guardedByLock
 import org.florisboard.lib.kotlin.collectLatestIn
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
+
+/**
+ * Strictly increasing ids for candidate refreshes. A clock is not an ordering primitive here: cursor
+ * movement and a first keypress can legitimately enqueue more than one refresh in one millisecond.
+ */
+internal class SuggestionRequestSequence {
+    private val counter = AtomicLong(0L)
+
+    fun next(): Long = counter.incrementAndGet()
+}
 
 private const val BLANK_STR_PATTERN = "^\\s*$"
 
@@ -113,8 +123,9 @@ class NlpManager(context: Context) {
     // lock unnecessary because values constant
     private val providersForceSuggestionOn = mutableMapOf<String, Boolean>()
 
+    private val suggestionRequestSequence = SuggestionRequestSequence()
     private val internalSuggestionsGuard = Mutex()
-    private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->
+    private var internalSuggestions by Delegates.observable(0L to listOf<SuggestionCandidate>()) { _, _, _ ->
         scope.launch { assembleCandidates() }
     }
 
@@ -291,7 +302,7 @@ class NlpManager(context: Context) {
             holdNextSuggest = false
             return
         }
-        val reqTime = SystemClock.uptimeMillis()
+        val reqGeneration = suggestionRequestSequence.next()
         scope.launch {
             val emojiSuggestions = when {
                 prefs.emoji.suggestionEnabled.get() -> {
@@ -334,11 +345,11 @@ class NlpManager(context: Context) {
                 }
             }
             internalSuggestionsGuard.withLock {
-                if (internalSuggestions.first < reqTime) {
+                if (internalSuggestions.first < reqGeneration) {
                     // Words first, emoji after — a flat list, because where they end up on screen is
                     // the strip's business, not this one's: [CandidatesRow] gives an emoji a narrow
                     // cell of its own so it costs no word its place (#338).
-                    internalSuggestions = reqTime to when {
+                    internalSuggestions = reqGeneration to when {
                         emojiSuggestions.isEmpty() -> suggestions
                         emojiSearch -> emojiSuggestions + suggestions
                         else -> suggestions + emojiSuggestions
@@ -355,17 +366,25 @@ class NlpManager(context: Context) {
         // still committed; only the alternatives are withheld, and holding the next suggest is left alone
         // so nothing changes for the case this was written for (#127).
         val wanted = wordSuggestionsWanted()
-        val reqTime = SystemClock.uptimeMillis()
+        val reqGeneration = suggestionRequestSequence.next()
         holdNextSuggest = holdNext
         runBlocking {
-            internalSuggestions = reqTime to if (wanted) suggestions else emptyList()
+            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqGeneration) {
+                    internalSuggestions = reqGeneration to if (wanted) suggestions else emptyList()
+                }
+            }
         }
     }
 
     fun clearSuggestions() {
-        val reqTime = SystemClock.uptimeMillis()
+        val reqGeneration = suggestionRequestSequence.next()
         runBlocking {
-            internalSuggestions = reqTime to emptyList()
+            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqGeneration) {
+                    internalSuggestions = reqGeneration to emptyList()
+                }
+            }
         }
     }
 
