@@ -28,6 +28,7 @@ import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.dictate.data.prefs.DictateLegacyMigrator
+import dev.patrickgold.florisboard.dictate.data.prefs.KapijujaRewordingDefaults
 import dev.patrickgold.florisboard.dictate.wear.DictateWearPublisher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
@@ -134,6 +135,10 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateFrenchPunctuationRuleIfNeeded()
             DictateLegacyMigrator.migrateDevanagariPunctuationRuleIfNeeded()
             DictateLegacyMigrator.reofferRateAndDonateIfNeeded()
+            // Separate availability from automation after the legacy importer has had its say: an old
+            // "auto format" choice must not keep silently rewriting every new dictation in the new UI.
+            // This migration leaves rewording itself on, so manual translation/the wand remain usable.
+            KapijujaRewordingDefaults.applyOnce(this@FlorisApplication)
             // Kapijuja's personal vocabulary is useful only when suggestions, the internal dictionary and
             // the learner are all enabled. Older builds shipped those defaults off, so enable the complete
             // stack once after legacy settings have settled; the ordinary switches remain authoritative
