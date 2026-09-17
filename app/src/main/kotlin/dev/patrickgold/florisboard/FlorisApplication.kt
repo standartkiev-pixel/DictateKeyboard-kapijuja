@@ -32,6 +32,7 @@ import dev.patrickgold.florisboard.dictate.wear.DictateWearPublisher
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.KapijujaTypingDefaults
 import dev.patrickgold.florisboard.ime.editor.EditorInstance
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
@@ -133,6 +134,11 @@ class FlorisApplication : Application() {
             DictateLegacyMigrator.migrateFrenchPunctuationRuleIfNeeded()
             DictateLegacyMigrator.migrateDevanagariPunctuationRuleIfNeeded()
             DictateLegacyMigrator.reofferRateAndDonateIfNeeded()
+            // Kapijuja's personal vocabulary is useful only when suggestions, the internal dictionary and
+            // the learner are all enabled. Older builds shipped those defaults off, so enable the complete
+            // stack once after legacy settings have settled; the ordinary switches remain authoritative
+            // from the next line onward and can be turned off normally.
+            KapijujaTypingDefaults.applyOnce(this@FlorisApplication)
             preferenceStoreLoaded.value = true
             // Keep the Wear OS companion's settings snapshot fresh: re-publish whenever a watch-relevant
             // phone setting changes (#106), so the watch reflects accent/provider/key/prompt automatically.
