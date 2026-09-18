@@ -6,13 +6,14 @@ The repository history is the archive; current work should use the smallest cont
 ## Current baseline
 
 - Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
-- Main baseline when this router was introduced: `f5e62e7b89170b946a339d97885ce94cf18ef4e4`
-- Release line: Dictate Kapijuja `0.1.0 RC6`
-- Android release package: `net.kapijuja.dictate`
-- Debug package seen in device bugreports: `net.kapijuja.dictate.debug`
+- Current public test release: Dictate Kapijuja `0.1.0 RC7`
+- RC7 target/main commit: `66d9faaac706450ae27347eef6a33d5a77e5a673`
+- RC7 GitHub Actions release run: `35270908894` — successful
+- Future stable Android package: `net.kapijuja.dictate`
+- Current prerelease/test package: `net.kapijuja.dictate.debug`
 - `DictateController.kt` is intentionally growth-frozen by `scripts/architecture-audit.sh`.
 
-Always inspect current `main` before relying on the baseline SHA above.
+Always inspect current `main` before relying on a historical SHA.
 
 ## Context rule for humans and AI agents
 
@@ -35,12 +36,16 @@ Recommended initial budget for a focused task:
 ### AI provider switches, automatic rewording, learned words, candidate strip
 
 Read `AI_REWORDING_AND_SUGGESTIONS.md`.
-This is the active handoff for:
+
+Provider runtime switches are merged and shipped in RC7.
+The candidate-strip monotonic refresh fix is also merged and shipped in RC7.
+
+Use this topic for:
 
 - Real-time ON/OFF beside the realtime model;
 - Automatic rewording ON/OFF without removing the manual magic wand/translation prompts;
-- existing learned-word/email/bigram behavior and its currently-off-by-default preference;
-- suggestion/candidate strip visibility around typing, cursor moves and competing Smartbar surfaces.
+- learned-word/email/bigram behavior and the currently opt-in learning preference;
+- suggestion/candidate strip behavior around typing, cursor moves and competing Smartbar surfaces.
 
 Do not build a second learning store: the topic document names the existing `LearnedWords` / `WordLearningGate` implementation and the paths that must be traced first.
 
@@ -67,19 +72,24 @@ Refactors must be behavior-preserving and should lower the controller ceiling af
 ### Release/build/signing
 
 Use `.github/workflows/`, Gradle files and current GitHub Releases/Actions state.
+RC7 is the current known-good public test baseline.
 Historical signing notes may be consulted only when signing is actually being performed.
 Never generate a replacement permanent signing key merely because an old chat cannot see the existing one.
 
 ### UI / Smartbar / prompt panel / History
 
 Start from the concrete screen/composable involved. Do not load provider internals unless the UI bug crosses that boundary.
-For the current learned-candidate/Smartbar visibility task, use `AI_REWORDING_AND_SUGGESTIONS.md` instead of this generic route.
+For learned-candidate/Smartbar work, use `AI_REWORDING_AND_SUGGESTIONS.md`.
 
 ## Documentation policy
 
 `NEXT_CHAT.md` is a small entry point, not an append-only diary.
 Topic documents describe **current invariants and open work**, not every event that happened.
 Completed implementation history belongs in Git commits, release notes or dated archive material.
+
+The fuller current dated handoff is:
+
+- `KAPIJUJA_PROJECT_HANDOFF_2026-09-18.txt`
 
 When a topic file starts accumulating unrelated subjects, split it rather than appending another large section.
 When a statement becomes stale, replace it; do not keep both old and new versions in the current-context files.
