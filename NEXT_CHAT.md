@@ -7,14 +7,38 @@ This is the compact entry point for continued development.
 ## Current baseline
 
 - Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
-- Release line: `0.1.0 RC6`
-- Android release package: `net.kapijuja.dictate`
-- Debug package: `net.kapijuja.dictate.debug`
+- Current public test release: `v0.1.0-rc.7`
+- RC7 release run: `35270908894` — completed successfully
+- RC7 target/main commit: `66d9faaac706450ae27347eef6a33d5a77e5a673`
+- Test/prerelease package: `net.kapijuja.dictate.debug`
+- Future stable package: `net.kapijuja.dictate`
 - `DictateController.kt` is growth-frozen by `scripts/architecture-audit.sh`.
-- Provider runtime switches were merged in PR #2, merge commit `2844aaa13e54d5263331da551921a23c1312fe37`.
-- Candidate-strip request ordering is under validation in PR #3, branch `kapijuja/suggestion-strip-consistency`.
+- Provider runtime switches are merged in PR #2.
+- Candidate-strip monotonic refresh fix is merged in PR #3 and shipped in RC7.
+- RC7 release retry hardening is merged; the final release workflow is green.
 
 Always inspect current `main`; historical SHAs in topic documents are anchors, not permanent HEADs.
+
+## What to do next
+
+Start with **device acceptance testing of RC7**, not a new rewrite.
+
+Check on the real phone:
+
+- short dictation;
+- long AUTO dictation with natural pauses;
+- Stop / Send again;
+- Cancel confirmation and recoverable audio;
+- History/replay;
+- Bluetooth ↔ phone microphone routing while recording;
+- Real-time transcription ON/OFF;
+- Automatic rewording ON/OFF;
+- manual magic wand/translation while Automatic rewording is OFF;
+- cursor movement into existing text before the first keypress;
+- suggestion strip after repeated cursor moves;
+- update over the previous compatible RC without uninstalling.
+
+If a path fails, capture the exact action sequence and a focused device log/bugreport before changing broad code.
 
 ## Provider switches + suggestions
 
@@ -24,9 +48,9 @@ Read:
 
 before changing provider/rewording or personal-suggestion code.
 
-### Provider/rewording — implemented on main
+### Provider/rewording — implemented and shipped
 
-The provider editor now has independent runtime switches for:
+The provider editor has independent runtime switches for:
 
 - **Real-time transcription**;
 - **Automatic rewording**.
@@ -45,26 +69,22 @@ The user currently prefers `gpt-4o-mini-transcribe` in everyday use because `gpt
 
 Do not build a second learning system. The repository already contains:
 
-- `ime/dictionary/LearnedWords.kt` with learned words, learned bigrams, prefix lookup, frequency/recency scoring and promotion state;
+- `ime/dictionary/LearnedWords.kt` with learned words, learned bigrams, prefix lookup, frequency/recency scoring and promotion;
 - `ime/nlp/latin/WordLearningGate.kt` with typo filtering and the learning ladder;
-- `suggestion__learn_typed_words` / `learnTypedWords`, deliberately opt-in by default;
+- `suggestion__learn_typed_words` / `learnTypedWords`, still opt-in by default;
 - long-press on a normal candidate to add it to the personal dictionary;
 - long-press on a learned candidate to forget it;
 - `LearnedWordsScreen` with **Add now** for manual promotion.
 
-Privacy invariants remain: no learning from password/private/incognito fields or non-typed origins, and likely slips should not be promoted aggressively.
+The next product question is whether automatic learning should remain opt-in or become the clean-install default. Before changing the default, test existing learning/ranking on-device, especially email/address-like values and frequent-prefix ranking.
 
-### Candidate-strip consistency — PR #3
+### Candidate-strip consistency — fixed and shipped
 
-The reported symptom was that moving the cursor before typing could leave the Smartbar without candidates, while the first keypress suddenly made them appear.
+PR #3 replaced millisecond timestamp request ids with a monotonic generation sequence shared by async suggestions, direct/glide publications and clears. Publication remains serialized through the existing guard/mutex.
 
-The traced cause is request ordering in `NlpManager`: candidate refreshes used `SystemClock.uptimeMillis()` as an id, while the initial candidate state used the same clock. The first refresh or several back-to-back cursor/key events can therefore share a millisecond and fail the strict newer-than guard.
+RC7 contains this fix.
 
-PR #3 replaces timestamp ids with a monotonic `AtomicLong` generation, uses one generation domain for async/direct/clear publications, and serializes publications through the existing mutex. It adds `SuggestionRequestSequenceTest.kt` for strict back-to-back ordering.
-
-This fix intentionally does **not** change ranking, learning thresholds, autocorrect, dictation, or Smartbar overlay priority.
-
-Before treating it as complete, confirm PR #3 CI is green and validate the cursor-before-first-keypress case on a device. If the symptom survives, inspect composing-region ownership and intentional competing Smartbar surfaces rather than forcing candidates over higher-priority UI.
+If the physical-device symptom survives, inspect composing-region ownership and intentional Smartbar overlays rather than forcing candidates over higher-priority dictation/error/resend/confirmation UI.
 
 ## Existing long-form work
 
@@ -72,15 +92,17 @@ For voice pauses, AUTO segmentation, Smart Turn and cancellation semantics, read
 
 `docs/context/VOICE_LONGFORM.md`
 
-The AUTO segmentation behavior is intentional and already implemented. Do not mix provider/suggestion work with a long-form rewrite.
+AUTO segmentation is intentional and already implemented.
+
+One UX question remains open: whether whole-session Cancel should remove already processed AUTO chunks, keep them, or expose a session Undo. Do not change this without editor-state tests.
 
 ## Reliability work
 
-For stuck Transcribing, Stop, resend, watchdog, history recovery or network faults, read:
+For stuck Transcribing, Stop, resend, watchdog, History recovery or network faults, read:
 
 `docs/context/RELIABILITY.md`
 
-The current recovery/watchdog design is already implemented; avoid duplicating it from old notes.
+The current recovery/watchdog design is implemented. Avoid duplicating it from old notes.
 
 ## Code cleanup direction
 
@@ -89,6 +111,12 @@ For controller extraction/refactoring, read:
 `docs/context/CONTROLLER_SPLIT_PLAN.md`
 
 Keep behavior changes and structural refactors separate. Do not start with a wholesale controller/state-machine rewrite.
+
+## Current dated handoff
+
+For a fuller plain-text summary of what has been done and what remains:
+
+`KAPIJUJA_PROJECT_HANDOFF_2026-09-18.txt`
 
 ## Historical material
 
