@@ -8,13 +8,15 @@ Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
 
 Provider runtime switches are implemented and merged on `main` in PR #2, merge commit `2844aaa13e54d5263331da551921a23c1312fe37`.
 
-The candidate-strip refresh race is being fixed separately in PR #3, branch `kapijuja/suggestion-strip-consistency`. Until PR #3 is merged, treat that part as pending device/CI validation rather than established `main` behavior.
+The candidate-strip refresh race is also implemented and merged on `main` in PR #3, merge commit `e7fa6596bd5403a71493079dd2acd33f046bd665`.
+
+Both changes are included in public test release `v0.1.0-rc.7`. The final RC7 release workflow run `35270908894` completed successfully.
 
 The user currently prefers `gpt-4o-mini-transcribe` over `gpt-transcribe` for everyday keyboard use because it felt faster. That is a user model choice, not a required code default.
 
-## 1. Provider editor invariants — implemented
+## 1. Provider editor invariants — implemented and shipped
 
-The provider editor now exposes explicit runtime controls beside the model configuration:
+The provider editor exposes explicit runtime controls beside the model configuration:
 
 - **Real-time transcription** — ON/OFF;
 - **Automatic rewording** — ON/OFF.
@@ -98,11 +100,24 @@ Current UI already has:
 
 These paths use the same existing dictionary/learning plumbing and should remain the source of truth.
 
-## 3. Candidate-strip consistency — PR #3
+### Remaining personal-learning product work
 
-The user reported that placing the cursor before typing can sometimes leave the Smartbar without word candidates, while the first keypress suddenly makes candidates appear. Cursor moves and later typing could also produce inconsistent candidate-strip state.
+The user wants frequently typed personal values, especially email/address-like values, to become easy to recall from a short prefix and to rank highly when used often.
 
-The important trace is now known:
+Before changing defaults or ranking:
+
+1. enable typed-word learning manually and test the current behavior on a physical device;
+2. verify how email/address-like strings are tokenized and merged by `LatinLanguageProvider`;
+3. confirm frequency/recency scoring actually raises frequently used entries into the first candidate slots;
+4. decide deliberately whether learning remains opt-in or becomes the clean-install default with clear privacy wording.
+
+Do not implement a second database or a second independent learning path.
+
+## 3. Candidate-strip consistency — fixed and shipped
+
+The user reported that placing the cursor before typing could sometimes leave the Smartbar without word candidates, while the first keypress suddenly made candidates appear. Cursor moves and later typing could also produce inconsistent candidate-strip state.
+
+The traced cause was request ordering in `NlpManager`:
 
 - `KeyboardManager` observes `editorInstance.activeContentFlow` and calls `resetSuggestions(content)` on cursor/content changes;
 - therefore cursor movement **does** request candidate recomputation;
@@ -110,9 +125,9 @@ The important trace is now known:
 - the old code used `SystemClock.uptimeMillis()` as the request ordering id;
 - `internalSuggestions` was also initialized with `SystemClock.uptimeMillis()`;
 - a first request made in the same millisecond as initialization could fail `internalSuggestions.first < reqTime` and be discarded;
-- cursor movement and a first keypress can likewise enqueue multiple refreshes inside one millisecond, allowing equal request ids and stale/empty UI behavior.
+- cursor movement and a first keypress could likewise enqueue multiple refreshes inside one millisecond, allowing equal request ids and stale/empty UI behavior.
 
-PR #3 replaces timestamp ordering with a strictly monotonic `AtomicLong` generation. The same generation domain is used by:
+PR #3 replaced timestamp ordering with a strictly monotonic `AtomicLong` generation. The same generation domain is used by:
 
 - async `suggest()`;
 - glide/direct candidate publication;
@@ -122,7 +137,7 @@ All three publication paths use the existing `internalSuggestionsGuard`, so an o
 
 A characterization test, `SuggestionRequestSequenceTest.kt`, asserts that many back-to-back generations are distinct and strictly increasing.
 
-### What PR #3 deliberately does not change
+### What the fix deliberately does not change
 
 - candidate ranking;
 - learned-word scoring or promotion thresholds;
@@ -131,7 +146,9 @@ A characterization test, `SuggestionRequestSequenceTest.kt`, asserts that many b
 - dictation UI;
 - long-form voice logic.
 
-If the physical-device issue remains after PR #3, continue by tracing composing-region ownership and intentional Smartbar overlays. Do not compensate by forcing candidates over dictation/error/resend/confirmation surfaces.
+RC7 contains this fix. Physical-device validation remains important.
+
+If the symptom remains in RC7, continue by tracing composing-region ownership and intentional Smartbar overlays. Do not compensate by forcing candidates over dictation/error/resend/confirmation surfaces.
 
 ### Candidate/suggestion files
 
@@ -171,4 +188,4 @@ Run `scripts/architecture-audit.sh`, phone and Wear builds, and the repository u
 
 ## Handoff rule
 
-Keep this file as current-state documentation. Replace stale pending-work statements when PR #3 lands; do not append a chronological diary. Git history is the archive.
+Keep this file as current-state documentation. Replace stale pending-work statements instead of appending a chronological diary. Git history is the archive.
