@@ -1,0 +1,254 @@
+KAPIJUJA VOICE KEYBOARD — PROJECT HANDOFF
+Date: 2026-09-18
+Repository: standartkiev-pixel/DictateKeyboard-kapijuja
+
+PURPOSE
+
+This file is the compact handoff for the next development session. It records what is already implemented, the current tested release, what remains open, and the order in which the next work should be done.
+
+CURRENT BASELINE
+
+- Current public test release: v0.1.0-rc.7.
+- RC7 GitHub Actions release run: 35270908894 — completed successfully.
+- RC7 target/main commit: 66d9faaac706450ae27347eef6a33d5a77e5a673.
+- APK: dictate-kapijuja-v0.1.0-rc.7-test.apk.
+- APK size: 129690172 bytes.
+- APK SHA-256: 65fd365852c58029eb0c21d0490daa35e60364538b7f2bfd29dd091cb3453dfd.
+- Test/prerelease package: net.kapijuja.dictate.debug.
+- Future stable package remains net.kapijuja.dictate.
+- RC7 uses the same pinned public prerelease signing identity as RC2-RC6, so compatible RC builds should update in place without uninstalling.
+
+WHAT HAS BEEN DONE
+
+1. Core Dictate/Kapijuja cleanup and reliability
+
+- Dictate Cloud / Google Play Billing dependencies and the old paid-cloud path were removed from the Kapijuja workflow.
+- Provider-based STT/rewording remains the main architecture.
+- Batch transcription has a no-progress watchdog so the keyboard does not stay forever in Transcribing.
+- Stop/cancellation tears down the owned request and preserves recoverable audio where privacy/settings allow.
+- “Send again” / resend is explicit; ambiguous billable uploads are not silently repeated over and over.
+- Retained source audio and History/replay are supported.
+- Non-sensitive recovery can survive process death through local recovery staging.
+- Request/cache audio files are uniquely owned instead of sharing one dangerous common temporary filename.
+- Realtime transcription has its own finalization watchdog and can fall back to batch.
+- Authentication/quota/network/cancellation failure paths have automated tests.
+
+2. Long-form dictation
+
+- AUTO is the clean-install long-form mode.
+- Default automatic silence split is 3 seconds; UI exposes roughly 2-8 seconds.
+- Silero VAD performs pause detection.
+- Smart Turn remains optional and off by default.
+- Long recordings are split and transcribed in the background while recording continues.
+- Continuous speech has a hard safety segment limit.
+- Long-form audio ownership/rescue assembly and session/queue/resource helpers are already separated and tested.
+- Do not rewrite this subsystem from scratch just because text appears after a pause: that behavior is intentional AUTO segmentation.
+
+3. Recording/cancel/recovery UX already present in the current baseline
+
+- Recording input routing exists, including the work around phone/Bluetooth microphone selection.
+- Cancel/discard handling preserves recovery rather than immediately destroying the recording.
+- Retained audio/history and resend behavior from RC6 remain in RC7.
+- These paths still deserve device acceptance testing after each new release, but they are not green-field features anymore.
+
+4. Provider runtime switches — completed and merged
+
+PR #2 / merge commit:
+2844aaa13e54d5263331da551921a23c1312fe37
+
+The provider editor now has two independent runtime controls:
+
+- Real-time transcription ON/OFF.
+- Automatic rewording ON/OFF.
+
+Important invariants:
+
+- Turning Real-time OFF does not erase the chosen realtime model; normal batch STT remains available.
+- Turning Automatic rewording OFF stops automatic formatting/auto-apply prompt calls after STT.
+- Manual magic-wand rewriting, saved prompts and translation remain available when Automatic rewording is OFF.
+- The old master rewording switch is still the master capability/UI switch and must not be reused as the automatic-only switch.
+- Single-call multimodal obeys the automatic-rewording gate.
+- Model selections are preserved when runtime switches are turned off.
+
+The user currently prefers gpt-4o-mini-transcribe for everyday use because gpt-transcribe felt slower. Do not change the selected/default model as part of unrelated fixes.
+
+5. Suggestion strip race — fixed and merged
+
+PR #3 / merge commit:
+e7fa6596bd5403a71493079dd2acd33f046bd665
+
+Reported symptom:
+- moving the cursor before typing could leave Smartbar candidates empty;
+- the first keypress suddenly made suggestions appear;
+- cursor/key updates could race.
+
+Root cause:
+- candidate refresh ordering used SystemClock.uptimeMillis();
+- multiple updates could receive the same millisecond id;
+- the strict newer-than guard could therefore discard a valid first refresh or allow stale ordering.
+
+Fix:
+- candidate refreshes now use a strictly monotonic AtomicLong generation;
+- async suggestions, direct/glide publication and clears share the same generation domain;
+- publication remains serialized through the existing guard/mutex;
+- a characterization test covers back-to-back generation ordering.
+
+This fix deliberately did NOT change ranking, autocorrect thresholds, learned-word scoring, long-form dictation or Smartbar overlay priority.
+
+6. Existing personal-learning system — do not duplicate it
+
+The repository already contains:
+
+- LearnedWords Room database.
+- Frequency/recency scoring.
+- Learned bigrams.
+- Prefix lookup.
+- Address/email-like learning support.
+- WordLearningGate typo/slip filtering and promotion stages.
+- Long-press normal candidate -> add to personal dictionary.
+- Long-press learned candidate -> forget.
+- Learned Words screen with “Add now”.
+
+Important: suggestion__learn_typed_words / learnTypedWords is still opt-in/off by default. This was intentionally left unchanged for privacy/behavior reasons. If automatic learning should become the default product behavior, make that a deliberate decision rather than adding a second learning system.
+
+7. RC7 release pipeline — repaired and hardened
+
+RC7 initially exposed two release-workflow problems, not application-code failures:
+
+- the release upload service could return transient GitHub 5xx errors;
+- a redundant repeated network-test class was wrapped in a 5-minute timeout and could turn the release red even though the normal full test suite had already passed.
+
+The workflow was changed so that:
+
+- release metadata creation and APK upload are separate;
+- transient release/upload failures are retried;
+- the verified APK is also kept temporarily as an Actions artifact;
+- the workflow verifies that the public release really contains the APK before declaring success;
+- the redundant repeated full network-test-class gate was removed;
+- the normal complete JVM suite still covers network fault, cancellation, auth and quota cases.
+
+Final RC7 release run 35270908894 completed successfully.
+
+WHAT IS STILL OPEN / WHAT TO DO NEXT
+
+Priority 1 — device acceptance test of RC7
+
+Before changing code again, install/update RC7 and check the real keyboard on the Samsung device:
+
+- normal short dictation;
+- long AUTO dictation with natural pauses;
+- Stop and Send again;
+- Cancel/confirmation/recovery;
+- source-audio History/replay;
+- Bluetooth microphone <-> phone microphone routing during recording;
+- Real-time ON and OFF;
+- Automatic rewording ON and OFF;
+- manual magic wand and translation while Automatic rewording is OFF;
+- cursor move into existing text before the first keypress;
+- first keypress after cursor move;
+- suggestion strip after repeated cursor moves;
+- update over the previous compatible RC without uninstalling.
+
+If any of these fail, capture the exact action sequence and a bugreport/log window before broad code changes.
+
+Priority 2 — personal suggestions / automatic learning
+
+This is the main product decision that is not fully finished.
+
+The user wants frequently typed personal content, for example an email address, to become easy to summon after typing the first few characters and to rank highly when used often.
+
+The infrastructure already exists. Next work should therefore be:
+
+1. Turn on “learn typed words” manually and test the existing behavior on-device.
+2. Confirm how an email/address-like value is tokenized and merged by LatinLanguageProvider.
+3. Confirm that frequency/recency scoring actually raises a frequently used entry to the first slots.
+4. Only after measurement decide whether:
+   - learning stays opt-in but the setting is made more discoverable; or
+   - clean installs should enable it by default with clear privacy wording.
+5. Do not build a second database or a duplicate “add word” mechanism.
+
+Priority 3 — verify the Smartbar cursor fix on a physical device
+
+The ordering race is fixed in code and RC7 contains that fix, but physical-device behavior still matters.
+
+If the old symptom survives in RC7:
+- inspect composing-region ownership;
+- inspect intentional higher-priority Smartbar surfaces;
+- inspect whether a provider suggestion refresh is actually requested for that editor state.
+
+Do NOT simply force the candidates row to stay visible over dictation/error/resend/confirmation UI.
+
+Priority 4 — Russian UI polish
+
+The new provider runtime-switch strings were added in the main English resources. If Russian fallback text is still visible in English, add exact Russian translations for the new Real-time transcription and Automatic rewording controls. Do this as a small resource-only change.
+
+Priority 5 — long-form cancellation semantics
+
+One UX question remains deliberately open.
+
+AUTO can display/transcribe completed chunks before the user finally presses Stop. If the user later cancels, decide explicitly what cancellation should mean:
+
+A. already processed chunks stay, cancel only the current unflushed speech;
+B. all chunks remain provisional/composing until final Stop and whole-session Cancel removes them;
+C. keep durable chunks but provide a session Undo that removes only text inserted by that recording.
+
+Do not change this casually because host apps can change text/cursor state while dictation is running. Add editor-state tests first.
+
+Priority 6 — controller cleanup / technical debt
+
+DictateController.kt is intentionally growth-frozen by scripts/architecture-audit.sh.
+
+Do not perform a giant rewrite. The planned safe order is:
+
+1. extract long-form orchestration/coordinator around the helper classes that already exist;
+2. extract batch transcription lifecycle/watchdog/cancellation;
+3. extract audio retention/recovery;
+4. extract History replay;
+5. extract prompt/rewording request orchestration.
+
+Each extraction should be behavior-preserving, tested separately, and followed by lowering the controller size ceiling.
+
+PERFORMANCE NOTE
+
+LiveSpeechSplitter.feed() currently allocates a ShortArray before trying to enqueue into the bounded analysis queue. Under saturation that allocation may be thrown away. This is a possible GC/performance optimization, but it touches the capture path and should be measured/tested separately rather than mixed with UX changes.
+
+RELEASE POLICY FROM HERE
+
+Use RC7 as the current known-good public test baseline.
+
+Do not cut RC8 merely to “continue”. First collect either:
+- an actual device regression/bug from RC7; or
+- a clearly chosen product change such as personal-learning default behavior, Russian localization, or long-form cancel semantics.
+
+For the next release:
+- keep the pinned prerelease signing identity;
+- run architecture/release audit;
+- compile phone and Wear;
+- run app/dictate-core/Wear JVM tests;
+- run lint/release-critical gate;
+- verify package, signature, version code, size and SHA;
+- publish only after the release asset is confirmed visible.
+
+SMALL-CONTEXT RULE FOR THE NEXT CHAT
+
+Do not load the whole repository and all historical handoffs.
+
+Start with:
+1. NEXT_CHAT.md
+2. docs/context/README.md
+3. exactly one topic document:
+   - AI_REWORDING_AND_SUGGESTIONS.md
+   - VOICE_LONGFORM.md
+   - RELIABILITY.md
+   - CONTROLLER_SPLIT_PLAN.md
+4. then only 2-5 directly relevant source files/logs.
+
+Historical handoffs remain archive/reference material, not startup reading.
+
+FINAL CURRENT STATE
+
+RC7 is built, tested and publicly published.
+Provider runtime switches are merged.
+The suggestion-strip ordering race is merged and shipped in RC7.
+The release workflow is repaired and green.
+The next sensible work is real-device RC7 acceptance testing, then personal-learning/ranking behavior if the keyboard itself is stable.
