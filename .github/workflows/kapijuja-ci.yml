@@ -74,13 +74,9 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Upload Wear debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          retention-days: 3
-          name: dictate-kapijuja-wear-debug
-          path: wear/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+      # The Wear APK is compiled and signature-checked above but deliberately NOT published as an
+      # artifact. It shares the phone's application ID and certificate with a much higher versionCode,
+      # so sideloading it onto a phone replaces the keyboard and then blocks the phone APK as a downgrade.
 
       # :lib:dictate-core owns the provider/network fault tests; :app alone does not execute them.
       # Keep Wear in the test graph too so a future watch-side unit test cannot silently be omitted.

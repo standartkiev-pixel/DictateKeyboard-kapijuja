@@ -60,6 +60,8 @@ configure<ApplicationExtension> {
         applicationId = "net.kapijuja.dictate"
         minSdk = wearMinSdk
         targetSdk = projectTargetSdk.toInt()
+        // NOTE: 2026-11-11 the phone code jumped from 7 to 100012 to recover a device where Wear build
+        // 100011 had been sideloaded over the phone app. Never lower projectVersionCode below that.
         // Offset the Wear versionCode into its own band so it never collides with the phone APK
         // in the same Play listing; [wearRevision] lets the watch re-release independently.
         versionCode = projectVersionCode.toInt() + 100_000 + wearRevision
