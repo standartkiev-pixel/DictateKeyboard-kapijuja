@@ -44,6 +44,7 @@ object SettingsSearchIndex {
         SettingsSearchEntry(R.string.physical_keyboard__title, R.string.physical_keyboard__title, Routes.Settings.PhysicalKeyboard, parentRes = R.string.settings__other__title),
         SettingsSearchEntry(R.string.backup_and_restore__restore__title, R.string.backup_and_restore__restore__title, Routes.Settings.Restore, parentRes = R.string.settings__other__title),
         SettingsSearchEntry(R.string.settings__clipboard__title, R.string.settings__clipboard__title, Routes.Settings.Clipboard),
+        SettingsSearchEntry(R.string.settings__speech__title, R.string.settings__clipboard__title, Routes.Settings.Clipboard, anchor = "settings__speech__title"),
         SettingsSearchEntry(R.string.dictate__floating_button_title, R.string.dictate__floating_button_title, Routes.Settings.DictateFloatingButton, parentRes = R.string.dictate__title),
         SettingsSearchEntry(R.string.dictate__history_title, R.string.dictate__history_title, Routes.Settings.DictateHistory, parentRes = R.string.dictate__title),
         // Hand-added: the generator only sees rows that navigate to a route, and this one opens the

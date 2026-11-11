@@ -60,6 +60,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.OtherScreen
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
 import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
+import dev.patrickgold.florisboard.driver.ui.SpeechSettingsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateLanguagesScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateMappingsScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateProvidersScreen
@@ -260,6 +261,10 @@ object Routes {
         object Clipboard
 
         @Serializable
+        @Deeplink("settings/speech")
+        object Speech
+
+        @Serializable
         @Deeplink("settings/media")
         object Media
 
@@ -428,6 +433,7 @@ object Routes {
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
 
             composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
+            composableWithDeepLink(Settings.Speech::class) { SpeechSettingsScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }
 
