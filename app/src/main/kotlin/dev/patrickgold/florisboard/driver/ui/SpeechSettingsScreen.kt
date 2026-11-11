@@ -90,6 +90,36 @@ fun SpeechSettingsScreen() = FlorisScreen {
             summary = stringRes(R.string.pref__speech__history_speaker__summary),
         )
 
+        PreferenceGroup(title = stringRes(R.string.pref__speech__group_autoread)) {
+            SwitchPreference(
+                prefs.speech.autoReadEnabled,
+                title = stringRes(R.string.pref__speech__autoread__label),
+                summary = stringRes(R.string.pref__speech__autoread__summary),
+            )
+            DialogSliderPreference(
+                prefs.speech.autoReadDelaySec,
+                title = stringRes(R.string.pref__speech__autoread_delay__label),
+                valueLabel = { stringRes(R.string.pref__speech__autoread_delay__value, "v" to it) },
+                min = 1,
+                max = 10,
+                stepIncrement = 1,
+            )
+            DialogSliderPreference(
+                prefs.speech.autoReadMinChars,
+                title = stringRes(R.string.pref__speech__autoread_min_chars__label),
+                valueLabel = { stringRes(R.string.pref__speech__autoread_min_chars__value, "v" to it) },
+                min = 1,
+                max = 100,
+                stepIncrement = 1,
+            )
+            SwitchPreference(
+                prefs.speech.autoReadSmartbarToggle,
+                title = stringRes(R.string.pref__speech__autoread_toggle__label),
+                summary = stringRes(R.string.pref__speech__autoread_toggle__summary),
+            )
+            Note(stringRes(R.string.pref__speech__autoread_note))
+        }
+
         ListPreference(
             prefs.speech.engine,
             icon = Icons.Default.RecordVoiceOver,

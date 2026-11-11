@@ -67,6 +67,11 @@
             <meta-data android:name="android.view.im" android:resource="@xml/method"/>
         </service>
 
+        <!-- Driver Assistant auto-read notification buttons (issue #7): cancel / turn off. -->
+        <receiver
+            android:name="dev.patrickgold.florisboard.driver.autoread.AutoReadActionReceiver"
+            android:exported="false"/>
+
         <!-- Dictate floating-overlay accessibility service (issue #88): optional, user-enabled. Detects
              when a text field is focused in any app so the floating dictation button can appear, and
              injects the transcribed text into that field (no InputConnection available from an overlay).

@@ -34,7 +34,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -108,6 +111,14 @@ class ClipboardManager(
 
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
+    /**
+     * Clips copied by *another* app, one event per copy, as they reach the history. The keyboard's
+     * own copies set [primaryClip] first and are therefore not emitted. Used by Driver Assistant
+     * auto-read (issue #7), so it needs no second clipboard listener.
+     */
+    val externalClipFlow: SharedFlow<ClipboardItem>
+        field = MutableSharedFlow<ClipboardItem>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
     val primaryClipFlow: StateFlow<ClipboardItem?>
         field = MutableStateFlow(null)
     inline var primaryClip
@@ -210,6 +221,7 @@ class ClipboardManager(
                     val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
                     primaryClip = item
                     insertOrMoveBeginning(item)
+                    externalClipFlow.tryEmit(item)
                 }
             }
         }

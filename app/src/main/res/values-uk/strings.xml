@@ -2004,4 +2004,25 @@
     <string name="pref__speech__android_pitch__label">Висота голосу</string>
     <string name="pref__speech__openai_note">Працює через Realtime API: OpenAI вимикає tts-1 і gpt-4o-mini-tts 6 січня 2027.</string>
     <string name="pref__speech__cloud_privacy">Провайдеру надсилається лише той текст, який ви самі вирішили прослухати, і лише з вибраним хмарним рушієм. Ключі зберігаються в налаштуваннях клавіатури й потрапляють до резервної копії налаштувань.</string>
+    <string name="speech__autoread_countdown">Озвучу скопійований текст через %1$d с</string>
+    <string name="speech__autoread_reading">Читаю скопійований текст…</string>
+    <string name="speech__autoread_cancel">Скасувати</string>
+    <string name="speech__autoread_disable">Вимкнути автозачитування</string>
+    <string name="speech__autoread_notification_title">Озвучу скопійований текст через</string>
+    <string name="speech__autoread_channel">Відлік автозачитування</string>
+    <string name="speech__autoread_enabled_toast">Автозачитування увімкнено</string>
+    <string name="speech__autoread_disabled_toast">Автозачитування вимкнено</string>
+    <string name="speech__autoread_toggle">Автозачитування скопійованого тексту</string>
+    <string name="speech__autoread_state_on">Увімкнено</string>
+    <string name="speech__autoread_state_off">Вимкнено</string>
+    <string name="pref__speech__group_autoread">Автозачитування</string>
+    <string name="pref__speech__autoread__label">Читати скопійований текст автоматично</string>
+    <string name="pref__speech__autoread__summary">Коли інший застосунок копіює текст, з\'являється відлік із кнопками «Скасувати» і «Вимкнути», потім текст читається вголос</string>
+    <string name="pref__speech__autoread_delay__label">Відлік</string>
+    <string name="pref__speech__autoread_delay__value">{v} с</string>
+    <string name="pref__speech__autoread_min_chars__label">Не читати тексти коротші за</string>
+    <string name="pref__speech__autoread_min_chars__value">{v} символів</string>
+    <string name="pref__speech__autoread_toggle__label">Кнопка автозачитування на панелі</string>
+    <string name="pref__speech__autoread_toggle__summary">Динамік у крайньому лівому куті панелі клавіатури. Довге натискання зупиняє читання.</string>
+    <string name="pref__speech__autoread_note">Вікно з відліком з\'являється поверх інших застосунків, коли увімкнено службу спеціальних можливостей Dictate; інакше замість нього сповіщення. Не читається: на заблокованому екрані, під час диктування, посилання, позначені як секретні кліпи, одноразові коди й схожий на пароль текст. До кінця відліку до хмарного рушія нічого не надсилається.</string>
 </resources>

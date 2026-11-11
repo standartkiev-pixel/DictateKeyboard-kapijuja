@@ -66,6 +66,7 @@ import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.dictate.ui.DictatePromptRow
 import dev.patrickgold.florisboard.dictate.ui.DictatePromptStrip
 import dev.patrickgold.florisboard.dictate.ui.DictateSmartbarUi
+import dev.patrickgold.florisboard.driver.ui.AutoReadSmartbarToggle
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
@@ -395,6 +396,8 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(FlorisImeSizing.smartbarHeight),
     ) {
+        // Driver Assistant auto-read switch (issue #7): always the leftmost item, the mic stays right.
+        AutoReadSmartbarToggle()
         when (smartbarLayout) {
             SmartbarLayout.SUGGESTIONS_ONLY -> {
                 if (showDictatePromptStrip) {

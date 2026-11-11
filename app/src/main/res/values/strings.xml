@@ -2392,4 +2392,25 @@
     <string name="pref__speech__android_pitch__label">Pitch</string>
     <string name="pref__speech__openai_note">Uses the Realtime API: OpenAI retires tts-1 and gpt-4o-mini-tts on 6 January 2027.</string>
     <string name="pref__speech__cloud_privacy">Only the text you choose to hear is sent to the provider, and only with this engine selected. Keys are stored in the keyboard settings and are included in settings backups.</string>
+    <string name="speech__autoread_countdown">Reading the copied text in %1$d s</string>
+    <string name="speech__autoread_reading">Reading the copied text…</string>
+    <string name="speech__autoread_cancel">Cancel</string>
+    <string name="speech__autoread_disable">Turn off auto-read</string>
+    <string name="speech__autoread_notification_title">Reading the copied text in</string>
+    <string name="speech__autoread_channel">Auto-read countdown</string>
+    <string name="speech__autoread_enabled_toast">Auto-read is on</string>
+    <string name="speech__autoread_disabled_toast">Auto-read is off</string>
+    <string name="speech__autoread_toggle">Auto-read copied text</string>
+    <string name="speech__autoread_state_on">On</string>
+    <string name="speech__autoread_state_off">Off</string>
+    <string name="pref__speech__group_autoread">Auto-read</string>
+    <string name="pref__speech__autoread__label">Read copied text automatically</string>
+    <string name="pref__speech__autoread__summary">When another app copies text, a countdown appears with Cancel and Turn off, then the text is read aloud</string>
+    <string name="pref__speech__autoread_delay__label">Countdown</string>
+    <string name="pref__speech__autoread_delay__value">{v} s</string>
+    <string name="pref__speech__autoread_min_chars__label">Do not read texts shorter than</string>
+    <string name="pref__speech__autoread_min_chars__value">{v} characters</string>
+    <string name="pref__speech__autoread_toggle__label">Auto-read switch in the Smartbar</string>
+    <string name="pref__speech__autoread_toggle__summary">Speaker button at the far left of the keyboard bar. Long press stops a reading.</string>
+    <string name="pref__speech__autoread_note">The countdown window appears over other apps while the Dictate accessibility service is on; otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
 </resources>
