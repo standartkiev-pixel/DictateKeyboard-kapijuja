@@ -230,6 +230,13 @@ grapheme clusters such as family emoji as one visual character.
 
 All unit tests passed after this change.
 
+## Kapijuja Driver Assistant — planned driver-friendly reading and replies
+
+**Proposal only; not yet implemented.** The planned enhancement adds clipboard read-aloud in the existing keyboard, a left-side speaker toggle, a configurable 2/3/5/10-second pre-reading countdown with **Cancel** and **Disable auto-reading** actions, manual read-aloud for clipboard history entries, Android/OpenAI/Azure speech engines, and optional WhatsApp/Viber reply preparation via notifications. Android background-activity restrictions require a one-tap notification fallback; messages are **never sent automatically**.
+
+- [Full technical specification (Russian)](docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md)
+- [GitHub implementation roadmap issue #7](https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja/issues/7)
+
 ## Immediate roadmap
 
 The next development work should proceed roughly in this order:
