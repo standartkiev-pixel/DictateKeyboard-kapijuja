@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.app.settings.theme.DisplayKbdAfterDialogs
 import dev.patrickgold.florisboard.app.settings.theme.SnyggLevel
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
 import dev.patrickgold.florisboard.dictate.DictateFloatingButtonDesign
+import dev.patrickgold.florisboard.driver.speech.SpeechEngineId
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
 import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
@@ -1546,6 +1547,92 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val selectionMetrics = boolean(
             key = "smartbar__selection_metrics",
             default = false,
+        )
+    }
+
+    // Reading text aloud (Driver Assistant, issue #7). Android TTS is the default and keeps text on
+    // the device; a cloud engine is only used once the user picks it and enters their own key.
+    val speech = Speech()
+    inner class Speech {
+        val historySpeakerEnabled = boolean(
+            key = "speech__history_speaker_enabled",
+            default = true,
+        )
+        val engine = enum(
+            key = "speech__engine",
+            default = SpeechEngineId.ANDROID,
+        )
+        val speedPercent = int(
+            key = "speech__speed_percent",
+            default = 100,
+        )
+        val language = string(
+            key = "speech__language",
+            default = "ru-RU",
+        )
+        val volumeBoostDb = int(
+            key = "speech__volume_boost_db",
+            default = 6,
+        )
+        val fallbackToAndroid = boolean(
+            key = "speech__fallback_to_android",
+            default = true,
+        )
+        val androidEngine = string(
+            key = "speech__android_engine",
+            default = "",
+        )
+        val androidVoice = string(
+            key = "speech__android_voice",
+            default = "",
+        )
+        val androidPitchPercent = int(
+            key = "speech__android_pitch_percent",
+            default = 100,
+        )
+        val openAiApiKey = string(
+            key = "speech__openai_api_key",
+            default = "",
+        )
+        val openAiModel = string(
+            key = "speech__openai_model",
+            default = "",
+        )
+        val openAiVoice = string(
+            key = "speech__openai_voice",
+            default = "marin",
+        )
+        val azureKey = string(
+            key = "speech__azure_key",
+            default = "",
+        )
+        val azureRegion = string(
+            key = "speech__azure_region",
+            default = "",
+        )
+        val azureVoice = string(
+            key = "speech__azure_voice",
+            default = "ru-RU-DmitryNeural",
+        )
+        val googleApiKey = string(
+            key = "speech__google_api_key",
+            default = "",
+        )
+        val googleModel = string(
+            key = "speech__google_model",
+            default = "",
+        )
+        val googleVoice = string(
+            key = "speech__google_voice",
+            default = "Kore",
+        )
+        val xaiApiKey = string(
+            key = "speech__xai_api_key",
+            default = "",
+        )
+        val xaiVoice = string(
+            key = "speech__xai_voice",
+            default = "orion",
         )
     }
 

@@ -76,6 +76,10 @@ RC7 is the current known-good public test baseline.
 Historical signing notes may be consulted only when signing is actually being performed.
 Never generate a replacement permanent signing key merely because an old chat cannot see the existing one.
 
+### Driver Assistant: reading text aloud (TTS engines, clipboard speaker)
+
+Read `DRIVER_ASSISTANT_SPEECH.md`. Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md`, issue #7.
+
 ### UI / Smartbar / prompt panel / History
 
 Start from the concrete screen/composable involved. Do not load provider internals unless the UI bug crosses that boundary.

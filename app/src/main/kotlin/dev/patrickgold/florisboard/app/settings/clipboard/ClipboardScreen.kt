@@ -17,11 +17,14 @@
 package dev.patrickgold.florisboard.app.settings.clipboard
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
@@ -30,6 +33,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
@@ -81,6 +85,16 @@ fun ClipboardScreen() = FlorisScreen {
             modifier = Modifier.settingsSearchAnchor("pref__clipboard__trim_on_copy__label"),
             title = stringRes(R.string.pref__clipboard__trim_on_copy__label),
             summary = stringRes(R.string.pref__clipboard__trim_on_copy__summary),
+        )
+
+        // Read clips aloud (Driver Assistant, issue #7): engine, voice and the history speaker.
+        val navController = LocalNavController.current
+        Preference(
+            icon = Icons.AutoMirrored.Filled.VolumeUp,
+            modifier = Modifier.settingsSearchAnchor("settings__speech__title"),
+            title = stringRes(R.string.settings__speech__title),
+            summary = stringRes(R.string.settings__speech__summary),
+            onClick = { navController.navigate(Routes.Settings.Speech) },
         )
 
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_suggestion__label)) {

@@ -33,6 +33,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,6 +97,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.ui.MediaAction
+import dev.patrickgold.florisboard.driver.ui.ClipboardSpeakButton
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
@@ -336,18 +338,22 @@ fun ClipboardInputLayout(
                 }
             } else {
                 val text = item.stringRepresentation()
-                Column {
-                    ClipTextItemDescription(
-                        elementName = FlorisImeUi.ClipboardItemDescription.elementName,
-                        attributes = attributes,
-                        text = text,
-                    )
-                    SnyggText(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .run { if (contentScrollInsteadOfClip) this.florisVerticalScroll() else this },
-                        text = item.displayText(),
-                    )
+                Row {
+                    Column(modifier = Modifier.weight(1f)) {
+                        ClipTextItemDescription(
+                            elementName = FlorisImeUi.ClipboardItemDescription.elementName,
+                            attributes = attributes,
+                            text = text,
+                        )
+                        SnyggText(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .run { if (contentScrollInsteadOfClip) this.florisVerticalScroll() else this },
+                            text = item.displayText(),
+                        )
+                    }
+                    // Read aloud without pasting (Driver Assistant, issue #7).
+                    ClipboardSpeakButton(item)
                 }
             }
         }
