@@ -1340,6 +1340,12 @@ class DictateAccessibilityService : AccessibilityService() {
         val isRunning: Boolean
             get() = instance != null
 
+        /**
+         * The running service as a context for a TYPE_ACCESSIBILITY_OVERLAY window (Driver Assistant
+         * auto-read prompt, issue #7), or null while the service is off.
+         */
+        fun overlayContext(): android.content.Context? = instance
+
         private val _editableFocused = MutableStateFlow(false)
 
         /** Whether an editable text field currently holds input focus anywhere on screen. */

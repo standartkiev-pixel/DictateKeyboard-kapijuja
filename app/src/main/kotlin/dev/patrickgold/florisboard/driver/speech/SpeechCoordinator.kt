@@ -73,6 +73,13 @@ object SpeechCoordinator {
     private var dictationWatch: Job? = null
     private var focusRequest: AudioFocusRequest? = null
 
+    /** Key of the reading being prepared or spoken, or null when idle. */
+    fun activeKey(): String? = when (val s = _state.value) {
+        is State.Preparing -> s.key
+        is State.Speaking -> s.key
+        State.Idle -> null
+    }
+
     fun isActive(key: String): Boolean = when (val s = _state.value) {
         is State.Preparing -> s.key == key
         is State.Speaking -> s.key == key

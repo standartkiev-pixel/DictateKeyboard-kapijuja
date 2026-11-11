@@ -9,8 +9,19 @@ Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md` (issue #7).
   Hidden for images/videos, blank clips and clips the source app marked sensitive.
   Pref `speech.historySpeakerEnabled` (default on: it only ever acts on an explicit tap).
 - Settings screen *Clipboard ▸ Read aloud* (`driver/ui/SpeechSettingsScreen.kt`, route `Settings.Speech`).
-- Not done yet (later stages): auto-read with countdown, notification assistant, messenger opening,
-  Microsoft Edge "Read aloud" engine (unofficial endpoint, deliberately left out of the first stage).
+- Auto-read (`driver/autoread/`): `AutoReadController` collects `ClipboardManager.externalClipFlow`
+  (clips copied by other apps; the keyboard's own copies are not emitted), filters with
+  `AutoReadFilter` (min length, sensitive, links, codes/passwords, own dictation copy via
+  `DictateAccessibilityService.lastClipText`), skips lock screen and active dictation, shows
+  `AutoReadPrompt` (window at the top: `TYPE_APPLICATION_OVERLAY` when "display over other apps"
+  is granted, else accessibility overlay when the Dictate service is on, else a heads-up
+  notification) and calls `SpeechCoordinator.speak` only after the countdown. Latest copy wins.
+  Turning it on without a way to draw the window opens the overlay permission screen. Settings show
+  permission status and the last clip's outcome (`AutoReadController.lastClip`, no text kept). Off by default; toggle `AutoReadSmartbarToggle` is the leftmost Smartbar item.
+- Volume: speech uses `USAGE_MEDIA` (media volume) plus a `LoudnessEnhancer` boost (default +6 dB).
+- Not done yet: notification assistant, messenger opening, Microsoft Edge "Read aloud" engine.
+- Unverified on devices: whether a default IME gets clipboard callbacks while the keyboard is hidden
+  on Samsung/One UI; LoudnessEnhancer on the Android TTS engine's session.
 
 ## Architecture (`driver/speech/`)
 

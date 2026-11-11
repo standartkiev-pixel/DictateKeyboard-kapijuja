@@ -10,6 +10,10 @@
 
 package dev.patrickgold.florisboard.driver.ui
 
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,9 +42,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.settings.dictate.TextInputPreference
+import dev.patrickgold.florisboard.driver.autoread.AutoReadController
 import dev.patrickgold.florisboard.driver.speech.GeminiSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiRealtimeSpeechSource
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
@@ -59,6 +68,7 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceUiScope
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
+import java.util.Date
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.florisDialogScroll
 import org.florisboard.lib.compose.stringRes
@@ -89,6 +99,37 @@ fun SpeechSettingsScreen() = FlorisScreen {
             title = stringRes(R.string.pref__speech__history_speaker__label),
             summary = stringRes(R.string.pref__speech__history_speaker__summary),
         )
+
+        PreferenceGroup(title = stringRes(R.string.pref__speech__group_autoread)) {
+            SwitchPreference(
+                prefs.speech.autoReadEnabled,
+                title = stringRes(R.string.pref__speech__autoread__label),
+                summary = stringRes(R.string.pref__speech__autoread__summary),
+            )
+            DialogSliderPreference(
+                prefs.speech.autoReadDelaySec,
+                title = stringRes(R.string.pref__speech__autoread_delay__label),
+                valueLabel = { stringRes(R.string.pref__speech__autoread_delay__value, "v" to it) },
+                min = 1,
+                max = 10,
+                stepIncrement = 1,
+            )
+            DialogSliderPreference(
+                prefs.speech.autoReadMinChars,
+                title = stringRes(R.string.pref__speech__autoread_min_chars__label),
+                valueLabel = { stringRes(R.string.pref__speech__autoread_min_chars__value, "v" to it) },
+                min = 1,
+                max = 100,
+                stepIncrement = 1,
+            )
+            SwitchPreference(
+                prefs.speech.autoReadSmartbarToggle,
+                title = stringRes(R.string.pref__speech__autoread_toggle__label),
+                summary = stringRes(R.string.pref__speech__autoread_toggle__summary),
+            )
+            AutoReadStatusRows()
+            Note(stringRes(R.string.pref__speech__autoread_note))
+        }
 
         ListPreference(
             prefs.speech.engine,
@@ -336,6 +377,82 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.VoicePickerPreference(
             }
         }
     }
+}
+
+/**
+ * Why the countdown window may not appear and what happened to the last copied text, so a missing
+ * window or a skipped clip can be explained on the device without logs (no text is shown or stored).
+ */
+@Composable
+private fun PreferenceUiScope<FlorisPreferenceModel>.AutoReadStatusRows() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var overlayGranted by remember { mutableStateOf(AutoReadController.canDrawOverlays(context)) }
+    var notificationsOn by remember { mutableStateOf(notificationsEnabled(context)) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                overlayGranted = AutoReadController.canDrawOverlays(context)
+                notificationsOn = notificationsEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    Preference(
+        title = stringRes(R.string.pref__speech__autoread_overlay__label),
+        summary = stringRes(
+            if (overlayGranted) R.string.pref__speech__autoread_overlay__granted
+            else R.string.pref__speech__autoread_overlay__missing
+        ),
+        onClick = { AutoReadController.openOverlayPermissionSettings(context) },
+    )
+    if (!overlayGranted) {
+        Preference(
+            title = stringRes(R.string.pref__speech__autoread_notifications__label),
+            summary = stringRes(
+                if (notificationsOn) R.string.pref__speech__autoread_notifications__on
+                else R.string.pref__speech__autoread_notifications__off
+            ),
+            onClick = {
+                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                runCatching { context.startActivity(intent) }
+            },
+        )
+    }
+    val last by AutoReadController.lastClip.collectAsState()
+    val clip = last
+    Preference(
+        title = stringRes(R.string.pref__speech__autoread_last__label),
+        summary = if (clip == null) {
+            stringRes(R.string.pref__speech__autoread_last__none)
+        } else {
+            stringRes(
+                R.string.pref__speech__autoread_last__value,
+                "time" to DateFormat.getTimeFormat(context).format(Date(clip.atMillis)),
+                "result" to stringRes(outcomeLabel(clip.outcome)),
+                "n" to clip.length,
+            )
+        },
+    )
+}
+
+private fun notificationsEnabled(context: Context): Boolean =
+    NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+private fun outcomeLabel(outcome: AutoReadController.Outcome): Int = when (outcome) {
+    AutoReadController.Outcome.READ -> R.string.speech__autoread_outcome_read
+    AutoReadController.Outcome.DISABLED -> R.string.speech__autoread_outcome_disabled
+    AutoReadController.Outcome.EMPTY -> R.string.speech__autoread_outcome_empty
+    AutoReadController.Outcome.SENSITIVE -> R.string.speech__autoread_outcome_sensitive
+    AutoReadController.Outcome.TOO_SHORT -> R.string.speech__autoread_outcome_too_short
+    AutoReadController.Outcome.OWN_COPY -> R.string.speech__autoread_outcome_own_copy
+    AutoReadController.Outcome.LOOKS_SECRET -> R.string.speech__autoread_outcome_secret
+    AutoReadController.Outcome.LINK -> R.string.speech__autoread_outcome_link
+    AutoReadController.Outcome.LOCKED -> R.string.speech__autoread_outcome_locked
+    AutoReadController.Outcome.DICTATING -> R.string.speech__autoread_outcome_dictating
 }
 
 @Composable

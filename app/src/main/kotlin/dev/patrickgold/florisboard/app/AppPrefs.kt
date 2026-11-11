@@ -1558,6 +1558,23 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "speech__history_speaker_enabled",
             default = true,
         )
+        // Auto-read of text other apps copy. Off by default; the Smartbar toggle switches it.
+        val autoReadEnabled = boolean(
+            key = "speech__auto_read_enabled",
+            default = false,
+        )
+        val autoReadDelaySec = int(
+            key = "speech__auto_read_delay_sec",
+            default = 3,
+        )
+        val autoReadMinChars = int(
+            key = "speech__auto_read_min_chars",
+            default = 18,
+        )
+        val autoReadSmartbarToggle = boolean(
+            key = "speech__auto_read_smartbar_toggle",
+            default = true,
+        )
         val engine = enum(
             key = "speech__engine",
             default = SpeechEngineId.ANDROID,
