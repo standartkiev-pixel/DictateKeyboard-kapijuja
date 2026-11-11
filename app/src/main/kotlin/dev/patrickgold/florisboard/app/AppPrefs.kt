@@ -1570,6 +1570,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "speech__language",
             default = "ru-RU",
         )
+        val volumeBoostDb = int(
+            key = "speech__volume_boost_db",
+            default = 6,
+        )
         val fallbackToAndroid = boolean(
             key = "speech__fallback_to_android",
             default = true,

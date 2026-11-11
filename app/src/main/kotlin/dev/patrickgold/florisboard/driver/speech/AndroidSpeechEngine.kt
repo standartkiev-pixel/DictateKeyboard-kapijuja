@@ -11,6 +11,8 @@
 package dev.patrickgold.florisboard.driver.speech
 
 import android.content.Context
+import android.media.AudioManager
+import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
@@ -45,6 +47,30 @@ class AndroidSpeechEngine(context: Context) {
         if (pieces.isEmpty()) return
         val session = ++utteranceSession
         val lastId = "kapijuja-$session-${pieces.lastIndex}"
+        // Our own audio session for the engine's output, so the loudness boost can be attached to it.
+        val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        val audioSession = audioManager?.generateAudioSessionId() ?: AudioManager.AUDIO_SESSION_ID_GENERATE
+        val loudness = SpeechAudio.loudness(audioSession, settings.boostDb)
+        val params = Bundle().apply {
+            if (audioSession > 0) {
+                putInt(TextToSpeech.Engine.KEY_PARAM_SESSION_ID, audioSession)
+            }
+        }
+        try {
+            speakPieces(engine, pieces, params, session, lastId, onStarted)
+        } finally {
+            runCatching { loudness?.release() }
+        }
+    }
+
+    private suspend fun speakPieces(
+        engine: TextToSpeech,
+        pieces: List<String>,
+        params: Bundle,
+        session: Long,
+        lastId: String,
+        onStarted: () -> Unit,
+    ) {
         suspendCancellableCoroutine { cont ->
             engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 private var announced = false
@@ -74,7 +100,7 @@ class AndroidSpeechEngine(context: Context) {
             })
             pieces.forEachIndexed { index, piece ->
                 val mode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
-                val result = engine.speak(piece, mode, null, "kapijuja-$session-$index")
+                val result = engine.speak(piece, mode, params, "kapijuja-$session-$index")
                 if (result != TextToSpeech.SUCCESS && cont.isActive) {
                     cont.resumeWithException(SpeechEngineException("Android TTS refused the text"))
                     return@suspendCancellableCoroutine

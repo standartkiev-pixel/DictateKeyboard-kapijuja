@@ -143,6 +143,14 @@ fun SpeechSettingsScreen() = FlorisScreen {
             max = 200,
             stepIncrement = 5,
         )
+        DialogSliderPreference(
+            prefs.speech.volumeBoostDb,
+            title = stringRes(R.string.pref__speech__volume_boost__label),
+            valueLabel = { if (it == 0) stringRes(R.string.pref__speech__volume_boost_off) else "+$it dB" },
+            min = 0,
+            max = 15,
+            stepIncrement = 1,
+        )
         TextInputPreference(
             pref = prefs.speech.language,
             title = stringRes(R.string.pref__speech__language__label),

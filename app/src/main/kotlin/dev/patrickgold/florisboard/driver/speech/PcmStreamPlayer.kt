@@ -13,6 +13,7 @@ package dev.patrickgold.florisboard.driver.speech
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.audiofx.LoudnessEnhancer
 import android.os.SystemClock
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.delay
@@ -33,8 +34,10 @@ import kotlinx.coroutines.currentCoroutineContext
 class PcmStreamPlayer(
     private val sampleRate: Int = PcmAudio.SAMPLE_RATE,
     private val prebufferMs: Int = 350,
+    boostDb: Int = 0,
 ) {
     private val track: AudioTrack
+    private val loudness: LoudnessEnhancer?
     private val prebuffer = ByteArrayOutputStream()
     private val prebufferBytes = PcmAudio.bytesForMillis(prebufferMs, sampleRate)
     private var started = false
@@ -61,6 +64,7 @@ class PcmStreamPlayer(
             .setBufferSizeInBytes(bufferBytes)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
+        loudness = SpeechAudio.loudness(track.audioSessionId, boostDb)
     }
 
     /** Queues [pcm] (whole 16-bit frames). Blocks while the track buffer is full. */
@@ -99,6 +103,7 @@ class PcmStreamPlayer(
                 track.stop()
             }
         }
+        runCatching { loudness?.release() }
         runCatching { track.release() }
     }
 
@@ -126,10 +131,30 @@ class PcmStreamPlayer(
     private fun playedFrames(): Long = track.playbackHeadPosition.toLong() and 0xFFFF_FFFFL
 }
 
-/** Audio attributes shared by every engine, so the system treats all of them as one assistant voice. */
+/**
+ * Audio attributes shared by every engine. Media usage on purpose: it follows the media volume the
+ * user sets with the volume keys. The assistant usage it replaced is mapped to a separate, often
+ * much quieter volume curve on some phones (reported as "the voice is quiet" on a Samsung).
+ */
 object SpeechAudio {
     val attributes: AudioAttributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_ASSISTANT)
+        .setUsage(AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build()
+
+    /**
+     * Adds [boostDb] of gain with the platform limiter to the audio session [sessionId], or returns
+     * null when the device has no LoudnessEnhancer (the speech then simply plays unboosted).
+     */
+    fun loudness(sessionId: Int, boostDb: Int): LoudnessEnhancer? {
+        if (boostDb <= 0 || sessionId <= 0) return null
+        return runCatching {
+            LoudnessEnhancer(sessionId).apply {
+                setTargetGain(boostDb.coerceAtMost(MAX_BOOST_DB) * 100)
+                enabled = true
+            }
+        }.getOrNull()
+    }
+
+    const val MAX_BOOST_DB = 15
 }

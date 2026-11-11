@@ -2163,6 +2163,8 @@
     <string name="pref__speech__engine__label">Движок озвучивания</string>
     <string name="pref__speech__test__label">Прослушать пример</string>
     <string name="pref__speech__test__summary">Читает короткую фразу с текущими настройками и заодно проверяет ключ</string>
+    <string name="pref__speech__volume_boost__label">Усиление громкости</string>
+    <string name="pref__speech__volume_boost_off">Выкл. (только громкость медиа)</string>
     <string name="pref__speech__speed__label">Скорость</string>
     <string name="pref__speech__language__label">Язык (если голос не выбран)</string>
     <string name="pref__speech__fallback__label">Запасной голос Android</string>

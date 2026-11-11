@@ -20,6 +20,8 @@ data class SpeechSettings(
     /** BCP-47 tag used when an engine needs a language and no voice implies one. */
     val language: String = "ru-RU",
     val fallbackToAndroid: Boolean = true,
+    /** Extra loudness in dB on top of the media volume (0 = off). */
+    val boostDb: Int = 6,
     val androidEnginePackage: String = "",
     val androidVoice: String = "",
     val androidPitch: Float = 1.0f,
@@ -47,6 +49,7 @@ data class SpeechSettings(
                 speed = s.speedPercent.get() / 100f,
                 language = s.language.get().trim().ifBlank { "ru-RU" },
                 fallbackToAndroid = s.fallbackToAndroid.get(),
+                boostDb = s.volumeBoostDb.get(),
                 androidEnginePackage = s.androidEngine.get().trim(),
                 androidVoice = s.androidVoice.get().trim(),
                 androidPitch = s.androidPitchPercent.get() / 100f,

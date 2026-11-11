@@ -1990,6 +1990,8 @@
     <string name="pref__speech__engine__label">Рушій озвучування</string>
     <string name="pref__speech__test__label">Прослухати приклад</string>
     <string name="pref__speech__test__summary">Читає коротку фразу з поточними налаштуваннями й заразом перевіряє ключ</string>
+    <string name="pref__speech__volume_boost__label">Підсилення гучності</string>
+    <string name="pref__speech__volume_boost_off">Вимк. (лише гучність медіа)</string>
     <string name="pref__speech__speed__label">Швидкість</string>
     <string name="pref__speech__language__label">Мова (якщо голос не вибрано)</string>
     <string name="pref__speech__fallback__label">Запасний голос Android</string>

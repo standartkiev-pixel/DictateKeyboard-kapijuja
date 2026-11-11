@@ -2378,6 +2378,8 @@
     <string name="pref__speech__engine__label">Speech engine</string>
     <string name="pref__speech__test__label">Play a sample</string>
     <string name="pref__speech__test__summary">Reads a short phrase with the current settings, which also checks the key</string>
+    <string name="pref__speech__volume_boost__label">Loudness boost</string>
+    <string name="pref__speech__volume_boost_off">Off (media volume only)</string>
     <string name="pref__speech__speed__label">Speed</string>
     <string name="pref__speech__language__label">Language (when no voice is chosen)</string>
     <string name="pref__speech__fallback__label">Fall back to the Android voice</string>

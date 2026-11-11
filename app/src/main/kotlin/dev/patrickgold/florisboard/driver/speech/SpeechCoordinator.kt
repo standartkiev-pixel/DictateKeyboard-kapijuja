@@ -196,7 +196,7 @@ object SpeechCoordinator {
             }
         }
         withContext(Dispatchers.IO) {
-            val player = PcmStreamPlayer()
+            val player = PcmStreamPlayer(boostDb = settings.boostDb)
             var announced = false
             try {
                 for (piece in channel) {
