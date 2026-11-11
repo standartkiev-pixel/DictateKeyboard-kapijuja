@@ -7,7 +7,7 @@ Encrypted backup: [kapijuja-signing-recovery-2026-09-08.aes256gcm.b64](kapijuja-
 ## Two different original keys (do not mix them)
 
 1. **Standalone legacy keystore**, originally `kapijuja-voice-release.jks` (3797 bytes): alias `kapijuja-voice`, keystore SHA-256 `708b2c4202e7d7cff995f69ab6fda4f9bd69cad2cc146dea412da9665e13feaf`, **certificate SHA-256** `58A177EE9D9CDAFAE8F45967B713C13C00F8FA2E437939A54E5E40B2B0493C6B`.
-2. **Another distinct JKS inside the original backup ZIP**, alias `kapijuja_voice_release`, keystore SHA-256 `1db16eb1226b6e9d4c20719780765ed0bdeb088ba68714e6069022661e99a81b`, **certificate SHA-256** `B7000716F77AFD04388D71546B128E9A934D8B7934E93A094E7FA2DDEE7C296`.
+2. **Another distinct JKS inside the original backup ZIP**, alias `kapijuja_voice_release`, keystore SHA-256 `1db16eb1226b6e9d4c20719780765ed0bdeb088ba68714e6069022661e99a81b`, **certificate SHA-256** `B7000716F77ADFD04388D71546B128E9A934D8B7934E93A094E7FA2DDEE7C296`.
 
 These are not interchangeable. Both JKS files have been read successfully using their corresponding recovery records. It is **not established** which, if either, signed an already-distributed stable `net.kapijuja.dictate` APK. The prerelease `net.kapijuja.dictate.debug` has a **third, separate** public test signing identity in `.github/test-signing`.
 
