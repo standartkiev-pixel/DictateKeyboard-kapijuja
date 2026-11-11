@@ -54,6 +54,18 @@ jobs:
       - name: Build phone and Wear debug APKs
         run: ./gradlew :app:assembleDebug :wear:assembleDebug --stacktrace
 
+      # Fail the run if any debug APK is signed by anything other than the pinned test certificate,
+      # so a CI artifact can always be installed as an in-place update of the previous test build.
+      - name: Verify debug APK signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          for apk in app/build/outputs/apk/debug/*.apk wear/build/outputs/apk/debug/*.apk; do
+            "$build_tools/apksigner" verify --print-certs "$apk" | tee apk-signature.txt
+            grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
+          done
+
       - name: Upload phone debug APK
         uses: actions/upload-artifact@v4
         with:

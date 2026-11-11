@@ -125,18 +125,16 @@ configure<ApplicationExtension> {
     } else {
         null
     }
-    // CI sets this only for upgrade-compatible public test builds. Keeping it separate from
-    // keystore.properties prevents a local debug build from ever borrowing the production identity.
-    val prereleaseDebugKeystore = System.getenv("KAPIJUJA_PRERELEASE_DEBUG_KEYSTORE")
-        ?.takeIf { it.isNotBlank() }
+    // All debug builds use the pinned public prerelease test identity resolved and checksum-verified in the
+    // root build script, so any machine produces `.debug` APKs that update each other in place. It is
+    // separate from keystore.properties so a debug build can never borrow the production identity.
+    val prereleaseDebugKeystore = rootProject.extra["kapijujaPrereleaseKeystore"] as File
     signingConfigs {
-        prereleaseDebugKeystore?.let { keyPath ->
-            create("prereleaseDebug") {
-                storeFile = rootProject.file(keyPath)
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
-            }
+        create("prereleaseDebug") {
+            storeFile = prereleaseDebugKeystore
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
         keystoreProps?.let { props ->
             create("release") {
@@ -151,9 +149,7 @@ configure<ApplicationExtension> {
     buildTypes {
         named("debug") {
             applicationIdSuffix = ".debug"
-            if (prereleaseDebugKeystore != null) {
-                signingConfig = signingConfigs.getByName("prereleaseDebug")
-            }
+            signingConfig = signingConfigs.getByName("prereleaseDebug")
             versionNameSuffix = "-debug+${getGitCommitHash(short = true).get()}"
 
             isDebuggable = true
