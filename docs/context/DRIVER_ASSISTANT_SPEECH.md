@@ -13,9 +13,11 @@ Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md` (issue #7).
   (clips copied by other apps; the keyboard's own copies are not emitted), filters with
   `AutoReadFilter` (min length, sensitive, links, codes/passwords, own dictation copy via
   `DictateAccessibilityService.lastClipText`), skips lock screen and active dictation, shows
-  `AutoReadPrompt` (accessibility overlay at the top when the Dictate service is on, else a heads-up
-  notification with chronometer) and calls `SpeechCoordinator.speak` only after the countdown.
-  Latest copy wins. Off by default; toggle `AutoReadSmartbarToggle` is the leftmost Smartbar item.
+  `AutoReadPrompt` (window at the top: `TYPE_APPLICATION_OVERLAY` when "display over other apps"
+  is granted, else accessibility overlay when the Dictate service is on, else a heads-up
+  notification) and calls `SpeechCoordinator.speak` only after the countdown. Latest copy wins.
+  Turning it on without a way to draw the window opens the overlay permission screen. Settings show
+  permission status and the last clip's outcome (`AutoReadController.lastClip`, no text kept). Off by default; toggle `AutoReadSmartbarToggle` is the leftmost Smartbar item.
 - Volume: speech uses `USAGE_MEDIA` (media volume) plus a `LoudnessEnhancer` boost (default +6 dB).
 - Not done yet: notification assistant, messenger opening, Microsoft Edge "Read aloud" engine.
 - Unverified on devices: whether a default IME gets clipboard callbacks while the keyboard is hidden

@@ -2412,5 +2412,25 @@
     <string name="pref__speech__autoread_min_chars__value">{v} characters</string>
     <string name="pref__speech__autoread_toggle__label">Auto-read switch in the Smartbar</string>
     <string name="pref__speech__autoread_toggle__summary">Speaker button at the far left of the keyboard bar. Long press stops a reading.</string>
-    <string name="pref__speech__autoread_note">The countdown window appears over other apps while the Dictate accessibility service is on; otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
+    <string name="speech__autoread_needs_overlay_toast">Allow “Display over other apps” so the countdown window can appear</string>
+    <string name="pref__speech__autoread_overlay__label">Countdown window</string>
+    <string name="pref__speech__autoread_overlay__granted">Allowed: the window appears over any app</string>
+    <string name="pref__speech__autoread_overlay__missing">Not allowed: tap and allow “Display over other apps”, otherwise only a notification is shown</string>
+    <string name="pref__speech__autoread_notifications__label">Notifications</string>
+    <string name="pref__speech__autoread_notifications__on">On: without the window, the countdown is a notification</string>
+    <string name="pref__speech__autoread_notifications__off">Off: without the window and notifications the countdown is not visible at all</string>
+    <string name="pref__speech__autoread_last__label">Last copied text</string>
+    <string name="pref__speech__autoread_last__value">{time}: {result} ({n} characters)</string>
+    <string name="pref__speech__autoread_last__none">Nothing copied since the app started</string>
+    <string name="speech__autoread_outcome_read">read aloud</string>
+    <string name="speech__autoread_outcome_disabled">skipped, auto-read was off</string>
+    <string name="speech__autoread_outcome_empty">skipped, empty</string>
+    <string name="speech__autoread_outcome_sensitive">skipped, marked as sensitive</string>
+    <string name="speech__autoread_outcome_too_short">skipped, too short</string>
+    <string name="speech__autoread_outcome_own_copy">skipped, copied by this keyboard</string>
+    <string name="speech__autoread_outcome_secret">skipped, looks like a code or password</string>
+    <string name="speech__autoread_outcome_link">skipped, a link</string>
+    <string name="speech__autoread_outcome_locked">skipped, screen locked</string>
+    <string name="speech__autoread_outcome_dictating">skipped, dictation in progress</string>
+    <string name="pref__speech__autoread_note">The countdown window needs “Display over other apps” (or the Dictate accessibility service); otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
 </resources>

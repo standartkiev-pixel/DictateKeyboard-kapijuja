@@ -2024,5 +2024,25 @@
     <string name="pref__speech__autoread_min_chars__value">{v} символів</string>
     <string name="pref__speech__autoread_toggle__label">Кнопка автозачитування на панелі</string>
     <string name="pref__speech__autoread_toggle__summary">Динамік у крайньому лівому куті панелі клавіатури. Довге натискання зупиняє читання.</string>
-    <string name="pref__speech__autoread_note">Вікно з відліком з\'являється поверх інших застосунків, коли увімкнено службу спеціальних можливостей Dictate; інакше замість нього сповіщення. Не читається: на заблокованому екрані, під час диктування, посилання, позначені як секретні кліпи, одноразові коди й схожий на пароль текст. До кінця відліку до хмарного рушія нічого не надсилається.</string>
+    <string name="speech__autoread_needs_overlay_toast">Дозвольте «Поверх інших застосунків», щоб з\'являлося вікно з відліком</string>
+    <string name="pref__speech__autoread_overlay__label">Вікно з відліком</string>
+    <string name="pref__speech__autoread_overlay__granted">Дозволено: вікно з\'являється поверх будь-якого застосунку</string>
+    <string name="pref__speech__autoread_overlay__missing">Не дозволено: натисніть і увімкніть «Поверх інших застосунків», інакше буде лише сповіщення</string>
+    <string name="pref__speech__autoread_notifications__label">Сповіщення</string>
+    <string name="pref__speech__autoread_notifications__on">Увімкнено: без вікна відлік показується сповіщенням</string>
+    <string name="pref__speech__autoread_notifications__off">Вимкнено: без вікна й сповіщень відлік зовсім не видно</string>
+    <string name="pref__speech__autoread_last__label">Останній скопійований текст</string>
+    <string name="pref__speech__autoread_last__value">{time}: {result} ({n} символів)</string>
+    <string name="pref__speech__autoread_last__none">Від запуску застосунку нічого не копіювали</string>
+    <string name="speech__autoread_outcome_read">прочитано вголос</string>
+    <string name="speech__autoread_outcome_disabled">пропущено, автозачитування було вимкнено</string>
+    <string name="speech__autoread_outcome_empty">пропущено, порожній</string>
+    <string name="speech__autoread_outcome_sensitive">пропущено, позначено як секретний</string>
+    <string name="speech__autoread_outcome_too_short">пропущено, надто короткий</string>
+    <string name="speech__autoread_outcome_own_copy">пропущено, скопійовано самою клавіатурою</string>
+    <string name="speech__autoread_outcome_secret">пропущено, схожий на код або пароль</string>
+    <string name="speech__autoread_outcome_link">пропущено, це посилання</string>
+    <string name="speech__autoread_outcome_locked">пропущено, екран заблоковано</string>
+    <string name="speech__autoread_outcome_dictating">пропущено, триває диктування</string>
+    <string name="pref__speech__autoread_note">Вікну з відліком потрібен дозвіл «Поверх інших застосунків» (або служба спеціальних можливостей Dictate); інакше замість нього сповіщення. Не читається: на заблокованому екрані, під час диктування, посилання, позначені як секретні кліпи, одноразові коди й схожий на пароль текст. До кінця відліку до хмарного рушія нічого не надсилається.</string>
 </resources>

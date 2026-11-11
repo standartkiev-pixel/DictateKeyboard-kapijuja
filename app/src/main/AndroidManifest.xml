@@ -16,6 +16,8 @@
 
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Auto-read countdown window over other apps (Driver Assistant, issue #7) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
     <!-- Permissions for the floating dictation button (issue #88): the accessibility service promotes
          itself to a microphone foreground service while recording so background mic capture is allowed -->

@@ -37,12 +37,14 @@ interface AutoReadPrompt {
 }
 
 /**
- * A compact window at the top of the screen, drawn as an accessibility overlay through the optional
- * Dictate accessibility service, so it needs no "draw over other apps" permission and stays clear of
- * a messenger's reply field and send button at the bottom. Only available while that service is on.
+ * A compact window at the top of the screen, clear of a messenger's reply field and send button at
+ * the bottom. Drawn either as an application overlay (needs "display over other apps", works with
+ * the keyboard hidden or shown) or as an accessibility overlay through the Dictate accessibility
+ * service when that one is on and the overlay permission is not granted.
  */
 class OverlayAutoReadPrompt(
     private val serviceContext: Context,
+    private val windowType: Int,
     private val onCancel: () -> Unit,
     private val onDisable: () -> Unit,
 ) : AutoReadPrompt {
@@ -112,7 +114,7 @@ class OverlayAutoReadPrompt(
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            windowType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT,
         ).apply {
