@@ -4,6 +4,10 @@
 It exists because clean GitHub runners otherwise create a different debug certificate for every build,
 which makes Android reject the next prerelease with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`.
 
+Since the Gradle build pins it in `build.gradle.kts`, every `assembleDebug` (CI, Android Studio or a
+plain `./gradlew` on any machine) signs with this key; the machine's own `~/.android/debug.keystore` is
+never used, and a checksum mismatch fails the build. CI also checks the certificate of every debug APK.
+
 This key signs only the `.debug` application ID. It is not confidential, grants no repository or service
 access, and must never sign the stable `net.kapijuja.dictate` application. The production Kapijuja JKS
 remains external to Git and will be connected through `keystore.properties` when it is recovered.
