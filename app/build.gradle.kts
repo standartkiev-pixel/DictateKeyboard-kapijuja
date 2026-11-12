@@ -149,6 +149,12 @@ configure<ApplicationExtension> {
 
             isDebuggable = true
             isJniDebuggable = false
+
+            // This is the build people install, so it is shrunk like a release: unused code and
+            // resources are dropped (names are kept, see -dontobfuscate in the rules file).
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
 
         create("beta") {
