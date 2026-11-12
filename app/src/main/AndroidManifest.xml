@@ -165,25 +165,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ui" android:host="florisboard" android:pathPrefix="/" />
             </intent-filter>
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="content"/>
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
-                <data android:mimeType="application/octet-stream"/><!-- Firefox looking at you :eyes: -->
-            </intent-filter>
-            <!-- Sharing an extension keeps its own type only. octet-stream belongs on the VIEW
-                 filter above, where it earns its keep: a browser downloads a .flex and hands it over
-                 with no type at all. On SEND it earned nothing and cost something — Android has no
-                 type for .opus either, so every shared voice note offered "Import Extension" beside
-                 "Transcribe", and a share sheet that asks you to choose between two entries of the
-                 same app is a riddle. An extension that arrives typed still works, "Open with" still
-                 works, and the settings have their own import screen. -->
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
-            </intent-filter>
         </activity>
 
         <!-- Using an activity alias to disable/enable the app icon in the launcher -->

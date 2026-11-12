@@ -761,7 +761,6 @@
     <string name="devtools__debuglog__copy_for_github">Скопировать журнал (формат GitHub)</string>
     <string name="devtools__debuglog__loading">Загрузка…</string>
     <!-- Extension strings -->
-    <string name="ext__home__title">Расширения &amp; Дополнения</string>
     <string name="ext__list__ext_theme">Расширения темы</string>
     <string name="ext__list__ext_keyboard">Расширения клавиатуры</string>
     <string name="ext__list__ext_languagepack">Языковые пакеты</string>
@@ -842,16 +841,7 @@
     <string name="ext__validation__enter_percent_size">Укажите размер в процентах</string>
     <string name="ext__validation__enter_number_between_0_100">Укажите положительное число от 0 до 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Любое значение выше 50% будет работать так же, как и 50%, попробуйте уменьшить размер в процентах</string>
-    <string name="ext__update_box__internet_permission_hint">Так как это приложение не имеет доступа к Интернету, обновления для установленных расширений придётся проверять вручную.</string>
-    <string name="ext__update_box__search_for_updates">Проверить обновления</string>
-    <string name="ext__addon_management_box__managing_placeholder">Управление {extensions}</string>
-    <string name="ext__addon_management_box__addon_manager_info">Все задачи, связанные с импортом, экспортом, созданием, персонализацией и удалением расширений могут быть выполнены через централизованный менеджер расширений.</string>
-    <string name="ext__addon_management_box__go_to_page">Перейти к {ext_home_title}</string>
-    <string name="ext__home__info">Вы можете скачать и установить расширения через магазин расширений Dictate или импортировать любые файлы расширений, скачанные из интернета.</string>
-    <string name="ext__home__visit_store">Магазин расширений</string>
-    <string name="ext__home__manage_extensions">Установленные расширения</string>
     <string name="ext__list__view_details">Подробности</string>
-    <string name="ext__check_updates__title">Проверить обновления</string>
     <!-- Action strings -->
     <string name="action__add">Добавить</string>
     <string name="action__apply">Применить</string>
@@ -2140,4 +2130,6 @@
     <string name="speech__autoread_outcome_locked">пропущен, экран заблокирован</string>
     <string name="speech__autoread_outcome_dictating">пропущен, идёт диктовка</string>
     <string name="pref__speech__autoread_note">Окну с отсчётом нужно разрешение «Поверх других приложений» (или служба специальных возможностей Dictate); иначе вместо него уведомление. Не читается: на заблокированном экране, во время диктовки, ссылки, помеченные как секретные клипы, одноразовые коды и похожий на пароль текст. До конца отсчёта в облачный движок ничего не отправляется.</string>
+    <string name="settings__theme__manage_themes">Управление темами</string>
+    <string name="dictate__import_copy_failed">Расшифровка слишком длинная для буфера обмена. Используйте «Сохранить» или «Поделиться».</string>
 </resources>

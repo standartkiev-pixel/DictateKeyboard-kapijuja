@@ -639,7 +639,6 @@
     <string name="devtools__debuglog__copy_for_github">Скопіювати журнал (форматування GitHub)</string>
     <string name="devtools__debuglog__loading">Завантаження…</string>
     <!-- Extension strings -->
-    <string name="ext__home__title">Доповнення та розширення</string>
     <string name="ext__list__ext_theme">Розширення теми</string>
     <string name="ext__list__ext_keyboard">Розширення клавіатури</string>
     <string name="ext__list__ext_languagepack">Розширення мовних пакетів</string>
@@ -718,16 +717,7 @@
     <string name="ext__validation__enter_percent_size">Введіть розмір у відсотках</string>
     <string name="ext__validation__enter_number_between_0_100">Введіть додатне число від 0 до 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Будь-яке значення вище 50% буде таке ж як і 50%, розгляньте можливість зменшення розміру відсотка</string>
-    <string name="ext__update_box__internet_permission_hint">Оскільки цей застосунок не має дозволу на доступ до Інтернету, оновлення для встановлених розширень потрібно перевіряти вручну.</string>
-    <string name="ext__update_box__search_for_updates">Перевірити оновлення</string>
-    <string name="ext__addon_management_box__managing_placeholder">Керування {extensions}</string>
-    <string name="ext__addon_management_box__addon_manager_info">Всі завдання, пов\'язані з імпортом, експортом, створенням, налаштуванням і видаленням розширень, можна вирішувати за допомогою централізованого менеджера розширень.</string>
-    <string name="ext__addon_management_box__go_to_page">Перейти до {ext_home_title}</string>
-    <string name="ext__home__info">Ви можете завантажити і встановити розширення з магазину розширень Dictate або імпортувати будь-який файл розширення, який ви завантажили з мережі.</string>
-    <string name="ext__home__visit_store">Відвідати магазин розширень</string>
-    <string name="ext__home__manage_extensions">Керування встановленими розширеннями</string>
     <string name="ext__list__view_details">Докладніше</string>
-    <string name="ext__check_updates__title">Перевірити оновлення</string>
     <!-- Action strings -->
     <string name="action__add">Додати</string>
     <string name="action__apply">Застосувати</string>
@@ -1967,4 +1957,6 @@
     <string name="speech__autoread_outcome_locked">пропущено, екран заблоковано</string>
     <string name="speech__autoread_outcome_dictating">пропущено, триває диктування</string>
     <string name="pref__speech__autoread_note">Вікну з відліком потрібен дозвіл «Поверх інших застосунків» (або служба спеціальних можливостей Dictate); інакше замість нього сповіщення. Не читається: на заблокованому екрані, під час диктування, посилання, позначені як секретні кліпи, одноразові коди й схожий на пароль текст. До кінця відліку до хмарного рушія нічого не надсилається.</string>
+    <string name="settings__theme__manage_themes">Керування темами</string>
+    <string name="dictate__import_copy_failed">Розшифровка задовга для буфера обміну. Скористайтеся «Зберегти» або «Поділитися».</string>
 </resources>

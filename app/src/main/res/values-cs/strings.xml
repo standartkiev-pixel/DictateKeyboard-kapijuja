@@ -774,7 +774,6 @@
     <string name="devtools__debuglog__copy_for_github">Kopírovat protokol (formátování GitHub)</string>
     <string name="devtools__debuglog__loading">Načítání…</string>
     <!-- Extension strings -->
-    <string name="ext__home__title">Doplňky a rozšíření</string>
     <string name="ext__list__ext_theme">Rozšíření témat</string>
     <string name="ext__list__ext_keyboard">Rozšíření klávesnice</string>
     <string name="ext__list__ext_languagepack">Rozšíření jazykových balíčků</string>
@@ -855,16 +854,7 @@
     <string name="ext__validation__enter_percent_size">Zadejte prosím velikost v procentech</string>
     <string name="ext__validation__enter_number_between_0_100">Zadejte prosím kladné číslo mezi 0 a 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Jakákoli hodnota nad 50 % se bude chovat, jako kdybyste nastavili 50 %, zvažte snížení velikosti v procentech</string>
-    <string name="ext__update_box__internet_permission_hint">Jelikož tato aplikace nemá přístup k internetu, musíte aktualizace nainstalovaných rozšíření kontrolovat ručně.</string>
-    <string name="ext__update_box__search_for_updates">Vyhledat aktualizace</string>
-    <string name="ext__addon_management_box__managing_placeholder">Správa {extensions}</string>
-    <string name="ext__addon_management_box__addon_manager_info">Všechny úlohy spojené s importováním, exportováním, vytvářením, přizpůsobováním a odstraňováním rozšíření mohou být prováděny skrze centralizovaného správce doplňků.</string>
-    <string name="ext__addon_management_box__go_to_page">Přejít na {ext_home_title}</string>
-    <string name="ext__home__info">Rozšíření můžete stahovat a instalovat z Obchodu s doplňky Dictate nebo importovat jakýkoli soubor rozšíření, který jste si stáhli z internetu.</string>
-    <string name="ext__home__visit_store">Navštívit Obchod s doplňky</string>
-    <string name="ext__home__manage_extensions">Správa nainstalovaných doplňků</string>
     <string name="ext__list__view_details">Zobrazit podrobnosti</string>
-    <string name="ext__check_updates__title">Zkontrolovat aktualizace</string>
     <!-- Action strings -->
     <string name="action__add">Přidat</string>
     <string name="action__apply">Použít</string>

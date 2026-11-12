@@ -757,7 +757,6 @@
     <string name="devtools__debuglog__copy_for_github">Copiar registro (formato GitHub)</string>
     <string name="devtools__debuglog__loading">Cargando…</string>
     <!-- Extension strings -->
-    <string name="ext__home__title">Complementos y ampliaciones</string>
     <string name="ext__list__ext_theme">Ampliaciones del tema</string>
     <string name="ext__list__ext_keyboard">Ampliaciones de teclado</string>
     <string name="ext__list__ext_languagepack">Ampliaciones del paquete de idiomas</string>
@@ -838,16 +837,7 @@
     <string name="ext__validation__enter_percent_size">Por favor, introduce un porcentaje</string>
     <string name="ext__validation__enter_number_between_0_100">Por favor, introduce un número entre 0 y 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Cualquier valor superior al 50% se comportará como si fuese el 50%, considere la posibilidad de disminuir el porcentaje</string>
-    <string name="ext__update_box__internet_permission_hint">Ya que esta aplicación no tiene permisos para acceder a Internet, las actualizaciones de las extensiones instaladas deben verificarse manualmente.</string>
-    <string name="ext__update_box__search_for_updates">Buscar actualizaciones</string>
-    <string name="ext__addon_management_box__managing_placeholder">Gestionando {extensions}</string>
-    <string name="ext__addon_management_box__addon_manager_info">Todas las tareas relacionadas con la importación, exportación, creación, personalización y eliminación de extensiones pueden ser manejadas a través del administrador de complementos centralizado.</string>
-    <string name="ext__addon_management_box__go_to_page">Ir a {ext_home_title}</string>
-    <string name="ext__home__info">Puede descargar e instalar extensiones de la tienda Dictate Addons o importar cualquier archivo de extensión que haya descargado de internet.</string>
-    <string name="ext__home__visit_store">Visita la tienda de complementos</string>
-    <string name="ext__home__manage_extensions">Administrar las extensiones instaladas</string>
     <string name="ext__list__view_details">Ver detalles</string>
-    <string name="ext__check_updates__title">Verificar actualizaciones</string>
     <!-- Action strings -->
     <string name="action__add">Añadir</string>
     <string name="action__apply">Aplicar</string>

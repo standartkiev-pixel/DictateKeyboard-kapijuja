@@ -1247,7 +1247,6 @@
 
 
     <!-- Extension strings -->
-    <string name="ext__home__title">Addons &amp; Extensions</string>
     <string name="ext__list__ext_theme">Theme extensions</string>
     <string name="ext__list__ext_keyboard">Keyboard extensions</string>
     <string name="ext__list__ext_languagepack">Language pack extensions</string>
@@ -1328,16 +1327,7 @@
     <string name="ext__validation__enter_percent_size">Please enter a percent size</string>
     <string name="ext__validation__enter_number_between_0_100">Please enter a positive number between 0 and 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Any value above 50% will behave as if you set 50%, consider lowering your percent size</string>
-    <string name="ext__update_box__internet_permission_hint">Since this app does not have Internet permission, updates for installed extensions must be checked manually.</string>
-    <string name="ext__update_box__search_for_updates">Search for Updates</string>
-    <string name="ext__addon_management_box__managing_placeholder">Managing {extensions}</string>
-    <string name="ext__addon_management_box__addon_manager_info">All tasks related to importing, exporting, creating, customizing, and removing extensions can be handled through the centralized addon manager.</string>
-    <string name="ext__addon_management_box__go_to_page">Go to {ext_home_title}</string>
-    <string name="ext__home__info">You can download and install extensions from the Dictate Keyboard Addons Store or import any extension file you have downloaded from the internet.</string>
-    <string name="ext__home__visit_store">Visit Addons Store</string>
-    <string name="ext__home__manage_extensions">Manage installed extensions</string>
     <string name="ext__list__view_details">View details</string>
-    <string name="ext__check_updates__title">Check for Updates</string>
 
     <!-- Action strings -->
     <string name="action__add">Add</string>
@@ -2355,4 +2345,6 @@
     <string name="speech__autoread_outcome_locked">skipped, screen locked</string>
     <string name="speech__autoread_outcome_dictating">skipped, dictation in progress</string>
     <string name="pref__speech__autoread_note">The countdown window needs “Display over other apps” (or the Dictate accessibility service); otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
+    <string name="settings__theme__manage_themes">Manage themes</string>
+    <string name="dictate__import_copy_failed">The transcript is too long for the clipboard. Use Save or Share instead.</string>
 </resources>
