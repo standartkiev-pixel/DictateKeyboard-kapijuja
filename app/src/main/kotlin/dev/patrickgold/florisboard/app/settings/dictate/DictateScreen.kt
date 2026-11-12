@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Segment
 import androidx.compose.foundation.clickable
@@ -249,21 +248,6 @@ fun DictateScreen() = FlorisScreen {
             title = stringRes(R.string.dictate__output_group),
             summary = stringRes(R.string.dictate__output_menu_summary),
             onClick = { navController.navigate(Routes.Settings.DictateOutput) },
-        )
-
-        // Floating button keeps its own screen and the "New" badge until first opened (issue #88).
-        val floatingHintSeen by prefs.dictate.floatingButtonHintSeen.collectAsState()
-        Preference(
-            icon = Icons.Default.Adjust,
-            modifier = Modifier.settingsSearchAnchor("dictate__floating_button_enable_title"),
-            title = stringRes(R.string.dictate__floating_button_enable_title),
-            summary = stringRes(R.string.dictate__floating_button_enable_summary),
-            onClick = { navController.navigate(Routes.Settings.DictateFloatingButton) },
-            trailing = if (!floatingHintSeen) {
-                { NewBadge() }
-            } else {
-                null
-            },
         )
 
         Preference(
@@ -657,23 +641,6 @@ fun DictateLayoutScreen() = FlorisScreen {
 private fun providerDisplayName(id: String, accounts: ProviderAccounts): String {
     ProviderRegistry.byId(id)?.let { return it.displayName }
     return accounts[id]?.displayName?.takeIf { it.isNotBlank() } ?: id
-}
-
-/** A small accent "New" pill used to point users at a recently added settings entry. */
-@Composable
-private fun NewBadge() {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(percent = 50))
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-    ) {
-        Text(
-            text = stringRes(R.string.dictate__floating_button_badge_new),
-            color = MaterialTheme.colorScheme.onPrimary,
-            style = MaterialTheme.typography.labelSmall,
-        )
-    }
 }
 
 /**

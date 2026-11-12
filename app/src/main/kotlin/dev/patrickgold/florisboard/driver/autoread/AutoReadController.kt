@@ -21,7 +21,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
@@ -59,6 +58,15 @@ object AutoReadController {
     private var job: Job? = null
     private var prompt: AutoReadPrompt? = null
     private var generation = 0L
+
+    /** The last text this app itself put on the clipboard; never read back to the user. */
+    @Volatile
+    private var ownCopy: String? = null
+
+    /** Call right before the app copies [text] itself (a transcript, a history entry). */
+    fun noteOwnCopy(text: String) {
+        ownCopy = text
+    }
 
     /** Subscribes to new clips. Called once when the app has loaded its preferences. */
     fun start(context: Context) {
@@ -118,7 +126,7 @@ object AutoReadController {
             text = item.text,
             isSensitive = item.isSensitive || item.type != ItemType.TEXT,
             minChars = prefs.speech.autoReadMinChars.get(),
-            ownCopy = DictateAccessibilityService.lastClipText,
+            ownCopy = ownCopy,
         )
         if (verdict != AutoReadFilter.Verdict.READ) return record(Outcome.valueOf(verdict.name), item)
         if (isLocked(context)) return record(Outcome.LOCKED, item)
@@ -157,21 +165,11 @@ object AutoReadController {
     }
 
     private fun createPrompt(context: Context, delaySeconds: Int): AutoReadPrompt {
-        // 1) "Display over other apps": independent of the accessibility service, so it is the first
-        // choice. 2) The accessibility overlay when only the service is on. 3) A notification.
+        // A window with "display over other apps", otherwise a heads-up notification.
         if (canDrawOverlays(context)) {
             return OverlayAutoReadPrompt(
                 serviceContext = context,
                 windowType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                onCancel = { cancelCurrent() },
-                onDisable = { disable(context) },
-            )
-        }
-        val service = DictateAccessibilityService.overlayContext()
-        if (service != null) {
-            return OverlayAutoReadPrompt(
-                serviceContext = service,
-                windowType = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
                 onCancel = { cancelCurrent() },
                 onDisable = { disable(context) },
             )
@@ -182,8 +180,7 @@ object AutoReadController {
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
 
     /** Whether a countdown window (not just a notification) can currently be shown. */
-    fun canShowWindow(context: Context): Boolean =
-        canDrawOverlays(context) || DictateAccessibilityService.overlayContext() != null
+    fun canShowWindow(context: Context): Boolean = canDrawOverlays(context)
 
     /** Opens the system screen where "display over other apps" is granted for this app. */
     fun openOverlayPermissionSettings(context: Context) {

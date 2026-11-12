@@ -187,16 +187,6 @@ class FlorisAppActivity : ComponentActivity() {
             if (isImeSetUp) Routes.Settings.Home::class else Routes.Setup.Screen::class
         }
 
-        // After the onboarding's optional floating-button step finishes setup, jump on to the
-        // floating-button settings so the user lands exactly where the step pointed them. One-shot.
-        val openFloatingButtonAfterSetup by prefs.internal.openFloatingButtonAfterSetup.collectAsState()
-        LaunchedEffect(isImeSetUp, openFloatingButtonAfterSetup) {
-            if (isImeSetUp && openFloatingButtonAfterSetup) {
-                prefs.internal.openFloatingButtonAfterSetup.set(false)
-                navController.navigate(Routes.Settings.DictateFloatingButton)
-            }
-        }
-
         CompositionLocalProvider(
             LocalNavController provides navController,
             LocalPreviewFieldController provides previewFieldController,

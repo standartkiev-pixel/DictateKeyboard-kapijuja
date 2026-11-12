@@ -82,6 +82,7 @@ import dev.patrickgold.florisboard.app.settings.dictate.AudioPlaybackRow
 import dev.patrickgold.florisboard.app.settings.dictate.rememberAudioPlayer
 import dev.patrickgold.florisboard.dictate.DictateLanguages
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistorySource
+import dev.patrickgold.florisboard.driver.autoread.AutoReadController
 import dev.patrickgold.florisboard.dictate.data.history.DictateHistoryStore
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptsDatabaseHelper
@@ -764,9 +765,17 @@ private fun openProviderSettings(context: Context) {
     }
 }
 
+/**
+ * Copies the transcript. Android has no documented clipboard limit, but a clip travels in one binder
+ * transaction (about 1 MB), so a transcript of several hours can be refused: say so instead of
+ * crashing, since "save" and "share" still work for it.
+ */
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-    clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text))
+    // Our own transcript is not something auto-read should read back.
+    AutoReadController.noteOwnCopy(text)
+    val copied = runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text)) }.isSuccess
+    if (!copied) Toast.makeText(context, R.string.dictate__import_copy_failed, Toast.LENGTH_LONG).show()
 }
 
 private fun shareText(context: Context, text: String) {
