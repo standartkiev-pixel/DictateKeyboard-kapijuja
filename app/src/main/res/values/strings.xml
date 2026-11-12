@@ -2307,7 +2307,6 @@
     <string name="speech__autoread_countdown">Reading the copied text in %1$d s</string>
     <string name="speech__autoread_reading">Reading the copied text…</string>
     <string name="speech__autoread_cancel">Cancel</string>
-    <string name="speech__autoread_disable">Turn off auto-read</string>
     <string name="speech__autoread_notification_title">Reading the copied text in</string>
     <string name="speech__autoread_channel">Auto-read countdown</string>
     <string name="speech__autoread_enabled_toast">Auto-read is on</string>
@@ -2344,7 +2343,24 @@
     <string name="speech__autoread_outcome_link">skipped, a link</string>
     <string name="speech__autoread_outcome_locked">skipped, screen locked</string>
     <string name="speech__autoread_outcome_dictating">skipped, dictation in progress</string>
-    <string name="pref__speech__autoread_note">The countdown window needs “Display over other apps” (or the Dictate accessibility service); otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
+    <string name="pref__speech__autoread_note">The window needs “Display over other apps”; otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
     <string name="settings__theme__manage_themes">Manage themes</string>
     <string name="dictate__import_copy_failed">The transcript is too long for the clipboard. Use Save or Share instead.</string>
+    <string name="pref__speech__chatgpt__label">Read aloud with ChatGPT</string>
+    <string name="pref__speech__chatgpt__summary">OpenAI voice with the same key as dictation. Off: the Android voice.</string>
+    <string name="pref__speech__openai_key_shared">The dictation key is used ({key})</string>
+    <string name="pref__speech__model_default">Default ({model})</string>
+    <string name="speech__models_loading">Loading models…</string>
+    <string name="speech__voice_listen">Listen</string>
+    <string name="pref__speech__android_voice_note">Android does not report whether a voice is male or female. Tap the speaker next to a voice to hear it. “Offline” voices work without internet.</string>
+    <string name="speech__android_voice_numbered">voice %1$d</string>
+    <string name="speech__android_voice_default">default voice</string>
+    <string name="speech__android_voice_offline">offline</string>
+    <string name="speech__android_voice_online">needs internet</string>
+    <string name="speech__autoread_countdown_paused">Paused before reading</string>
+    <string name="speech__autoread_reading_paused">Reading paused</string>
+    <string name="speech__autoread_pause">Pause</string>
+    <string name="speech__autoread_resume">Continue</string>
+    <string name="speech__autoread_stop">Stop</string>
+    <string name="speech__autoread_disable_short">Turn off</string>
 </resources>

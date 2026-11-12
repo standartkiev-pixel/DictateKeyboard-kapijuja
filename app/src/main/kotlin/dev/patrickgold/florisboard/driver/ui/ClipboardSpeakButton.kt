@@ -55,11 +55,7 @@ fun ClipboardSpeakButton(item: ClipboardItem, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val state by SpeechCoordinator.state.collectAsState()
     val key = "clip-${item.id}"
-    val active = when (val s = state) {
-        is SpeechCoordinator.State.Preparing -> s.key == key
-        is SpeechCoordinator.State.Speaking -> s.key == key
-        SpeechCoordinator.State.Idle -> false
-    }
+    val active = SpeechCoordinator.keyOf(state) == key
     val label = stringRes(if (active) R.string.speech__stop else R.string.speech__speak_clip)
     Box(
         modifier = modifier

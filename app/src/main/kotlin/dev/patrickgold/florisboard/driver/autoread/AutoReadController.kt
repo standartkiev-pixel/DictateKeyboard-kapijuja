@@ -15,7 +15,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.view.WindowManager
 import android.os.SystemClock
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -32,7 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showShortToast
 
@@ -59,6 +58,10 @@ object AutoReadController {
     private var prompt: AutoReadPrompt? = null
     private var generation = 0L
 
+    // Only touched on the main thread: by the countdown coroutine and by the window's buttons.
+    private var countingDown = false
+    private var countdownPaused = false
+
     /** The last text this app itself put on the clipboard; never read back to the user. */
     @Volatile
     private var ownCopy: String? = null
@@ -79,9 +82,24 @@ object AutoReadController {
         }
     }
 
+    /**
+     * The left button of the window: holds the countdown, or the reading once it has started, and
+     * continues it on the next press.
+     */
+    fun togglePause() {
+        val context = appContext ?: return
+        if (countingDown) {
+            countdownPaused = !countdownPaused
+        } else if (SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true) {
+            SpeechCoordinator.togglePause(context)
+        }
+    }
+
     /** Cancels the pending countdown or the auto-reading in progress; the next copy works again. */
     fun cancelCurrent() {
         generation++
+        countingDown = false
+        countdownPaused = false
         job?.cancel()
         job = null
         prompt?.hide()
@@ -138,24 +156,33 @@ object AutoReadController {
         val text = item.text.orEmpty()
         val key = "$KEY_PREFIX$myGeneration"
         val delaySeconds = prefs.speech.autoReadDelaySec.get().coerceIn(1, 30)
-        val shownPrompt = createPrompt(context, delaySeconds)
+        val shownPrompt = createPrompt(context)
         prompt = shownPrompt
         job = scope.launch {
             try {
-                val deadline = SystemClock.elapsedRealtime() + delaySeconds * 1000L
-                while (true) {
-                    val left = deadline - SystemClock.elapsedRealtime()
-                    if (left <= 0) break
-                    shownPrompt.showCountdown(((left + 999) / 1000).toInt())
+                // A paused countdown simply stops losing time, so the remaining time is counted
+                // down here instead of being compared with a fixed deadline.
+                var left = delaySeconds * 1000L
+                var last = SystemClock.elapsedRealtime()
+                countingDown = true
+                countdownPaused = false
+                while (left > 0) {
+                    shownPrompt.showCountdown(((left + 999) / 1000).toInt(), countdownPaused)
                     delay(minOf(left, 200L))
+                    val now = SystemClock.elapsedRealtime()
+                    if (!countdownPaused) left -= now - last
+                    last = now
                 }
+                countingDown = false
                 if (generation != myGeneration || !prefs.speech.autoReadEnabled.get()) return@launch
                 if (DictateController.state.value is DictateController.UiState.Recording) return@launch
-                shownPrompt.showReading()
                 SpeechCoordinator.speak(context, text, key)
-                SpeechCoordinator.state.first { !SpeechCoordinator.isActive(key) }
+                SpeechCoordinator.state
+                    .takeWhile { SpeechCoordinator.keyOf(it) == key }
+                    .collect { shownPrompt.showReading(paused = it is SpeechCoordinator.State.Paused) }
             } finally {
                 if (generation == myGeneration) {
+                    countingDown = false
                     shownPrompt.hide()
                     prompt = null
                     job = null
@@ -164,17 +191,17 @@ object AutoReadController {
         }
     }
 
-    private fun createPrompt(context: Context, delaySeconds: Int): AutoReadPrompt {
+    private fun createPrompt(context: Context): AutoReadPrompt {
         // A window with "display over other apps", otherwise a heads-up notification.
         if (canDrawOverlays(context)) {
             return OverlayAutoReadPrompt(
-                serviceContext = context,
-                windowType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                context = context,
+                onPauseToggle = { togglePause() },
                 onCancel = { cancelCurrent() },
                 onDisable = { disable(context) },
             )
         }
-        return NotificationAutoReadPrompt(context, delaySeconds)
+        return NotificationAutoReadPrompt(context)
     }
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
