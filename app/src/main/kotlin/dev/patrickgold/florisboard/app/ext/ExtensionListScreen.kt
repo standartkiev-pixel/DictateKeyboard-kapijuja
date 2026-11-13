@@ -88,7 +88,7 @@ enum class ExtensionListScreenType(
 }
 
 @Composable
-fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = FlorisScreen {
+fun ExtensionListScreen(type: ExtensionListScreenType) = FlorisScreen {
     title = stringRes(type.titleResId)
     previewFieldVisible = false
     scrollable = false
@@ -112,14 +112,6 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
             state = listState,
             contentPadding = PaddingValues(bottom = fabHeightDp),
         ) {
-            if (showUpdate) {
-                item {
-                    ImportExtensionBox(navController)
-                }
-                item {
-                    UpdateBox(extensionIndex = extensionIndex)
-                }
-            }
             items(extensionIndex) { ext ->
                 FlorisOutlinedBox(
                     modifier = Modifier.defaultFlorisOutlinedBox(),

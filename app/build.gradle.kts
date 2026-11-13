@@ -76,20 +76,15 @@ configure<ApplicationExtension> {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // sherpa-onnx on-device STT (issue #104): ship the ABIs the vendored native libs cover —
-        // arm64-v8a (modern phones), armeabi-v7a (older 32-bit devices) and x86_64.
-        //
-        // x86_64 exists for emulators rather than for hardware: without it Play reports the app as
-        // incompatible on every emulator image, which rules out rehearsing a purchase on a throwaway
-        // account. Real users pay nothing for it — the bundle is split per architecture, so a phone
-        // only ever downloads the libraries it can run. See tools/fetch-sherpa-onnx.sh.
+        // sherpa-onnx / ONNX Runtime native libs (issue #104) are ~30 MB per ABI and are stored
+        // uncompressed. This fork is distributed as one directly installed APK (no Play per-ABI
+        // splits), so it ships arm64-v8a only: every extra ABI would be dead weight on the phone.
+        // Keep in sync with verifySherpaOnnxLibs below and tools/fetch-sherpa-onnx.sh.
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            abiFilters += listOf("arm64-v8a")
         }
 
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
-        buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
-        buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
 
         sourceSets {
             maybeCreate("main").apply {
@@ -154,6 +149,12 @@ configure<ApplicationExtension> {
 
             isDebuggable = true
             isJniDebuggable = false
+
+            // This is the build people install, so it is shrunk like a release: unused code and
+            // resources are dropped (names are kept, see -dontobfuscate in the rules file).
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
 
         create("beta") {
@@ -314,10 +315,9 @@ val verifySherpaOnnxLibs by tasks.registering {
     val required = buildList {
         add(projectDir.file("libs/sherpa-onnx-1.13.3.jar").asFile)
         add(projectDir.file("libs/onnxruntime-android-1.24.3.jar").asFile)
-        // Must match the abiFilters above. A missing ABI here would not fail the build — it would
-        // produce a split for that architecture carrying no sherpa-onnx at all, which installs
-        // happily and then dies the first time on-device transcription or the VAD is touched.
-        for (abi in listOf("arm64-v8a", "armeabi-v7a", "x86_64")) {
+        // Must match the abiFilters above: a missing library would not fail the build, it would
+        // install happily and then die the first time on-device transcription or the VAD is touched.
+        for (abi in listOf("arm64-v8a")) {
             add(projectDir.file("src/main/jniLibs/$abi/libonnxruntime.so").asFile)
             add(projectDir.file("src/main/jniLibs/$abi/libonnxruntime4j_jni.so").asFile)
             add(projectDir.file("src/main/jniLibs/$abi/libsherpa-onnx-jni.so").asFile)

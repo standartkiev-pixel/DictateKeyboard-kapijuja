@@ -24,9 +24,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,8 +55,10 @@ import dev.patrickgold.florisboard.app.settings.dictate.TextInputPreference
 import dev.patrickgold.florisboard.driver.autoread.AutoReadController
 import dev.patrickgold.florisboard.driver.speech.GeminiSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiRealtimeSpeechSource
+import dev.patrickgold.florisboard.driver.speech.OpenAiSpeechModels
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.driver.speech.SpeechEngineId
+import dev.patrickgold.florisboard.driver.speech.SpeechSettings
 import dev.patrickgold.florisboard.driver.speech.SpeechVoice
 import dev.patrickgold.florisboard.driver.speech.SpeechVoiceCatalog
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -131,6 +136,21 @@ fun SpeechSettingsScreen() = FlorisScreen {
             Note(stringRes(R.string.pref__speech__autoread_note))
         }
 
+        // The short way to the one cloud voice most people want; the full list is right below.
+        val engineScope = rememberCoroutineScope()
+        val setChatGpt: (Boolean) -> Unit = { on ->
+            engineScope.launch {
+                prefs.speech.engine.set(if (on) SpeechEngineId.OPENAI else SpeechEngineId.ANDROID)
+            }
+        }
+        Preference(
+            title = stringRes(R.string.pref__speech__chatgpt__label),
+            summary = stringRes(R.string.pref__speech__chatgpt__summary),
+            onClick = { setChatGpt(engine != SpeechEngineId.OPENAI) },
+            trailing = {
+                Switch(checked = engine == SpeechEngineId.OPENAI, onCheckedChange = setChatGpt)
+            },
+        )
         ListPreference(
             prefs.speech.engine,
             icon = Icons.Default.RecordVoiceOver,
@@ -164,10 +184,7 @@ fun SpeechSettingsScreen() = FlorisScreen {
             },
         )
 
-        val sampleActive = speechState.let {
-            (it is SpeechCoordinator.State.Preparing && it.key == SAMPLE_KEY) ||
-                (it is SpeechCoordinator.State.Speaking && it.key == SAMPLE_KEY)
-        }
+        val sampleActive = SpeechCoordinator.keyOf(speechState) == SAMPLE_KEY
         val sampleText = stringRes(R.string.speech__sample_text)
         Preference(
             icon = if (sampleActive) Icons.Default.Stop else Icons.AutoMirrored.Filled.VolumeUp,
@@ -208,19 +225,7 @@ fun SpeechSettingsScreen() = FlorisScreen {
                 AndroidEngineSection()
             }
             SpeechEngineId.OPENAI -> PreferenceGroup(title = stringRes(R.string.speech__engine_openai)) {
-                TextInputPreference(
-                    pref = prefs.speech.openAiApiKey,
-                    title = stringRes(R.string.pref__speech__api_key__label),
-                    isSecret = true,
-                    summaryProvider = masked,
-                )
-                VoicePickerPreference(prefs.speech.openAiVoice, SpeechVoiceCatalog.openAi)
-                TextInputPreference(
-                    pref = prefs.speech.openAiModel,
-                    title = stringRes(R.string.pref__speech__model__label),
-                    placeholder = OpenAiRealtimeSpeechSource.DEFAULT_MODEL,
-                    summaryProvider = { it.ifBlank { OpenAiRealtimeSpeechSource.DEFAULT_MODEL } },
-                )
+                OpenAiSection(masked)
                 Note(stringRes(R.string.pref__speech__openai_note))
                 Note(stringRes(R.string.pref__speech__cloud_privacy))
             }
@@ -269,18 +274,57 @@ fun SpeechSettingsScreen() = FlorisScreen {
     }
 }
 
+/**
+ * OpenAI: the key (the dictation key when none is entered here), the voice, and the model picked
+ * from the list the account itself reports.
+ */
+@Composable
+private fun PreferenceUiScope<FlorisPreferenceModel>.OpenAiSection(masked: (String) -> String) {
+    val ownKey by prefs.speech.openAiApiKey.collectAsState()
+    val accounts by prefs.dictate.providerAccounts.collectAsState()
+    val dictationKey = remember(accounts) { SpeechSettings.dictationOpenAiKey(prefs) }
+    val effectiveKey = ownKey.trim().ifBlank { dictationKey }
+    val sharedKeyLabel = stringRes(R.string.pref__speech__openai_key_shared, "key" to masked(dictationKey))
+    TextInputPreference(
+        pref = prefs.speech.openAiApiKey,
+        title = stringRes(R.string.pref__speech__api_key__label),
+        isSecret = true,
+        summaryProvider = { key -> if (key.isBlank() && dictationKey.isNotBlank()) sharedKeyLabel else masked(key) },
+    )
+    VoicePickerPreference(prefs.speech.openAiVoice, SpeechVoiceCatalog.openAi)
+    val models by produceState<List<SpeechVoice>?>(initialValue = null, effectiveKey) {
+        value = null
+        value = if (effectiveKey.isBlank()) {
+            emptyList()
+        } else {
+            runCatching { OpenAiSpeechModels.fetch(effectiveKey) }.getOrDefault(emptyList()).map { SpeechVoice(it, it) }
+        }
+    }
+    val defaultModel = stringRes(R.string.pref__speech__model_default, "model" to OpenAiRealtimeSpeechSource.DEFAULT_MODEL)
+    VoicePickerPreference(
+        pref = prefs.speech.openAiModel,
+        voices = listOf(SpeechVoice("", defaultModel)) + models.orEmpty(),
+        title = stringRes(R.string.pref__speech__model__label),
+        loadingLabel = if (models == null) stringRes(R.string.speech__models_loading) else null,
+    )
+}
+
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
 @Composable
 private fun PreferenceUiScope<FlorisPreferenceModel>.AndroidEngineSection() {
     val context = LocalContext.current
     val enginePackage by prefs.speech.androidEngine.collectAsState()
+    val language by prefs.speech.language.collectAsState()
+    val sampleText = stringRes(R.string.speech__sample_text)
     val loading = stringRes(R.string.speech__voices_loading)
     val engines by produceState<List<SpeechVoice>?>(initialValue = null) {
         value = runCatching { SpeechCoordinator.androidEngine(context).engines() }.getOrDefault(emptyList())
     }
-    val voices by produceState<List<SpeechVoice>?>(initialValue = null, enginePackage) {
+    val voices by produceState<List<SpeechVoice>?>(initialValue = null, enginePackage, language) {
         value = null
-        value = runCatching { SpeechCoordinator.androidEngine(context).voices(enginePackage) }.getOrDefault(emptyList())
+        value = runCatching {
+            SpeechCoordinator.androidEngine(context).voices(enginePackage, language)
+        }.getOrDefault(emptyList())
     }
     val systemDefault = stringRes(R.string.speech__system_default)
     VoicePickerPreference(
@@ -295,7 +339,14 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.AndroidEngineSection() {
         voices = listOf(SpeechVoice("", stringRes(R.string.speech__voice_by_language))) + voices.orEmpty(),
         allowCustom = false,
         loadingLabel = if (voices == null) loading else null,
+        // Android does not say what a voice sounds like, so every one can be heard before choosing.
+        onPreview = { voice ->
+            SpeechCoordinator.speak(context, sampleText, SAMPLE_KEY) {
+                it.copy(engine = SpeechEngineId.ANDROID, androidEnginePackage = enginePackage, androidVoice = voice.id)
+            }
+        },
     )
+    Note(stringRes(R.string.pref__speech__android_voice_note))
     DialogSliderPreference(
         prefs.speech.androidPitchPercent,
         title = stringRes(R.string.pref__speech__android_pitch__label),
@@ -317,6 +368,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.VoicePickerPreference(
     title: String = stringRes(R.string.pref__speech__voice__label),
     allowCustom: Boolean = true,
     loadingLabel: String? = null,
+    onPreview: ((SpeechVoice) -> Unit)? = null,
 ) {
     val value by pref.collectAsState()
     val scope = rememberCoroutineScope()
@@ -362,7 +414,15 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.VoicePickerPreference(
                             custom = ""
                         },
                     )
-                    Text(voice.label, modifier = Modifier.padding(start = 4.dp))
+                    Text(voice.label, modifier = Modifier.weight(1f).padding(start = 4.dp))
+                    if (onPreview != null) {
+                        IconButton(onClick = { onPreview(voice) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = stringRes(R.string.speech__voice_listen),
+                            )
+                        }
+                    }
                 }
             }
             if (allowCustom) {

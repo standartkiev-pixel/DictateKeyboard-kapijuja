@@ -42,6 +42,12 @@ data class SpeechSettings(
     override fun toString(): String = "SpeechSettings(engine=$engine, speed=$speed)" // never print keys
 
     companion object {
+        /** The key of the OpenAI account in the dictation providers, or blank when there is none. */
+        fun dictationOpenAiKey(prefs: FlorisPreferenceModel): String =
+            prefs.dictate.providerAccounts.get()[OPENAI_PROVIDER_ID]?.apiKey.orEmpty().trim()
+
+        private const val OPENAI_PROVIDER_ID = "openai"
+
         fun from(prefs: FlorisPreferenceModel): SpeechSettings {
             val s = prefs.speech
             return SpeechSettings(
@@ -53,7 +59,8 @@ data class SpeechSettings(
                 androidEnginePackage = s.androidEngine.get().trim(),
                 androidVoice = s.androidVoice.get().trim(),
                 androidPitch = s.androidPitchPercent.get() / 100f,
-                openAiKey = s.openAiApiKey.get().trim(),
+                // No separate key for reading: use the OpenAI key dictation already has.
+                openAiKey = s.openAiApiKey.get().trim().ifBlank { dictationOpenAiKey(prefs) },
                 openAiModel = s.openAiModel.get().trim().ifBlank { OpenAiRealtimeSpeechSource.DEFAULT_MODEL },
                 openAiVoice = s.openAiVoice.get().trim().ifBlank { "marin" },
                 azureKey = s.azureKey.get().trim(),

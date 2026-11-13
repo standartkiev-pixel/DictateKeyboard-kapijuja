@@ -19,7 +19,6 @@ SCREEN_ROUTE = {
     "DictateLayoutScreen": "Routes.Settings.DictateLayout",
     "DictateStatsScreen": "Routes.Settings.DictateStats",
     "DictateHistoryScreen": "Routes.Settings.DictateHistory",
-    "DictateFloatingButtonScreen": "Routes.Settings.DictateFloatingButton",
     "DictatePromptLibraryScreen": "Routes.Settings.DictatePromptLibrary",
     "DictatePromptsScreen": "Routes.Settings.DictatePrompts()",
     "LocalizationScreen": "Routes.Settings.Localization",
@@ -44,7 +43,7 @@ DICTATE = "R.string.dictate__title"
 PARENT = {}
 for s in ["DictateLanguagesScreen","DictateProvidersScreen","DictateMappingsScreen","DictateProxyScreen",
           "DictateWearScreen","DictateRewordingScreen","DictateFormattingScreen","DictateRecordingScreen",
-          "DictateOutputScreen","DictateLayoutScreen","DictateStatsScreen","DictateHistoryScreen","DictateFloatingButtonScreen",
+          "DictateOutputScreen","DictateLayoutScreen","DictateStatsScreen","DictateHistoryScreen",
           "DictatePromptLibraryScreen","DictatePromptsScreen"]:
     PARENT[s] = DICTATE
 for s in ["PhysicalKeyboardScreen","BackupScreen","RestoreScreen"]:

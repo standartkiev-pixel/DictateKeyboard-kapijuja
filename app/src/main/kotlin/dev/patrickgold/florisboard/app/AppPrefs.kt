@@ -23,12 +23,10 @@ import dev.patrickgold.florisboard.app.settings.theme.ColorPreferenceSerializer
 import dev.patrickgold.florisboard.app.settings.theme.DisplayKbdAfterDialogs
 import dev.patrickgold.florisboard.app.settings.theme.SnyggLevel
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
-import dev.patrickgold.florisboard.dictate.DictateFloatingButtonDesign
 import dev.patrickgold.florisboard.driver.speech.SpeechEngineId
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
 import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
-import dev.patrickgold.florisboard.dictate.DictateFloatingButtonSize
 import dev.patrickgold.florisboard.dictate.DictateLegacyLayout
 import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.dictate.DictateRecordingAnimation
@@ -36,7 +34,6 @@ import dev.patrickgold.florisboard.dictate.DictateReasoningEffort
 import dev.patrickgold.florisboard.dictate.data.mappings.DictateMappings
 import dev.patrickgold.florisboard.dictate.gif.GifContentFilter
 import dev.patrickgold.florisboard.dictate.gif.GifHistory
-import dev.patrickgold.florisboard.dictate.overlay.BubbleAnchors
 import dev.patrickgold.florisboard.dictate.provider.DictateProxyType
 import dev.patrickgold.florisboard.dictate.provider.ProviderAccounts
 import dev.patrickgold.florisboard.dictate.sticker.StickerHistory
@@ -529,95 +526,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = false,
         )
 
-        // Floating dictation button (issue #88): the in-app master toggle. The bubble only shows when
-        // this is on AND the DictateAccessibilityService is enabled in the system accessibility settings
-        // (the latter is the actual permission; this lets the user hide the bubble without digging into
-        // system settings). Default off — opt-in feature.
-        val floatingButtonEnabled = boolean(
-            key = "dictate__floating_button_enabled",
-            default = false,
-        )
-        // Whether the floating button also shows while the Dictate keyboard itself is the active input
-        // method. Default off: when our own keyboard is up it already has a mic key, so the bubble would
-        // be redundant; turning this on shows it everywhere regardless of the active keyboard.
-        val floatingButtonShowWithDictateKeyboard = boolean(
-            key = "dictate__floating_button_show_with_dictate_keyboard",
-            default = false,
-        )
-        // Visual style of the floating button: a compact ring (RING) or a bubble that expands into a pill
-        // with a timer + live waveform while active (PILL). See DictateFloatingButtonDesign.
-        val floatingButtonDesign = enum(
-            key = "dictate__floating_button_design",
-            default = DictateFloatingButtonDesign.PILL,
-        )
-        // Overall size of the floating button (scales the skin dimensions).
-        val floatingButtonSize = enum(
-            key = "dictate__floating_button_size",
-            default = DictateFloatingButtonSize.MEDIUM,
-        )
-        // Whether the floating button snaps to the nearest screen edge after being dragged. Default on;
-        // turn off to leave it wherever it is dropped (still kept within the screen bounds).
-        val floatingButtonSnapToEdge = boolean(
-            key = "dictate__floating_button_snap_to_edge",
-            default = true,
-        )
-        // Accent color of the floating button (idle/transcribing visuals). Defaults to the Dictate light blue.
-        val floatingButtonColor = custom(
-            key = "dictate__floating_button_color",
-            default = Color(0xFF30B7E6),
-            serializer = ColorPreferenceSerializer,
-        )
-        // Fade + shrink the button to a small dot after a few seconds of inactivity; tap to restore.
-        val floatingButtonAutoDim = boolean(
-            key = "dictate__floating_button_auto_dim",
-            default = true,
-        )
-        // Remember the button's position separately per app.
-        val floatingButtonRememberPosition = boolean(
-            key = "dictate__floating_button_remember_position",
-            default = true,
-        )
-        // The remembered positions themselves (issue #323). Each is an anchor — a side of the screen plus
-        // a share of the travel — not a pixel pair, so a position keeps its meaning when the screen it was
-        // made on changes shape: a rotation, a foldable opening, a move into split screen. Persisted
-        // because the map used to live in the accessibility service and nowhere else, which made
-        // "remember" true only until that service was next restarted.
-        val floatingButtonPositions = custom(
-            key = "dictate__floating_button_positions",
-            default = BubbleAnchors.Empty,
-            serializer = BubbleAnchors.Serializer,
-        )
-        // Vibrate briefly when the button is tapped.
-        val floatingButtonHaptic = boolean(
-            key = "dictate__floating_button_haptic",
-            default = true,
-        )
-        // Optional undo control on the floating button (issue #133): when on, an undo button appears
-        // next to the bubble after a dictation and removes the last inserted text in one tap. Off by
-        // default to keep the overlay minimal; needs "remember last dictation" to have something to undo.
-        val floatingButtonUndoEnabled = boolean(
-            key = "dictate__floating_button_undo_enabled",
-            default = false,
-        )
-        // Safety net (issue #214): unconditionally copy every floating-button dictation to the system
-        // clipboard, so nothing is lost if the accessibility insert is silently swallowed (the known
-        // "green check but no text" failure) — the user can then just paste it manually. Off by default
-        // because it overwrites the clipboard on every dictation (and shows a system clipboard toast on
-        // some OEMs like Samsung).
-        val floatingButtonCopyToClipboard = boolean(
-            key = "dictate__floating_button_copy_to_clipboard",
-            default = false,
-        )
-        // Whether the user has opened the floating-button screen at least once (clears the "New" badge).
-        val floatingButtonHintSeen = boolean(
-            key = "dictate__floating_button_hint_seen",
-            default = false,
-        )
-        // App version whose one-time floating-button Smartbar spotlight has already been shown.
-        val floatingButtonSpotlightVersion = string(
-            key = "dictate__floating_button_spotlight_version",
-            default = "",
-        )
         // --- Output behavior (roadmap section 10) ------------------------------------------------
         // Press Enter / trigger the editor action automatically after committing a transcription.
         val autoEnter = boolean(
@@ -1299,13 +1207,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val isImeSetUp = boolean(
             key = "internal__is_ime_set_up",
-            default = false,
-        )
-        // One-shot signal set by the onboarding's optional floating-button step: completing setup flips
-        // [isImeSetUp], which rebuilds the nav graph and resets the back stack to Home; this flag lets
-        // FlorisAppActivity then navigate on to the floating-button settings once that reset has settled.
-        val openFloatingButtonAfterSetup = boolean(
-            key = "internal__open_floating_button_after_setup",
             default = false,
         )
         // Newline-separated most-recent settings-search queries (newest first), for the search screen's

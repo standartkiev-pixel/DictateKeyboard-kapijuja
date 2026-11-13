@@ -682,7 +682,9 @@ private fun historyRowMeta(entry: DictateHistoryEntry): String {
 
 private fun copyToClipboard(context: Context, text: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    cm.setPrimaryClip(ClipData.newPlainText("Dictate", text))
+    // Our own history entry is not something auto-read should read back.
+    dev.patrickgold.florisboard.driver.autoread.AutoReadController.noteOwnCopy(text)
+    runCatching { cm.setPrimaryClip(ClipData.newPlainText("Dictate", text)) }
 }
 
 private fun shareText(context: Context, text: String) {

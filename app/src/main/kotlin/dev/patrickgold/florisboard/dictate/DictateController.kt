@@ -11,8 +11,6 @@
 package dev.patrickgold.florisboard.dictate
 
 import android.content.BroadcastReceiver
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.ContentValues
 import android.content.Context
 import android.content.IntentFilter
@@ -69,8 +67,6 @@ import dev.patrickgold.florisboard.dictate.provider.ProviderPreset
 import dev.patrickgold.florisboard.dictate.provider.ProviderRegistry
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionApi
 import dev.patrickgold.florisboard.dictate.provider.TranscriptionRequest
-import dev.patrickgold.florisboard.dictate.overlay.AccessibilitySink
-import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.dictate.provider.chatModelFor
 import dev.patrickgold.florisboard.dictate.provider.chatModelIsPresetDefault
 import dev.patrickgold.florisboard.dictate.provider.singleCallApplies
@@ -79,7 +75,6 @@ import dev.patrickgold.florisboard.dictate.snippet.SnippetTriggers
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.AppVersionUtils
-import dev.patrickgold.florisboard.lib.util.VersionName
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.CancellationException
@@ -231,14 +226,14 @@ object DictateController {
      * CHANGELOG is shown right after an app update (see [maybePromptChangelog]) and opens the in-app
      * "What's new" dialog instead of a web page.
      */
-    enum class PromoKind { RATE, DONATE, CHANGELOG, FLOATING_BUTTON, MILESTONE }
+    enum class PromoKind { RATE, DONATE, CHANGELOG, MILESTONE }
 
     /**
-     * Where the active dictation's output goes: the keyboard editor ([OutputTarget.IME]) or the
-     * accessibility-injected field of the floating button ([OutputTarget.OVERLAY], issue #88). Set when a
-     * dictation starts (the mic-tap entry points carry their source); the two never drive concurrently.
+     * Where the active dictation's output goes: the keyboard editor ([OutputTarget.IME]) or back to the
+     * OS through the system voice-input service ([OutputTarget.RECOGNITION_SERVICE], issue #67). Set when
+     * a dictation starts (the mic-tap entry points carry their source); the two never drive concurrently.
      */
-    enum class OutputTarget { IME, OVERLAY, RECOGNITION_SERVICE }
+    enum class OutputTarget { IME, RECOGNITION_SERVICE }
 
     /**
      * One recognizer offered for a single History replay. [active] marks the user's normal provider;
@@ -258,12 +253,6 @@ object DictateController {
      * version name carries an unparseable suffix). MUST be false for any committed/shipped build.
      */
     private const val DEBUG_FORCE_CHANGELOG_NUDGE = false
-
-    /** Forces the floating-button spotlight regardless of gates (testing only). MUST be false for shipped builds. */
-    private const val DEBUG_FORCE_FB_SPOTLIGHT = false
-
-    /** This build's release, patch level dropped — the bucket the once-per-release nudges are keyed on. */
-    private val FEATURE_VERSION_NAME = VersionName.featureVersionOf(BuildConfig.VERSION_NAME)
 
     private val prefs by FlorisPreferenceStore
 
@@ -443,13 +432,8 @@ object DictateController {
             var prev: UiState = initial
             _state.collect { new ->
                 when {
-                    // Record started — skipped for the floating button when its own tap already buzzed
-                    // (no double buzz); a resend enters at Transcribing so it never matches here.
-                    new is UiState.Recording && prev !is UiState.Recording -> {
-                        val buttonAlreadyBuzzed = outputTarget == OutputTarget.OVERLAY &&
-                            prefs.dictate.floatingButtonHaptic.get()
-                        if (!buttonAlreadyBuzzed) DictateHaptics.short(appContext)
-                    }
+                    // Record started; a resend enters at Transcribing so it never matches here.
+                    new is UiState.Recording && prev !is UiState.Recording -> DictateHaptics.short(appContext)
                     // Record stopped → transcribing (a resend is Idle→Transcribing and is ignored).
                     prev is UiState.Recording && new is UiState.Transcribing -> DictateHaptics.short(appContext)
                     // Transcription ready (heading to commit/idle or on to a rewording pass) — not on failure.
@@ -1762,7 +1746,7 @@ object DictateController {
         // including the early returns below (no key / model not downloaded) — log the same info.
         val historyProviderName = account.displayName.ifBlank { preset.displayName }
         val historyLanguage = prefs.dictate.activeInputLanguage.get().takeIf { it != DictateLanguages.DETECT } ?: ""
-        val historySource = if (outputTarget == OutputTarget.OVERLAY) DictateHistorySource.OVERLAY else source
+        val historySource = source
         // Logs the failed dictation with its audio (safety net, issue #140) unless this is a replay, then
         // drops the cache file. Async so the early-return callers don't block.
         fun logFailureAndDrop() {
@@ -2203,57 +2187,12 @@ object DictateController {
             // Realtime (#128): replace the live-streamed preview with the finished (reworded) result via the
             // minimal diff, then honor auto-enter — instead of committing on top of the preview.
             val outSink = sink(appContext)
-            // Off the main thread for the overlay, like every other accessibility write: this one ends
-            // in the same resolve-focus-write-verify round trip (see [writeToSink]).
-            val landed = if (outputTarget == OutputTarget.OVERLAY) {
-                withContext(Dispatchers.IO) {
-                    outSink.commitDictationFinal(outputText, realtimeShown.toString())
-                }
-            } else {
-                outSink.commitDictationFinal(outputText, realtimeShown.toString())
-            }
+            outSink.commitDictationFinal(outputText, realtimeShown.toString())
             realtimeShown.setLength(0)
-            // This branch never went through commitOutput, so it never saw the insert-failure check
-            // either (issue #277) — a swallowed write finished as Idle, i.e. a green check.
-            if (reportOverlayInsertFailure(appContext, landed, outputText)) {
-                rememberLastDictation(outputText)
-                recordHistory(appContext, outputText, originalForHistory, recordedSeconds, capture, reworded = live)
-                discardRetainedAudio()
-                return
-            }
             if (prefs.dictate.autoEnter.get() && outputText.isNotEmpty()) outSink.performEnter()
         } else {
-            // Safety net (#214): for the floating button, optionally copy every dictation to the system
-            // clipboard so nothing is lost if the accessibility insert is silently swallowed (the known
-            // "green check but no text" case). Done BEFORE the commit on purpose: the paste-fallback captures
-            // the current clipboard as "previous" and restores it 400 ms later, so with our text already on
-            // the clipboard that restore becomes a no-op instead of wiping the copy.
-            if (outputTarget == OutputTarget.OVERLAY && outputText.isNotEmpty() &&
-                prefs.dictate.floatingButtonCopyToClipboard.get()
-            ) {
-                copyToSystemClipboard(appContext, outputText)
-            }
             val committed = commitOutput(appContext, outputText)
             if (committed) latencyTrace?.let { logLatency(it, "outputCommitted") }
-            // Floating button (#156): the accessibility insert can be silently swallowed by some app fields
-            // (Gemini's Compose box, WebViews). Don't flash a false green check — surface an error, and
-            // put the text somewhere the user can actually reach.
-            if (!committed && outputTarget == OutputTarget.OVERLAY && outputText.isNotEmpty()) {
-                rememberLastDictation(outputText)
-                if (capture?.isReplay != true) {
-                    DictateStats.recordDictation(prefs, outputText, recordedSeconds)
-                    if (recordedSeconds > 0L) creditAudioSeconds(recordedSeconds)
-                }
-                recordHistory(appContext, outputText, originalForHistory, recordedSeconds, capture, reworded = live)
-                discardRetainedAudio()
-                // The clipboard is the recovery route, and only here (issue #277). The old message sent
-                // people to "Reinsert", which lives in the Dictate keyboard — unreachable for exactly the
-                // people who hit this, since they are using the floating button with another keyboard.
-                // Copying on failure alone keeps the clipboard (and the Samsung toast) out of the way of
-                // everyone whose insert works; the always-copy setting (#214) stays what it is.
-                reportOverlayInsertFailure(appContext, committed, outputText)
-                return
-            }
         }
         // Re-insert safety net (issue #111) + lifetime stats (issue #142) + history log (issue #140).
         rememberLastDictation(outputText)
@@ -2266,44 +2205,12 @@ object DictateController {
         if (reportSwallowedRewording(appContext)) return
         _state.value = UiState.Idle
         // Both nudges are Smartbar chips: they can only be seen, tapped and dismissed on the keyboard.
-        // Arming one after a dictation that did not come from the keyboard parked the state machine in a
-        // state nothing outside the keyboard can clear — which, for the floating button, meant it read
-        // "a dictation is running" and stayed on screen over every app for good (#339). The nudges are
-        // not lost: the keyboard asks for them again on every open, and a milestone stays pending until
-        // it is actually shown.
+        // Arming one after a dictation that did not come from the keyboard would park the state machine
+        // in a state nothing outside the keyboard can clear (#339). The nudges are not lost: the keyboard
+        // asks for them again on every open, and a milestone stays pending until it is actually shown.
         if (outputTarget == OutputTarget.IME && !showMilestoneNudge(appContext)) {
             maybePromptForReview()
         }
-    }
-
-    /** Copies [text] to the system clipboard — the floating-button always-copy safety net (issue #214). */
-    /**
-     * A floating-button write the field refused: put the text on the clipboard and say so, instead of
-     * flashing a green check over nothing (issue #277).
-     *
-     * Returns whether it handled a failure, so callers can `if (reportOverlayInsertFailure(...)) return`.
-     * Only ever true for [OutputTarget.OVERLAY] — the keyboard writes through its own InputConnection
-     * and cannot silently no-op, and the recognition service has no field of its own.
-     */
-    private fun reportOverlayInsertFailure(context: Context, committed: Boolean, text: String): Boolean {
-        if (committed || outputTarget != OutputTarget.OVERLAY || text.isEmpty()) return false
-        copyToSystemClipboard(context, text)
-        _state.value = UiState.Error(
-            message = context.getString(R.string.dictate__error_overlay_insert_clipboard),
-        )
-        return true
-    }
-
-    private fun copyToSystemClipboard(context: Context, text: String) {
-        // Already there, so writing it again would buy nothing but a second "copied" notice. This is the
-        // normal case on the failure route: the paste attempt put the text on the clipboard moments ago,
-        // and then the failure handler goes to copy the very same text as the recovery route.
-        if (DictateAccessibilityService.lastClipText == text) return
-        val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
-        val copied = runCatching { clipboard.setPrimaryClip(ClipData.newPlainText("Dictate", text)) }
-        // Tell the overlay what is on the clipboard now, so a paste-based insert moments later does not
-        // write the identical text a second time either.
-        if (copied.isSuccess) DictateAccessibilityService.lastClipText = text
     }
 
     // --- Real-time streaming (issue #128) -------------------------------------------------------
@@ -2953,13 +2860,11 @@ object DictateController {
     /**
      * Resolves the output sink for the current dictation: where the finished text is written and how the
      * focused field is read. The keyboard's own editor ([ImeDictationSink]) for in-keyboard dictation, or
-     * an accessibility-backed sink ([dev.patrickgold.florisboard.dictate.overlay.AccessibilitySink]) when
-     * the dictation was started from the floating button (issue #88) and must inject into another app.
-     * This single seam keeps the rest of the engine editor-agnostic.
+     * the system voice-input callback ([RecognitionSink]). This single seam keeps the rest of the engine
+     * editor-agnostic.
      */
     private fun sink(context: Context): DictationSink = when (outputTarget) {
         OutputTarget.IME -> ImeDictationSink(context)
-        OutputTarget.OVERLAY -> AccessibilitySink()
         // System voice input (#67): the finished text is handed back to the OS via the RecognitionService
         // callback (the calling app/keyboard inserts it), not written into a field ourselves.
         OutputTarget.RECOGNITION_SERVICE -> RecognitionSink()
@@ -2979,14 +2884,14 @@ object DictateController {
         // System voice input (#67) returns the whole result at once — no typewriter animation, which only
         // makes sense when we're the one typing into a visible field.
         if (prefs.dictate.instantOutput.get() || outputTarget == OutputTarget.RECOGNITION_SERVICE) {
-            committed = writeToSink(sink, text)
+            committed = sink.commitText(text)
         } else {
             val perChar = perCharDelayMs(prefs.dictate.outputSpeed.get())
             val results = ArrayList<Boolean>(text.length)
             // Verify the first character only: it is the one [typedCommitLanded] judges, and a read-back
             // per character would be hundreds of extra round trips into the host app (issue #277).
             text.forEachIndexed { i, ch ->
-                results.add(writeToSink(sink, ch.toString(), verify = i == 0))
+                results.add(sink.commitText(ch.toString(), verify = i == 0))
                 delay(perChar)
             }
             committed = typedCommitLanded(results)
@@ -2998,22 +2903,6 @@ object DictateController {
         }
         return committed
     }
-
-    /**
-     * Writes into the sink, off the main thread when it goes through the accessibility service.
-     *
-     * A floating-button insert is not a quick call: it resolves the field, focuses it, writes, and then
-     * waits — sometimes a few hundred milliseconds — for the field to show the write. On the main thread
-     * that is the bubble visibly freezing mid-dictation, which is exactly what it looked like. The
-     * keyboard's own sink stays where it is: it talks to the editor through the IME's InputConnection,
-     * which belongs to this thread.
-     */
-    private suspend fun writeToSink(sink: DictationSink, text: String, verify: Boolean = true): Boolean =
-        if (outputTarget == OutputTarget.OVERLAY) {
-            withContext(Dispatchers.IO) { sink.commitText(text, verify) }
-        } else {
-            sink.commitText(text, verify)
-        }
 
     /**
      * Whether a character-by-character commit counts as having landed. **The first write decides.**
@@ -3205,13 +3094,12 @@ object DictateController {
     }
 
     /**
-     * True while a dictation the keyboard does not own is starting or running: the floating button (#88)
-     * or the system voice-input service (#67). Both deliberately outlive the keyboard window — that
-     * independence is the floating button's whole purpose.
+     * True while a dictation the keyboard does not own is starting or running: the system voice-input
+     * service (#67), which deliberately outlives the keyboard window.
      *
      * The live-dictation half of the check is not optional: [outputTarget] is latched by every start and
      * never reset, so on its own it would also silence the keyboard's ordinary idle teardown for the rest
-     * of the process's life after a single bubble dictation. [startJob] covers the gap between the tap and
+     * of the process's life after a single voice-input dictation. [startJob] covers the gap between the tap and
      * [UiState.Recording], during which audio focus, Bluetooth SCO and the realtime socket are still
      * opening — a rotation landing there would otherwise cancel a dictation that had just begun.
      */
@@ -3222,18 +3110,6 @@ object DictateController {
                 _state.value is UiState.Transcribing ||
                 _state.value is UiState.Rewording
             )
-
-    /**
-     * The floating button's service is going away (switched off in the system settings, unbound by the
-     * system) while it owns a dictation. Nobody is left to show or inject it, so it is finalized and kept
-     * here — the duty the keyboard used to discharge by accident, now carried by the owner (#293). No-op
-     * for a keyboard dictation: turning the accessibility service off must not take one of those with it.
-     */
-    fun stashRecordingOnOverlayGone(context: Context) {
-        if (outputTarget != OutputTarget.OVERLAY) return
-        if (_state.value !is UiState.Recording && startJob?.isActive != true) return
-        stashRecording(context)
-    }
 
     /**
      * Finalizes and keeps an in-progress recording instead of discarding it: the audio is stopped cleanly
@@ -3438,27 +3314,6 @@ object DictateController {
         if (text.isEmpty()) return
         sink(context).commitText(text)
         clearError()
-    }
-
-    /**
-     * Undo (issue #133): removes the last successful dictation from the focused field again — the
-     * inverse of [reinsertLastDictation]. Used by the floating button's optional undo control, so it
-     * outputs through the overlay sink. No-op while a recording/transcription/rewording is in flight,
-     * or when nothing is cached. On success the cache is cleared so a second tap can't delete unrelated
-     * text. Returns true when the field accepted the removal.
-     */
-    fun undoLastDictation(context: Context): Boolean {
-        if (_state.value is UiState.Recording || _state.value is UiState.Transcribing ||
-            _state.value is UiState.Rewording
-        ) return false
-        if (!prefs.dictate.rememberLastDictation.get()) return false
-        val text = prefs.dictate.lastDictation.get()
-        if (text.isEmpty()) return false
-        outputTarget = OutputTarget.OVERLAY
-        if (!sink(context).deleteLastText(text)) return false
-        scope.launch { prefs.dictate.lastDictation.set("") }
-        clearError()
-        return true
     }
 
     // --- Transcription history (issue #140) -----------------------------------------------------
@@ -3767,27 +3622,9 @@ object DictateController {
     }
 
     /**
-     * Shows a one-time Smartbar spotlight for the floating dictation button to users who have not enabled
-     * it yet, so existing users discover the feature. Tapping it deep-links straight to the floating-button
-     * settings screen (where the accessibility opt-in + disclosure live — it is never auto-enabled).
-     * Gated by a per-release flag; skipped once the user has enabled it or opened its screen. No-op unless idle.
-     *
-     * "Per release" means per *feature* release: a patch is meant to install unnoticed, and a spotlight
-     * reappearing the day after one would announce it just as loudly as an update notice would.
-     */
-    fun maybePromptFloatingButton(context: Context) {
-        if (_state.value !is UiState.Idle) return
-        if (!DEBUG_FORCE_FB_SPOTLIGHT) {
-            if (prefs.dictate.floatingButtonEnabled.get() || prefs.dictate.floatingButtonHintSeen.get()) return
-            if (prefs.dictate.floatingButtonSpotlightVersion.get() == FEATURE_VERSION_NAME) return
-        }
-        _state.value = UiState.Promo(PromoKind.FLOATING_BUTTON)
-    }
-
-    /**
      * Acts on the active promo and marks it done: RATE/DONATE open the Kapijuja project page,
-     * CHANGELOG opens the app (which then shows the "What's new" dialog), FLOATING_BUTTON deep-links to its
-     * settings screen. No-op otherwise.
+     * CHANGELOG opens the app (which then shows the "What's new" dialog), MILESTONE deep-links to the
+     * statistics screen. No-op otherwise.
      */
     fun acceptPromo(context: Context) {
         val kind = (_state.value as? UiState.Promo)?.kind ?: return
@@ -3797,12 +3634,6 @@ object DictateController {
                     Uri.parse("https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja"))
                 PromoKind.DONATE -> Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/standartkiev-pixel/DictateKeyboard-kapijuja"))
                 PromoKind.CHANGELOG -> Intent(context, FlorisAppActivity::class.java)
-                PromoKind.FLOATING_BUTTON -> Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse("ui://florisboard/settings/dictate/floating-button"),
-                    context,
-                    FlorisAppActivity::class.java,
-                ).addCategory(Intent.CATEGORY_BROWSABLE)
                 PromoKind.MILESTONE -> Intent(
                     Intent.ACTION_VIEW,
                     Uri.parse("ui://florisboard/settings/dictate/stats"),
@@ -3835,8 +3666,6 @@ object DictateController {
                 // Remember this version so the keyboard nudge shows only once per update. The in-app
                 // dialog stays governed by versionLastChangelog, so tapping/dismissing here never hides it.
                 PromoKind.CHANGELOG -> prefs.dictate.changelogNudgeVersion.set(BuildConfig.VERSION_NAME)
-                // Show the floating-button spotlight only once per feature release (see the gate).
-                PromoKind.FLOATING_BUTTON -> prefs.dictate.floatingButtonSpotlightVersion.set(FEATURE_VERSION_NAME)
                 // The milestone was already consumed when shown; nothing further to persist.
                 PromoKind.MILESTONE -> Unit
             }
@@ -3879,8 +3708,6 @@ object DictateController {
         // selection read and the request build, but if the server was asleep it means the retry lands on a
         // machine that is already coming up instead of one that has not been told yet.
         warmUpRewordingServer()
-        // The floating overlay passes OVERLAY so the result is injected into the focused field via the
-        // accessibility sink rather than the keyboard's editor.
         if (target != null) outputTarget = target
         val appContext = context.applicationContext
         val sink = sink(appContext)
@@ -3889,11 +3716,7 @@ object DictateController {
         // Snippet shortcut: text wrapped in [...] is inserted literally (no network call).
         val snippet = prompt.snippetBody()
         if (snippet != null) {
-            // A refused write here used to end in a green check as well (issue #277). Launched rather
-            // than called: for the overlay the write goes off the main thread (see [writeToSink]).
-            scope.launch {
-                reportOverlayInsertFailure(appContext, writeToSink(sink, snippet), snippet)
-            }
+            sink.commitText(snippet)
             return
         }
 
@@ -3931,10 +3754,8 @@ object DictateController {
             try {
                 val text = requestReword(raw, input, prompt.reasoningEffort, prompt.reasoningEffortCustom)
                 // commitText replaces the active selection if any, else inserts at the cursor.
-                val committed = writeToSink(sink, text)
-                // Don't declare success over a write the field refused (issue #277) — the reworded text
-                // is the expensive part, and it goes to the clipboard rather than nowhere.
-                if (!reportOverlayInsertFailure(appContext, committed, text)) _state.value = UiState.Idle
+                sink.commitText(text)
+                _state.value = UiState.Idle
             } catch (e: CancellationException) {
                 throw e // stop button pressed: cancelRewording already reset the state, leave the field as-is
             } catch (e: DictateApiException) {

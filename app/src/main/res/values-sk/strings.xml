@@ -353,7 +353,6 @@
     <string name="devtools__debuglog__copy_for_github">Kopírovať denník (formát na GitHub)</string>
     <string name="devtools__debuglog__loading">Načítava sa…</string>
     <!-- Extension strings -->
-    <string name="ext__home__title">Doplnky a rozšírenia</string>
     <string name="ext__error__not_found_title">Rozšírenie sa nenašlo.</string>
     <string name="ext__editor__metadata__title_invalid">Neplatné metadáta</string>
     <!-- Action strings -->
