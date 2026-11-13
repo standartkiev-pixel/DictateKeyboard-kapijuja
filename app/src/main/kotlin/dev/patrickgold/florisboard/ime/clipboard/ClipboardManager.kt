@@ -20,6 +20,8 @@ import android.content.ClipData
 import android.content.ClipDescription
 import android.content.Context
 import android.net.Uri
+import android.os.PersistableBundle
+import android.util.Log
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
@@ -66,6 +68,8 @@ class ClipboardManager(
     companion object {
         // 1 minute
         private const val INTERVAL = 60 * 1000L
+        private const val OWN_CLIP_MARKER = "net.kapijuja.dictate.own_clip"
+        private const val TAG = "KapijujaClipboard"
 
         /**
          * Taken from ClipboardDescription.java from the AOSP
@@ -111,6 +115,9 @@ class ClipboardManager(
 
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
+    // ClipDescription.timestamp changes on a real new copy, including identical text.
+    // The old text/URI equality guard suppressed legitimate "copy again" events indefinitely.
+    private var primaryClipLastTimestamp = 0L
     /**
      * Clips copied by *another* app, one event per copy, as they reach the history. The keyboard's
      * own copies set [primaryClip] first and are therefore not emitted. Used by Driver Assistant
@@ -162,17 +169,36 @@ class ClipboardManager(
      */
     fun updatePrimaryClip(item: ClipboardItem?) {
         primaryClip = item
+        // Mark ONLY our own writes. Equality of clip text is not proof that a later copy is ours.
+        // Preserve system sensitivity extras when adding the marker.
+        val clipData = item?.toClipData(appContext)?.also { data ->
+            val desc = data.description
+            val extras = desc.extras?.let { PersistableBundle(it) } ?: PersistableBundle()
+            extras.putBoolean(OWN_CLIP_MARKER, true)
+            desc.extras = extras
+        }
         if (prefs.clipboard.useInternalClipboard.get()) {
             val syncBehavior = prefs.clipboard.syncToSystem.get()
-            val clipData = item?.toClipData(appContext)
             if (clipData != null && syncBehavior.shouldSyncSet) {
                 systemClipboardManager.setPrimaryClip(clipData)
             } else if (clipData == null && syncBehavior.shouldSyncClear) {
                 systemClipboardManager.clearPrimaryClipAnyApi()
             }
         } else {
-            systemClipboardManager.setOrClearPrimaryClip(item?.toClipData(appContext))
+            systemClipboardManager.setOrClearPrimaryClip(clipData)
         }
+    }
+
+    /**
+     * Reattach after the IME becomes visible. This is event-driven (not a polling timer).
+     * Reconcile a missed clipboard change once; timestamp dedup prevents replay of an old copy.
+     */
+    fun refreshClipboardObservation() {
+        runCatching {
+            systemClipboardManager.removePrimaryClipChangedListener(this)
+            systemClipboardManager.addPrimaryClipChangedListener(this)
+            onPrimaryClipChanged()
+        }.onFailure { Log.w(TAG, "Failed to reattach clipboard listener", it) }
     }
 
     /**
@@ -180,48 +206,62 @@ class ClipboardManager(
      */
     override fun onPrimaryClipChanged() {
         val syncBehavior = prefs.clipboard.syncToFloris.get()
-        if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
-            val systemPrimaryClip = systemClipboardManager.primaryClip
+        val autoReadEnabled = prefs.speech.autoReadEnabled.get()
+        if (!prefs.clipboard.useInternalClipboard.get() ||
+            syncBehavior != ClipboardSyncBehavior.NO_EVENTS || autoReadEnabled
+        ) {
+            // Android can reject a read while the IME loses access/focus. Never allow that
+            // transient exception to kill the clipboard callback or its process.
+            val result = runCatching { systemClipboardManager.primaryClip }
+                .onFailure { Log.w(TAG, "Cannot read clipboard; will retry on next IME event", it) }
+            if (result.isFailure) return
+            val systemPrimaryClip = result.getOrNull()
+            if (systemPrimaryClip == null) {
+                if (syncBehavior.shouldSyncClear) primaryClip = null
+                return
+            }
             ioScope.launch {
-                val isDuplicate: Boolean
-                primaryClipLastFromCallbackGuard.withLock {
-                    val a = primaryClipLastFromCallback?.getItemAt(0)
-                    val b = systemPrimaryClip?.getItemAt(0)
-                    isDuplicate = when {
-                        a === b -> true
-                        a == null || b == null -> false
-                        else -> a.text == b.text && a.uri == b.uri
+                try {
+                    val isDuplicate = primaryClipLastFromCallbackGuard.withLock {
+                        val timestamp = systemPrimaryClip.description.timestamp
+                        val duplicate = if (timestamp > 0L) {
+                            timestamp == primaryClipLastTimestamp
+                        } else {
+                            systemPrimaryClip === primaryClipLastFromCallback
+                        }
+                        primaryClipLastTimestamp = timestamp
+                        primaryClipLastFromCallback = systemPrimaryClip
+                        duplicate
                     }
-                    primaryClipLastFromCallback = systemPrimaryClip
-                }
-                if (isDuplicate) return@launch
-
-                val internalPrimaryClip = primaryClip
-
-                if (systemPrimaryClip == null) {
-                    if (syncBehavior.shouldSyncClear) {
-                        primaryClip = null
+                    if (isDuplicate) return@launch
+                    if (systemPrimaryClip.itemCount == 0 ||
+                        systemPrimaryClip.getItemAt(0).let { it.text == null && it.uri == null }
+                    ) {
+                        if (syncBehavior.shouldSyncClear) primaryClip = null
+                        return@launch
                     }
-                    return@launch
-                }
+                    // A genuine new copy by another app must be published even if its text
+                    // happens to equal the current internal clipboard text.
+                    val isOwnCopy = systemPrimaryClip.description.extras
+                        ?.getBoolean(OWN_CLIP_MARKER, false) == true
+                    if (isOwnCopy || (!syncBehavior.shouldSyncSet && !autoReadEnabled)) return@launch
 
-                if (systemPrimaryClip.getItemAt(0).let { it.text == null && it.uri == null }) {
-                    if (syncBehavior.shouldSyncClear) {
-                        primaryClip = null
+                    val internalPrimaryClip = primaryClip
+                    val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
+                    val item = if (isEqual) {
+                        internalPrimaryClip!!
+                    } else {
+                        ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
                     }
-                    return@launch
-                }
-
-                if (!syncBehavior.shouldSyncSet) {
-                    return@launch
-                }
-
-                val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
-                if (!isEqual) {
-                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
-                    primaryClip = item
-                    insertOrMoveBeginning(item)
+                    if (syncBehavior.shouldSyncSet && !isEqual) {
+                        primaryClip = item
+                        insertOrMoveBeginning(item)
+                    }
+                    // This is the event stream, not the deduplicated history stream.
+                    // Re-copying identical text is an intentional new event.
                     externalClipFlow.tryEmit(item)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Clipboard callback failed; next copy may recover", e)
                 }
             }
         }
