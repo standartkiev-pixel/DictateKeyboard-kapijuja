@@ -40,10 +40,8 @@ import dev.patrickgold.florisboard.app.devtools.AndroidLocalesScreen
 import dev.patrickgold.florisboard.app.devtools.AndroidSettingsScreen
 import dev.patrickgold.florisboard.app.devtools.DevtoolsScreen
 import dev.patrickgold.florisboard.app.devtools.ExportDebugLogScreen
-import dev.patrickgold.florisboard.app.ext.CheckUpdatesScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionEditScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen
-import dev.patrickgold.florisboard.app.ext.ExtensionHomeScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreenType
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreen
@@ -68,7 +66,6 @@ import dev.patrickgold.florisboard.app.settings.dictate.DictateProxyScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateWearScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictatePromptLibraryScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictatePromptsScreen
-import dev.patrickgold.florisboard.app.settings.dictate.DictateFloatingButtonScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateFormattingScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateLayoutScreen
 import dev.patrickgold.florisboard.app.settings.dictate.DictateOutputScreen
@@ -167,10 +164,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictate/history")
         object DictateHistory
-
-        @Serializable
-        @Deeplink("settings/dictate/floating-button")
-        object DictateFloatingButton
 
         @Serializable
         @Deeplink("settings/dictate/formatting")
@@ -321,12 +314,8 @@ object Routes {
 
     object Ext {
         @Serializable
-        @Deeplink("ext")
-        object Home
-
-        @Serializable
         @Deeplink("ext/list")
-        data class List(val type: ExtensionListScreenType, val showUpdate: Boolean? = null)
+        data class List(val type: ExtensionListScreenType)
 
         @Serializable
         @Deeplink("ext/edit")
@@ -343,10 +332,6 @@ object Routes {
         @Serializable
         @Deeplink("ext/view")
         data class View(val id: String)
-
-        @Serializable
-        @Deeplink("ext/check-updates")
-        object CheckUpdates
     }
 
     @Composable
@@ -391,7 +376,6 @@ object Routes {
             composableWithDeepLink(Settings.DictateLayout::class) { DictateLayoutScreen() }
             composableWithDeepLink(Settings.DictateStats::class) { DictateStatsScreen() }
             composableWithDeepLink(Settings.DictateHistory::class) { DictateHistoryScreen() }
-            composableWithDeepLink(Settings.DictateFloatingButton::class) { DictateFloatingButtonScreen() }
             composableWithDeepLink(Settings.DictatePrompts::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.DictatePrompts>()
                 DictatePromptsScreen(editPromptId = payload.editPromptId)
@@ -455,11 +439,9 @@ object Routes {
             }
             composableWithDeepLink(Devtools.ExportDebugLog::class) { ExportDebugLogScreen() }
 
-            composableWithDeepLink(Ext.Home::class) { ExtensionHomeScreen() }
             composableWithDeepLink(Ext.List::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Ext.List>()
-                val showUpdate = payload.showUpdate != null && payload.showUpdate
-                ExtensionListScreen(payload.type, showUpdate)
+                ExtensionListScreen(payload.type)
             }
             composableWithDeepLink(Ext.Edit::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Ext.Edit>()
@@ -484,9 +466,6 @@ object Routes {
                 val payload = navBackStack.toRoute<Ext.View>()
                 val extensionId = payload.id
                 ExtensionViewScreen(id = extensionId)
-            }
-            composableWithDeepLink(Ext.CheckUpdates::class) {
-                CheckUpdatesScreen()
             }
         }
     }

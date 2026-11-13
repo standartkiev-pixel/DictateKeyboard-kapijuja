@@ -15,14 +15,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.view.WindowManager
 import android.os.SystemClock
 import android.util.Log
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.DictateController
-import dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
@@ -35,7 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showShortToast
@@ -64,10 +62,20 @@ object AutoReadController {
     private var prompt: AutoReadPrompt? = null
     private var generation = 0L
 
-    /**
-     * Ensure the observer is alive. A prior exception must never leave the ON switch
-     * pointing at an inactive collector for the remainder of the app process.
-     */
+    // Only touched on the main thread: by the countdown coroutine and by the window's buttons.
+    private var countingDown = false
+    private var countdownPaused = false
+
+    /** The last text this app itself put on the clipboard; never read back to the user. */
+    @Volatile
+    private var ownCopy: String? = null
+
+    /** Call right before the app copies [text] itself (a transcript, a history entry). */
+    fun noteOwnCopy(text: String) {
+        ownCopy = text
+    }
+
+    /** Self-healing subscription; a collector failure must never leave the enabled switch inert. */
     fun start(context: Context) {
         val app = context.applicationContext
         appContext = app
@@ -79,14 +87,14 @@ object AutoReadController {
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "Auto-read observer failed; resubscribing", e)
+                    Log.w(TAG, "Clipboard subscription failed; restarting", e)
                     delay(500)
                 }
             }
         }
     }
 
-    /** Reconcile the Android clipboard when a keyboard session starts, without a polling timer. */
+    /** Event-driven recovery after user opens the keyboard; no background polling. */
     fun onKeyboardShown(context: Context) {
         start(context)
         if (prefs.speech.autoReadEnabled.get()) {
@@ -94,9 +102,24 @@ object AutoReadController {
         }
     }
 
+    /**
+     * The left button of the window: holds the countdown, or the reading once it has started, and
+     * continues it on the next press.
+     */
+    fun togglePause() {
+        val context = appContext ?: return
+        if (countingDown) {
+            countdownPaused = !countdownPaused
+        } else if (SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true) {
+            SpeechCoordinator.togglePause(context)
+        }
+    }
+
     /** Cancels the pending countdown or the auto-reading in progress; the next copy works again. */
     fun cancelCurrent() {
         generation++
+        countingDown = false
+        countdownPaused = false
         job?.cancel()
         job = null
         prompt?.hide()
@@ -142,7 +165,7 @@ object AutoReadController {
             text = item.text,
             isSensitive = item.isSensitive || item.type != ItemType.TEXT,
             minChars = prefs.speech.autoReadMinChars.get(),
-            ownCopy = DictateAccessibilityService.lastClipText,
+            ownCopy = ownCopy,
         )
         if (verdict != AutoReadFilter.Verdict.READ) return record(Outcome.valueOf(verdict.name), item)
         if (isLocked(context)) return record(Outcome.LOCKED, item)
@@ -154,24 +177,33 @@ object AutoReadController {
         val text = item.text.orEmpty()
         val key = "$KEY_PREFIX$myGeneration"
         val delaySeconds = prefs.speech.autoReadDelaySec.get().coerceIn(1, 30)
-        val shownPrompt = createPrompt(context, delaySeconds)
+        val shownPrompt = createPrompt(context)
         prompt = shownPrompt
         job = scope.launch {
             try {
-                val deadline = SystemClock.elapsedRealtime() + delaySeconds * 1000L
-                while (true) {
-                    val left = deadline - SystemClock.elapsedRealtime()
-                    if (left <= 0) break
-                    shownPrompt.showCountdown(((left + 999) / 1000).toInt())
+                // A paused countdown simply stops losing time, so the remaining time is counted
+                // down here instead of being compared with a fixed deadline.
+                var left = delaySeconds * 1000L
+                var last = SystemClock.elapsedRealtime()
+                countingDown = true
+                countdownPaused = false
+                while (left > 0) {
+                    shownPrompt.showCountdown(((left + 999) / 1000).toInt(), countdownPaused)
                     delay(minOf(left, 200L))
+                    val now = SystemClock.elapsedRealtime()
+                    if (!countdownPaused) left -= now - last
+                    last = now
                 }
+                countingDown = false
                 if (generation != myGeneration || !prefs.speech.autoReadEnabled.get()) return@launch
                 if (DictateController.state.value is DictateController.UiState.Recording) return@launch
-                shownPrompt.showReading()
                 SpeechCoordinator.speak(context, text, key)
-                SpeechCoordinator.state.first { !SpeechCoordinator.isActive(key) }
+                SpeechCoordinator.state
+                    .takeWhile { SpeechCoordinator.keyOf(it) == key }
+                    .collect { shownPrompt.showReading(paused = it is SpeechCoordinator.State.Paused) }
             } finally {
                 if (generation == myGeneration) {
+                    countingDown = false
                     shownPrompt.hide()
                     prompt = null
                     job = null
@@ -180,34 +212,23 @@ object AutoReadController {
         }
     }
 
-    private fun createPrompt(context: Context, delaySeconds: Int): AutoReadPrompt {
-        // 1) "Display over other apps": independent of the accessibility service, so it is the first
-        // choice. 2) The accessibility overlay when only the service is on. 3) A notification.
+    private fun createPrompt(context: Context): AutoReadPrompt {
+        // A window with "display over other apps", otherwise a heads-up notification.
         if (canDrawOverlays(context)) {
             return OverlayAutoReadPrompt(
-                serviceContext = context,
-                windowType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                context = context,
+                onPauseToggle = { togglePause() },
                 onCancel = { cancelCurrent() },
                 onDisable = { disable(context) },
             )
         }
-        val service = DictateAccessibilityService.overlayContext()
-        if (service != null) {
-            return OverlayAutoReadPrompt(
-                serviceContext = service,
-                windowType = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                onCancel = { cancelCurrent() },
-                onDisable = { disable(context) },
-            )
-        }
-        return NotificationAutoReadPrompt(context, delaySeconds)
+        return NotificationAutoReadPrompt(context)
     }
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
 
     /** Whether a countdown window (not just a notification) can currently be shown. */
-    fun canShowWindow(context: Context): Boolean =
-        canDrawOverlays(context) || DictateAccessibilityService.overlayContext() != null
+    fun canShowWindow(context: Context): Boolean = canDrawOverlays(context)
 
     /** Opens the system screen where "display over other apps" is granted for this app. */
     fun openOverlayPermissionSettings(context: Context) {

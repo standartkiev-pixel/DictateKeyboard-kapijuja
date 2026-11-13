@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.theme
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Brightness2
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ColorLens
@@ -34,7 +35,6 @@ import dev.patrickgold.florisboard.app.settings.search.settingsSearchAnchor
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
-import dev.patrickgold.florisboard.app.ext.AddonManagementReferenceBox
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
@@ -127,6 +127,10 @@ fun ThemeScreen() = FlorisScreen {
             }
         )
 
-        AddonManagementReferenceBox(type = ExtensionListScreenType.EXT_THEME)
+        Preference(
+            icon = Icons.Default.Palette,
+            title = stringRes(R.string.settings__theme__manage_themes),
+            onClick = { navController.navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME)) },
+        )
     }
 }

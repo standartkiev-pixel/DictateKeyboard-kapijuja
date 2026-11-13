@@ -29,7 +29,8 @@ import kotlinx.coroutines.currentCoroutineContext
  * next piece's audio arrives before the buffer runs dry. Playback starts only once [prebufferMs] of
  * audio is queued, so a slow first network read does not turn into a crackle in the first second.
  *
- * Not thread-safe: one coroutine writes, and the same coroutine calls [drain] and [release].
+ * One coroutine writes, and the same coroutine calls [drain] and [release]; only [pause] and
+ * [resume] may be called from another thread.
  */
 class PcmStreamPlayer(
     private val sampleRate: Int = PcmAudio.SAMPLE_RATE,
@@ -40,7 +41,9 @@ class PcmStreamPlayer(
     private val loudness: LoudnessEnhancer?
     private val prebuffer = ByteArrayOutputStream()
     private val prebufferBytes = PcmAudio.bytesForMillis(prebufferMs, sampleRate)
+    private val playLock = Any()
     private var started = false
+    private var paused = false
     private var framesWritten = 0L
 
     init {
@@ -88,12 +91,28 @@ class PcmStreamPlayer(
         writeFully(ByteArray(PcmAudio.bytesForMillis(120, sampleRate)))
         val target = framesWritten
         val expectedMs = (target - playedFrames()).coerceAtLeast(0) * 1000L / sampleRate
-        val deadline = SystemClock.elapsedRealtime() + expectedMs + 2_000L
-        while (playedFrames() < target && SystemClock.elapsedRealtime() < deadline) {
+        var deadline = SystemClock.elapsedRealtime() + expectedMs + 2_000L
+        while (playedFrames() < target) {
             currentCoroutineContext().ensureActive()
+            // A paused stream is not a stalled one: the time spent paused does not count.
+            if (isPaused()) deadline += 40 else if (SystemClock.elapsedRealtime() >= deadline) break
             delay(40)
         }
     }
+
+    /** Holds playback where it is; queued audio is kept. Safe before the first sound. */
+    fun pause() = synchronized(playLock) {
+        paused = true
+        if (started) runCatching { track.pause() }
+    }
+
+    /** Continues after [pause] from the exact sample it stopped at. */
+    fun resume() = synchronized(playLock) {
+        paused = false
+        if (started) runCatching { track.play() }
+    }
+
+    private fun isPaused(): Boolean = synchronized(playLock) { paused }
 
     fun release() {
         runCatching {
@@ -108,10 +127,12 @@ class PcmStreamPlayer(
     }
 
     private suspend fun startWithPrebuffer() {
-        started = true
         val bytes = prebuffer.toByteArray()
         prebuffer.reset()
-        track.play()
+        synchronized(playLock) {
+            started = true
+            if (!paused) track.play()
+        }
         writeFully(bytes)
     }
 
@@ -119,9 +140,10 @@ class PcmStreamPlayer(
         var offset = 0
         while (offset < bytes.size) {
             currentCoroutineContext().ensureActive()
+            // Returns early (possibly 0) while the track is paused; then wait and try again.
             val n = track.write(bytes, offset, bytes.size - offset, AudioTrack.WRITE_BLOCKING)
             if (n < 0) error("AudioTrack write failed: $n")
-            if (n == 0) delay(10)
+            if (n == 0) delay(20)
             offset += n
         }
         framesWritten += bytes.size / PcmAudio.BYTES_PER_FRAME

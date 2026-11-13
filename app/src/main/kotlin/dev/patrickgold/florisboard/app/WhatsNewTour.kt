@@ -14,10 +14,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.viewinterop.AndroidView
-import dev.patrickgold.florisboard.dictate.ui.AudioReactiveCloudOrbView
-import dev.patrickgold.florisboard.dictate.ui.DictateAuroraOrbView
 import dev.patrickgold.florisboard.dictate.ui.DictateWaveform
-import dev.patrickgold.florisboard.dictate.ui.DictateLatticeSphereView
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -171,13 +168,6 @@ internal data class WhatsNewPage(
  * variant, and the three with writing in them would need twenty-one.
  */
 internal enum class TourArt {
-    /** The audio-reactive cloud orb (5.2). */
-    CLOUD_ORB,
-
-    /** Aurora and Lattice side by side, both idle, as the button actually sits there (5.3). */
-    DESIGN_ORBS,
-
-
     /** One recording drawn twice, the second squeezed — what speeding up does to the bill (6.0). */
     WAVE_COMPRESS,
 
@@ -393,15 +383,6 @@ private val WhatsNewPages52: List<WhatsNewPage> = listOf(
         highlight = true,
     ),
     WhatsNewPage(
-        icon = Icons.Filled.Bolt,
-        eyebrow = R.string.apptour52__liveprompt_eyebrow,
-        title = R.string.apptour52__liveprompt_title,
-        body = R.string.apptour52__liveprompt_body,
-        cta = R.string.apptour52__cta_try,
-        route = Routes.Settings.DictateFloatingButton,
-        highlight = true,
-    ),
-    WhatsNewPage(
         icon = Icons.Filled.PhoneAndroid,
         eyebrow = R.string.apptour52__ondevice_eyebrow,
         title = R.string.apptour52__ondevice_title,
@@ -432,16 +413,6 @@ private val WhatsNewPages52: List<WhatsNewPage> = listOf(
         body = R.string.apptour52__smartturn_body,
         cta = R.string.apptour52__cta_try,
         route = Routes.Settings.DictateRecording,
-    ),
-    WhatsNewPage(
-        icon = Icons.Filled.Cloud,
-        eyebrow = R.string.apptour52__orb_eyebrow,
-        title = R.string.apptour52__orb_title,
-        body = R.string.apptour52__orb_body,
-        cta = R.string.apptour52__cta_try,
-        route = Routes.Settings.DictateFloatingButton,
-        highlight = true,
-        art = TourArt.CLOUD_ORB,
     ),
     WhatsNewPage(
         icon = Icons.Filled.Celebration,
@@ -498,16 +469,6 @@ private val WhatsNewPages53: List<WhatsNewPage> = listOf(
         body = R.string.apptour53__languages_body,
         cta = R.string.apptour53__cta_try,
         route = Routes.Settings.DictateLanguages,
-    ),
-    WhatsNewPage(
-        icon = Icons.Filled.Brush,
-        eyebrow = R.string.apptour53__designs_eyebrow,
-        title = R.string.apptour53__designs_title,
-        body = R.string.apptour53__designs_body,
-        cta = R.string.apptour53__cta_try,
-        route = Routes.Settings.DictateFloatingButton,
-        highlight = true,
-        art = TourArt.DESIGN_ORBS,
     ),
     WhatsNewPage(
         icon = Icons.Filled.Lightbulb,
@@ -910,63 +871,6 @@ fun WhatsNewTour(autoQueue: List<VersionName>) {
                 Spacer(modifier = Modifier.height(6.dp))
             }
         }
-    }
-}
-
-/**
- * A live preview of the cloud orb skin (issue #231 follow-up / 5.2 tour). Drives a slow synthetic level
- * so the orb visibly pulses the way it does while dictating, instead of sitting still.
- */
-@Composable
-private fun TourCloudOrb() {
-    val transition = rememberInfiniteTransition(label = "orb-preview")
-    val level by transition.animateFloat(
-        initialValue = 0.15f,
-        targetValue = 0.85f,
-        animationSpec = infiniteRepeatable(tween(1400), RepeatMode.Reverse),
-        label = "orb-level",
-    )
-    Box(modifier = Modifier.size(132.dp), contentAlignment = Alignment.Center) {
-        AndroidView(
-            factory = { ctx ->
-                AudioReactiveCloudOrbView(ctx).apply {
-                    setMode(AudioReactiveCloudOrbView.Mode.LISTENING)
-                }
-            },
-            update = { it.setLevel(level) },
-            modifier = Modifier.size(132.dp),
-        )
-    }
-}
-
-/**
- * Aurora and Lattice side by side, exactly as they sit on the floating button when nothing is happening:
- * the aurora drifting, the dot sphere wiring itself together. Both are the shipping views rather than a
- * screenshot, so what the tour shows is what the user gets — and both follow the accent colour.
- */
-@Composable
-private fun TourDesignOrbs() {
-    val accent = MaterialTheme.colorScheme.primary.toArgb()
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AndroidView(
-            factory = { ctx ->
-                DictateAuroraOrbView(ctx).apply { setMood(DictateAuroraOrbView.Mood.IDLE, accent) }
-            },
-            update = { it.setMood(DictateAuroraOrbView.Mood.IDLE, accent) },
-            modifier = Modifier.size(96.dp),
-        )
-        AndroidView(
-            factory = { ctx ->
-                DictateLatticeSphereView(ctx).apply {
-                    setMode(DictateLatticeSphereView.Mode.WEB, accent)
-                }
-            },
-            update = { it.setMode(DictateLatticeSphereView.Mode.WEB, accent) },
-            modifier = Modifier.size(96.dp),
-        )
     }
 }
 
@@ -1529,8 +1433,6 @@ private fun PageContent(page: WhatsNewPage) {
         if (page.art != null) {
             // Show the real thing instead of an icon, so the user can see the new design right here.
             when (page.art) {
-                TourArt.CLOUD_ORB -> TourCloudOrb()
-                TourArt.DESIGN_ORBS -> TourDesignOrbs()
                 TourArt.WAVE_COMPRESS -> TourWaveCompress()
                 TourArt.PINYIN_STRIP -> TourPinyinStrip()
                 TourArt.SCRIPT_CAROUSEL -> TourScriptCarousel()

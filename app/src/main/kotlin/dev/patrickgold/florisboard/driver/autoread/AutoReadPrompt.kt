@@ -10,7 +10,6 @@
 
 package dev.patrickgold.florisboard.driver.autoread
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -29,39 +28,51 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import dev.patrickgold.florisboard.R
 
-/** The visible part of an auto-read: a countdown with "cancel" and "turn off", then "reading". */
+/**
+ * The visible part of an auto-read: a countdown, then "reading", each of which can be paused.
+ * Three controls, left to right: pause / continue, cancel (stop once reading), turn auto-read off.
+ */
 interface AutoReadPrompt {
-    fun showCountdown(secondsLeft: Int)
-    fun showReading()
+    fun showCountdown(secondsLeft: Int, paused: Boolean)
+    fun showReading(paused: Boolean)
     fun hide()
 }
 
 /**
  * A compact window at the top of the screen, clear of a messenger's reply field and send button at
- * the bottom. Drawn either as an application overlay (needs "display over other apps", works with
- * the keyboard hidden or shown) or as an accessibility overlay through the Dictate accessibility
- * service when that one is on and the overlay permission is not granted.
+ * the bottom. Drawn as an application overlay, which needs "display over other apps" and works with
+ * the keyboard hidden or shown.
  */
 class OverlayAutoReadPrompt(
-    private val serviceContext: Context,
-    private val windowType: Int,
+    private val context: Context,
+    private val onPauseToggle: () -> Unit,
     private val onCancel: () -> Unit,
     private val onDisable: () -> Unit,
 ) : AutoReadPrompt {
-    private val windowManager = serviceContext.getSystemService(WindowManager::class.java)
+    private val windowManager = context.getSystemService(WindowManager::class.java)
     private var root: View? = null
     private var title: TextView? = null
+    private var pauseButton: Button? = null
     private var cancelButton: Button? = null
 
-    override fun showCountdown(secondsLeft: Int) {
+    override fun showCountdown(secondsLeft: Int, paused: Boolean) {
         ensureShown()
-        title?.text = serviceContext.getString(R.string.speech__autoread_countdown, secondsLeft)
+        title?.text = if (paused) {
+            context.getString(R.string.speech__autoread_countdown_paused)
+        } else {
+            context.getString(R.string.speech__autoread_countdown, secondsLeft)
+        }
+        pauseButton?.text = pauseLabel(paused)
+        cancelButton?.text = context.getString(R.string.speech__autoread_cancel)
     }
 
-    override fun showReading() {
+    override fun showReading(paused: Boolean) {
         ensureShown()
-        title?.text = serviceContext.getString(R.string.speech__autoread_reading)
-        cancelButton?.text = serviceContext.getString(R.string.speech__stop)
+        title?.text = context.getString(
+            if (paused) R.string.speech__autoread_reading_paused else R.string.speech__autoread_reading
+        )
+        pauseButton?.text = pauseLabel(paused)
+        cancelButton?.text = context.getString(R.string.speech__autoread_stop)
     }
 
     override fun hide() {
@@ -70,11 +81,13 @@ class OverlayAutoReadPrompt(
         runCatching { windowManager?.removeViewImmediate(view) }
     }
 
-    @SuppressLint("SetTextI18n")
+    private fun pauseLabel(paused: Boolean): String =
+        context.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
+
     private fun ensureShown() {
         if (root != null) return
         val wm = windowManager ?: return
-        val ctx = serviceContext
+        val ctx = context
         fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), ctx.resources.displayMetrics).toInt()
 
         val titleView = TextView(ctx).apply {
@@ -82,24 +95,31 @@ class OverlayAutoReadPrompt(
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             gravity = Gravity.CENTER
         }
-        fun button(label: String, color: Int, onClick: () -> Unit) = Button(ctx).apply {
+        fun button(label: String, color: Int, textSp: Float, onClick: () -> Unit) = Button(ctx).apply {
             text = label
             isAllCaps = false
+            maxLines = 2
+            setPadding(dp(6), 0, dp(6), 0)
             setTextColor(0xFFFFFFFF.toInt())
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, textSp)
             minHeight = dp(56)
+            minWidth = 0
+            minimumWidth = 0
             background = GradientDrawable().apply {
                 cornerRadius = dp(12).toFloat()
                 setColor(color)
             }
             setOnClickListener { onClick() }
         }
-        val cancel = button(ctx.getString(R.string.speech__autoread_cancel), 0xFF455A64.toInt(), onCancel)
-        val disable = button(ctx.getString(R.string.speech__autoread_disable), 0xFFC62828.toInt(), onDisable)
+        val pause = button(pauseLabel(false), 0xFF1565C0.toInt(), 16f, onPauseToggle)
+        val cancel = button(ctx.getString(R.string.speech__autoread_cancel), 0xFF455A64.toInt(), 16f, onCancel)
+        // Deliberately the smallest: it changes a setting, the other two only act on this reading.
+        val disable = button(ctx.getString(R.string.speech__autoread_disable_short), 0xFFC62828.toInt(), 13f, onDisable)
         val buttons = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
-            addView(cancel, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(8) })
-            addView(disable, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(pause, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.3f).apply { marginEnd = dp(8) })
+            addView(cancel, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.3f).apply { marginEnd = dp(8) })
+            addView(disable, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 0.9f))
         }
         val panel = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -114,7 +134,7 @@ class OverlayAutoReadPrompt(
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            windowType,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT,
         ).apply {
@@ -126,47 +146,62 @@ class OverlayAutoReadPrompt(
         if (!added) return
         root = panel
         title = titleView
+        pauseButton = pause
         cancelButton = cancel
     }
 }
 
 /**
- * Fallback when the accessibility service is off: a heads-up notification with a countdown
- * chronometer and the same two actions. It never shows the clip's text, so nothing leaks onto the
- * lock screen. Without the notification permission it is simply not shown.
+ * Fallback without "display over other apps": a heads-up notification with a countdown chronometer
+ * and the same three actions. It never shows the clip's text, so nothing leaks onto the lock
+ * screen. Without the notification permission it is simply not shown.
  */
-class NotificationAutoReadPrompt(
-    private val context: Context,
-    private val totalSeconds: Int,
-) : AutoReadPrompt {
+class NotificationAutoReadPrompt(private val context: Context) : AutoReadPrompt {
     private val manager = context.getSystemService(NotificationManager::class.java)
-    private var shownCountdown = false
 
-    override fun showCountdown(secondsLeft: Int) {
-        if (shownCountdown) return
-        shownCountdown = true
-        val deadline = System.currentTimeMillis() + secondsLeft * 1000L
+    /** What is on screen now, so the 200 ms countdown ticks do not repost the same notification. */
+    private var shown: String? = null
+
+    override fun showCountdown(secondsLeft: Int, paused: Boolean) {
+        if (!changed("countdown:$paused")) return
+        if (paused) {
+            post(build(context.getString(R.string.speech__autoread_countdown_paused), paused, reading = false).setShowWhen(false).build())
+            return
+        }
         post(
-            build(context.getString(R.string.speech__autoread_notification_title))
+            build(context.getString(R.string.speech__autoread_notification_title), paused, reading = false)
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true)
-                .setWhen(deadline)
+                .setWhen(System.currentTimeMillis() + secondsLeft * 1000L)
                 .setShowWhen(true)
-                .setTimeoutAfter((totalSeconds + 2) * 1000L)
+                .setTimeoutAfter((secondsLeft + 2) * 1000L)
                 .build()
         )
     }
 
-    override fun showReading() {
-        post(build(context.getString(R.string.speech__autoread_reading)).setShowWhen(false).build())
+    override fun showReading(paused: Boolean) {
+        if (!changed("reading:$paused")) return
+        val title = context.getString(
+            if (paused) R.string.speech__autoread_reading_paused else R.string.speech__autoread_reading
+        )
+        post(build(title, paused, reading = true).setShowWhen(false).build())
     }
 
     override fun hide() {
+        shown = null
         runCatching { manager?.cancel(NOTIFICATION_ID) }
     }
 
-    private fun build(title: String): Notification.Builder {
+    private fun changed(state: String): Boolean {
+        if (shown == state) return false
+        shown = state
+        return true
+    }
+
+    private fun build(title: String, paused: Boolean, reading: Boolean): Notification.Builder {
         ensureChannel()
+        val pauseLabel = context.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
+        val cancelLabel = context.getString(if (reading) R.string.speech__autoread_stop else R.string.speech__autoread_cancel)
         return Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_icon_monochrome)
             .setContentTitle(title)
@@ -174,8 +209,9 @@ class NotificationAutoReadPrompt(
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
-            .addAction(Notification.Action.Builder(null, context.getString(R.string.speech__autoread_cancel), action(ACTION_CANCEL)).build())
-            .addAction(Notification.Action.Builder(null, context.getString(R.string.speech__autoread_disable), action(ACTION_DISABLE)).build())
+            .addAction(Notification.Action.Builder(null, pauseLabel, action(ACTION_PAUSE)).build())
+            .addAction(Notification.Action.Builder(null, cancelLabel, action(ACTION_CANCEL)).build())
+            .addAction(Notification.Action.Builder(null, context.getString(R.string.speech__autoread_disable_short), action(ACTION_DISABLE)).build())
     }
 
     private fun action(name: String): PendingIntent = PendingIntent.getBroadcast(
@@ -207,15 +243,17 @@ class NotificationAutoReadPrompt(
     companion object {
         const val CHANNEL_ID = "kapijuja_autoread"
         const val NOTIFICATION_ID = 0xA7D0
+        const val ACTION_PAUSE = "dev.patrickgold.florisboard.driver.autoread.PAUSE"
         const val ACTION_CANCEL = "dev.patrickgold.florisboard.driver.autoread.CANCEL"
         const val ACTION_DISABLE = "dev.patrickgold.florisboard.driver.autoread.DISABLE"
     }
 }
 
-/** Receives the notification's "cancel" and "turn off" buttons. Not exported. */
+/** Receives the notification's "pause", "cancel" and "turn off" buttons. Not exported. */
 class AutoReadActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
+            NotificationAutoReadPrompt.ACTION_PAUSE -> AutoReadController.togglePause()
             NotificationAutoReadPrompt.ACTION_CANCEL -> AutoReadController.cancelCurrent()
             NotificationAutoReadPrompt.ACTION_DISABLE -> AutoReadController.disable(context)
         }

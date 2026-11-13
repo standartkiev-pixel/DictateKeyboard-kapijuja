@@ -19,11 +19,8 @@
     <!-- Auto-read countdown window over other apps (Driver Assistant, issue #7) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
-    <!-- Permissions for the floating dictation button (issue #88): the accessibility service promotes
-         itself to a microphone foreground service while recording so background mic capture is allowed -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <!-- On-device model downloads that keep running in the background (issue #207). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
     <!-- Android 11+ only: Define that FlorisBoard requests to see all apps that
@@ -73,24 +70,6 @@
         <receiver
             android:name="dev.patrickgold.florisboard.driver.autoread.AutoReadActionReceiver"
             android:exported="false"/>
-
-        <!-- Dictate floating-overlay accessibility service (issue #88): optional, user-enabled. Detects
-             when a text field is focused in any app so the floating dictation button can appear, and
-             injects the transcribed text into that field (no InputConnection available from an overlay).
-             Bound only by the system via the BIND_ACCESSIBILITY_SERVICE permission. -->
-        <service
-            android:name="dev.patrickgold.florisboard.dictate.overlay.DictateAccessibilityService"
-            android:label="@string/dictate__accessibility_service_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:foregroundServiceType="microphone"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService"/>
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config"/>
-        </service>
 
         <!-- Spellchecker service -->
         <service
@@ -185,25 +164,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ui" android:host="florisboard" android:pathPrefix="/" />
-            </intent-filter>
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="content"/>
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
-                <data android:mimeType="application/octet-stream"/><!-- Firefox looking at you :eyes: -->
-            </intent-filter>
-            <!-- Sharing an extension keeps its own type only. octet-stream belongs on the VIEW
-                 filter above, where it earns its keep: a browser downloads a .flex and hands it over
-                 with no type at all. On SEND it earned nothing and cost something — Android has no
-                 type for .opus either, so every shared voice note offered "Import Extension" beside
-                 "Transcribe", and a share sheet that asks you to choose between two entries of the
-                 same app is a riddle. An extension that arrives typed still works, "Open with" still
-                 works, and the settings have their own import screen. -->
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
             </intent-filter>
         </activity>
 
