@@ -387,6 +387,9 @@ class FlorisImeService : LifecycleInputMethodService() {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
         super.onStartInputView(info, restarting)
+        // Reconnect the auto-read flow and system clipboard listener on the natural IME
+        // lifecycle event. Never poll or silently turn the user's preference off.
+        dev.patrickgold.florisboard.driver.autoread.AutoReadController.onKeyboardShown(this)
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
         activeState.batchEdit {
