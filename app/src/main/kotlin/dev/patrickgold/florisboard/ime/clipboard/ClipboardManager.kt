@@ -212,9 +212,14 @@ class ClipboardManager(
         ) {
             // Android can reject a read while the IME loses access/focus. Never allow that
             // transient exception to kill the clipboard callback or its process.
-            val systemPrimaryClip = runCatching { systemClipboardManager.primaryClip }
+            val result = runCatching { systemClipboardManager.primaryClip }
                 .onFailure { Log.w(TAG, "Cannot read clipboard; will retry on next IME event", it) }
-                .getOrNull() ?: return
+            if (result.isFailure) return
+            val systemPrimaryClip = result.getOrNull()
+            if (systemPrimaryClip == null) {
+                if (syncBehavior.shouldSyncClear) primaryClip = null
+                return
+            }
             ioScope.launch {
                 try {
                     val isDuplicate = primaryClipLastFromCallbackGuard.withLock {
