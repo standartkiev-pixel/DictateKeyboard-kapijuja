@@ -16,6 +16,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.os.SystemClock
+import android.util.Log
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
@@ -23,6 +24,7 @@ import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showShortToast
 
@@ -49,11 +52,12 @@ import org.florisboard.lib.android.showShortToast
  */
 object AutoReadController {
     private const val KEY_PREFIX = "auto-"
+    private const val TAG = "KapijujaAutoRead"
 
     private val prefs by FlorisPreferenceStore
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var appContext: Context? = null
-    private var started = false
+    private var subscriptionJob: Job? = null
     private var job: Job? = null
     private var prompt: AutoReadPrompt? = null
     private var generation = 0L
@@ -71,14 +75,30 @@ object AutoReadController {
         ownCopy = text
     }
 
-    /** Subscribes to new clips. Called once when the app has loaded its preferences. */
+    /** Self-healing subscription; a collector failure must never leave the enabled switch inert. */
     fun start(context: Context) {
-        if (started) return
-        started = true
         val app = context.applicationContext
         appContext = app
-        scope.launch {
-            app.clipboardManager().value.externalClipFlow.collect { onClip(app, it) }
+        if (subscriptionJob?.isActive == true) return
+        subscriptionJob = scope.launch {
+            while (isActive) {
+                try {
+                    app.clipboardManager().value.externalClipFlow.collect { onClip(app, it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Clipboard subscription failed; restarting", e)
+                    delay(500)
+                }
+            }
+        }
+    }
+
+    /** Event-driven recovery after user opens the keyboard; no background polling. */
+    fun onKeyboardShown(context: Context) {
+        start(context)
+        if (prefs.speech.autoReadEnabled.get()) {
+            context.clipboardManager().value.refreshClipboardObservation()
         }
     }
 
@@ -113,6 +133,7 @@ object AutoReadController {
     fun setEnabled(context: Context, enabled: Boolean) {
         if (!enabled) cancelCurrent()
         val app = context.applicationContext
+        if (enabled) start(app)
         scope.launch {
             prefs.speech.autoReadEnabled.set(enabled)
             if (enabled && !canShowWindow(app)) {
