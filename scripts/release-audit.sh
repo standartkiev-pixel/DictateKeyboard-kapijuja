@@ -13,7 +13,13 @@ fail_if_tracked() {
 # Product identity and the minimal release line must stay coherent.
 git grep -q 'applicationId = "net.kapijuja.dictate"' -- app/build.gradle.kts
 git grep -q 'rootProject.name = "DictateKapijuja"' -- settings.gradle.kts
-git grep -q '^projectVersionCode=100012$' -- gradle.properties
+# Accept monotonic test builds. Never tie CI to one exact versionCode:
+# that would reject every legitimate in-place update.
+version_code="$(sed -n 's/^projectVersionCode=//p' gradle.properties)"
+[[ "$version_code" =~ ^[0-9]+$ ]] && (( version_code >= 100012 )) || {
+  echo "Release audit rejected missing/older versionCode: $version_code" >&2
+  exit 1
+}
 git grep -q '^projectVersionName=0.1.0$' -- gradle.properties
 
 # No production credentials, private keys, old Cloud/Billing wiring, or accidentally committed signing material.
