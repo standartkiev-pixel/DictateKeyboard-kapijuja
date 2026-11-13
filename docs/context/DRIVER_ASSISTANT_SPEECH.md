@@ -59,3 +59,34 @@ most one paid request). Audio is played as it arrives instead of after the whole
 
 Unit tests: `app/src/test/.../driver/speech/SpeechEngineTest.kt` (chunking, WAV/PCM alignment,
 request building). Real audio, voices and each provider with a real key need a device check.
+
+
+## Reliability patch — 2026-11-13
+
+Bugreport on Android 17/Samsung (2026-11-13 16:17) showed system TTS
+`stop/getVoices/setLanguage/speak failed: not bound to TTS engine` followed by
+`KapijujaSpeech: reading failed: engine=ANDROID`. The system did not turn off
+auto-read preferences; a stale cached Android `TextToSpeech` binding and/or
+missed clipboard callbacks can make an enabled toggle look inert.
+
+- `AndroidSpeechEngine.speak` retries **once only before speech started**.
+  It shuts down the stale instance, waits briefly, and binds afresh.
+  Cancellation never retries, and mid-utterance failures never repeat audible text.
+- Internal writes are marked in `ClipDescription.extras`, not detected by comparing
+  the copied text to the internal text. A real new system copy with identical text
+  must generate a second `externalClipFlow` event.
+- Duplicate callbacks for the *same* system copy are filtered by
+  `ClipDescription.timestamp` (Android API 26+), not text comparison.
+- When `FlorisImeService.onStartInputView` runs, `AutoReadController` restarts
+  its subscription if needed, and `ClipboardManager` reattaches its system
+  callback and reconciles the current timestamp. There is **no periodic polling**.
+- Exceptions during clipboard processing/observation are logged without disabling
+  `speech.autoReadEnabled`. These state changes never silently reset user settings.
+- CI distributes `net.kapijuja.dictate.debug` signed by the repository's pinned
+  prerelease certificate SHA-256 `22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884`.
+  Upgrade installation needs a newer versionCode; this patch increments it to 100013.
+
+Device verification: copy text once, copy **the same text** again, close and reopen
+keyboard, try after killing/restarting the system TTS engine (or force-stopping its
+process), and check the Android TTS test voice. Never assume a CI compile confirms
+real background clipboard delivery on Samsung One UI.
