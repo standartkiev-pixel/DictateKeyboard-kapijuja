@@ -16,7 +16,9 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -40,6 +42,25 @@ class AndroidSpeechEngine(context: Context) {
 
     /** Speaks [text] and returns when it has been spoken; cancelling stops it at once. */
     suspend fun speak(text: String, settings: SpeechSettings, onStarted: () -> Unit) {
+        var audioStarted = false
+        try {
+            speakOnce(text, settings) {
+                audioStarted = true
+                onStarted()
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Android can drop the underlying TTS service while this cached object still exists.
+            // Retry only if NO audio started, to avoid reading the same text twice.
+            if (audioStarted) throw e
+            withContext(Dispatchers.Main) { shutdown() }
+            delay(250)
+            speakOnce(text, settings, onStarted)
+        }
+    }
+
+    private suspend fun speakOnce(text: String, settings: SpeechSettings, onStarted: () -> Unit) {
         val engine = obtain(settings.androidEnginePackage)
         withContext(Dispatchers.Main) { configure(engine, settings) }
         val maxLength = (TextToSpeech.getMaxSpeechInputLength() - 1).coerceIn(200, 3900)
@@ -146,17 +167,23 @@ class AndroidSpeechEngine(context: Context) {
         val created = withContext(Dispatchers.Main) {
             suspendCancellableCoroutine { cont ->
                 var instance: TextToSpeech? = null
-                instance = TextToSpeech(appContext, { status ->
+                var earlyStatus: Int? = null
+                fun finishInit(status: Int) {
                     val ready = instance
                     if (status == TextToSpeech.SUCCESS && ready != null) {
-                        if (cont.isActive) cont.resume(ready)
+                        if (cont.isActive) cont.resume(ready) else runCatching { ready.shutdown() }
                     } else {
                         runCatching { ready?.shutdown() }
                         if (cont.isActive) {
                             cont.resumeWithException(SpeechEngineException("Android TTS engine is not available"))
                         }
                     }
+                }
+                instance = TextToSpeech(appContext, { status ->
+                    // OnInit may run before the constructor has assigned "instance".
+                    if (instance == null) earlyStatus = status else finishInit(status)
                 }, wanted)
+                earlyStatus?.let { finishInit(it) }
                 cont.invokeOnCancellation { runCatching { instance?.shutdown() } }
             }
         }
