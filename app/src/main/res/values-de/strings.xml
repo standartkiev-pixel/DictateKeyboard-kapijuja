@@ -2002,4 +2002,5 @@
     <string name="pref__speech__autoread_last__label">Zuletzt kopierter Text</string>
     <string name="pref__speech__autoread_last__value">{time}: {result} ({n} Zeichen)</string>
     <string name="pref__speech__autoread_last__none">Seit App-Start nichts kopiert</string>
+    <string name="pref__speech__notification_restricted_hint">Wenn Android den Zugriff für eine APK sperrt: Android-Einstellungen → Apps → Kapijuja → ⋮ → Eingeschränkte Einstellungen zulassen, danach hierher zurück.</string>
 </resources>
