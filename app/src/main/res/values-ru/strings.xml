@@ -2048,7 +2048,7 @@
     <string name="dictate__input_unknown">Микр. ?</string>
     <!-- Read aloud (Driver Assistant, issue #7) -->
     <string name="settings__speech__title">Озвучивание</string>
-    <string name="settings__speech__summary">Движок озвучивания, голос и кнопка динамика в истории буфера</string>
+    <string name="settings__speech__summary">Голоса, буфер обмена, уведомления и фильтры текста</string>
     <string name="speech__speak_clip">Прочитать вслух</string>
     <string name="speech__stop">Остановить чтение</string>
     <string name="speech__error_toast">Не удалось прочитать: {message}</string>
@@ -2128,7 +2128,7 @@
     <string name="speech__autoread_outcome_link">пропущен, это ссылка</string>
     <string name="speech__autoread_outcome_locked">пропущен, экран заблокирован</string>
     <string name="speech__autoread_outcome_dictating">пропущен, идёт диктовка</string>
-    <string name="pref__speech__autoread_note">Окну нужно разрешение «Поверх других приложений»; иначе вместо него уведомление. Не читается: на заблокированном экране, во время диктовки, ссылки, помеченные как секретные клипы, одноразовые коды и похожий на пароль текст. До конца отсчёта в облачный движок ничего не отправляется.</string>
+    <string name="pref__speech__autoread_note">Для окна отсчёта нужно разрешение «Поверх других приложений»; иначе отображается уведомление. При заблокированном экране, во время диктовки, а также для секретных данных чтения нет. Фильтры ссылок, чисел и служебного текста — ниже.</string>
     <string name="settings__theme__manage_themes">Управление темами</string>
     <string name="dictate__import_copy_failed">Расшифровка слишком длинная для буфера обмена. Используйте «Сохранить» или «Поделиться».</string>
     <string name="pref__speech__chatgpt__label">Озвучивать через ChatGPT</string>
@@ -2148,4 +2148,33 @@
     <string name="speech__autoread_resume">Продолжить</string>
     <string name="speech__autoread_stop">Стоп</string>
     <string name="speech__autoread_disable_short">Выключить</string>
+    <string name="speech__notification_access_service">Чтение входящих уведомлений</string>
+    <string name="speech__all_reading_disabled">Автоматическое озвучивание выключено</string>
+    <string name="speech__notification_reading_disabled">Озвучивание уведомлений выключено</string>
+    <string name="speech__notification_countdown">Озвучу уведомление через %1$d с</string>
+    <string name="speech__notification_countdown_paused">Озвучивание уведомления на паузе</string>
+    <string name="speech__notification_reading">Читаю уведомление…</string>
+    <string name="speech__notification_reading_paused">Чтение уведомления на паузе</string>
+    <string name="speech__notification_title">Озвучивание входящего уведомления</string>
+    <string name="speech__disable_all_reading">Выключить озвучивание</string>
+    <string name="speech__disable_notification_reading">Отключить оповещения</string>
+    <string name="pref__speech__group_notifications">Входящие уведомления</string>
+    <string name="pref__speech__notification_master__label">Озвучивать входящие уведомления</string>
+    <string name="pref__speech__notification_master__summary">Только выбранные приложения после выдачи разрешения Android</string>
+    <string name="pref__speech__notification_permission">Доступ Android к уведомлениям</string>
+    <string name="pref__speech__notification_permission_granted">Разрешено; нажмите для проверки</string>
+    <string name="pref__speech__notification_permission_missing">Нет разрешения; нажмите, чтобы предоставить</string>
+    <string name="pref__speech__source_whatsapp">WhatsApp</string>
+    <string name="pref__speech__source_instagram">Instagram</string>
+    <string name="pref__speech__source_email">Почта (Gmail, Outlook и другие)</string>
+    <string name="pref__speech__source_viber">Viber</string>
+    <string name="pref__speech__source_telegram">Telegram</string>
+    <string name="pref__speech__source_youtube">YouTube</string>
+    <string name="pref__speech__notification_privacy_note">Читаются только новые уведомления выбранных приложений. При заблокированном экране чтения нет. Скрытый Android текст извлечь нельзя. Облачные голоса отправляют озвучиваемый текст выбранному провайдеру.</string>
+    <string name="pref__speech__group_cleanup">Очистка текста перед озвучиванием</string>
+    <string name="pref__speech__skip_links">Не озвучивать интернет-ссылки</string>
+    <string name="pref__speech__skip_numbers">Пропускать длинные цифровые последовательности</string>
+    <string name="pref__speech__skip_service_messages">Не читать служебные уведомления</string>
+    <string name="pref__speech__simplify_symbols">Убирать лишние символы</string>
+    <string name="pref__speech__cleanup_note">Фильтры действуют и для буфера обмена, и для уведомлений. Ключи доступа и коды подтверждения пропускаются всегда.</string>
 </resources>
