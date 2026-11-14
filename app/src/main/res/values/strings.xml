@@ -2322,7 +2322,7 @@
     <string name="pref__speech__autoread_min_chars__label">Do not read texts shorter than</string>
     <string name="pref__speech__autoread_min_chars__value">{v} characters</string>
     <string name="pref__speech__autoread_toggle__label">Auto-read switch in the Smartbar</string>
-    <string name="pref__speech__autoread_toggle__summary">Speaker at the left of the keyboard: tap to read clipboard or mute everything; hold to toggle spoken notifications. A dot means alerts ON.</string>
+    <string name="pref__speech__autoread_toggle__summary">Speaker on the keyboard: tap to enable both clipboard and notification reading, or mute both. In the reading window, turn off either source independently. Hold the speaker to toggle alerts or stop playing audio.</string>
     <string name="speech__autoread_needs_overlay_toast">Allow “Display over other apps” so the countdown window can appear</string>
     <string name="pref__speech__autoread_overlay__label">Countdown window</string>
     <string name="pref__speech__autoread_overlay__granted">Allowed: the window appears over any app</string>
@@ -2420,4 +2420,8 @@
     <string name="speech__notifications_need_permission">Grant Android notification access, then hold the speaker again</string>
     <string name="speech__notifications_quick_on">Speaking new notifications is on</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Turn on clipboard auto-read first. Hold the keyboard speaker to toggle alerts.</string>
+    <string name="speech__disable_clipboard_reading">Turn off clipboard</string>
+    <string name="speech__clipboard_reading_disabled">Clipboard reading is off</string>
+    <string name="speech__all_reading_enabled">Clipboard and notification reading are on</string>
+    <string name="speech__autoread_state_notifications_only">Reading notifications only</string>
 </resources>
