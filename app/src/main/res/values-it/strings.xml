@@ -1912,4 +1912,6 @@
     <string name="pref__speech__notification_connected">Servizio connesso e pronto</string>
     <string name="pref__speech__notification_recovering">Autorizzazione Android concessa. Se non legge, riconnetti il servizio.</string>
     <string name="pref__speech__notification_reconnect">Riconnetti lettura notifiche</string>
+    <string name="backup_and_restore__api_keys_warning">Il backup delle impostazioni include le chiavi API di dettatura e sintesi vocale: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok e altri. Il file ZIP NON è crittografato. Non condividerlo.</string>
+    <string name="backup_and_restore__api_keys_restore_note">Il ripristino delle impostazioni recupera anche le chiavi API presenti nel backup. I vecchi archivi potrebbero non contenere le nuove chiavi. Unisci mantiene le altre impostazioni attuali. Il file ZIP non è crittografato.</string>
 </resources>
