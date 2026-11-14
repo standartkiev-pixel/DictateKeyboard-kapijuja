@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.driver.notifications.SpeechTextSanitizer
 import dev.patrickgold.florisboard.driver.notifications.SpokenTextOptions
+import dev.patrickgold.florisboard.driver.notifications.NotificationAccess
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import kotlinx.coroutines.CancellationException
@@ -84,6 +85,11 @@ object AutoReadController {
     fun start(context: Context) {
         val app = context.applicationContext
         appContext = app
+        // A legacy backup can contain notifications=ON while clipboard=OFF. Treat
+        // the clipboard speaker as master, without ever reading such alerts.
+        if (!prefs.speech.autoReadEnabled.get() && prefs.speech.notificationReadEnabled.get()) {
+            scope.launch { prefs.speech.notificationReadEnabled.set(false) }
+        }
         if (subscriptionJob?.isActive == true) return
         subscriptionJob = scope.launch {
             while (isActive) {
@@ -118,6 +124,16 @@ object AutoReadController {
         } else if (SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true) {
             SpeechCoordinator.togglePause(context)
         }
+    }
+
+    /** Long press remains the emergency Stop for any active TTS, including manual history speech. */
+    fun hasActiveReading(): Boolean =
+        countingDown || SpeechCoordinator.activeKey() != null
+
+    fun stopActiveReading() {
+        if (countingDown || activeOrigin != null) cancelCurrent()
+        // The previous long press stopped manual TTS as well; do not regress that safety behavior.
+        if (SpeechCoordinator.activeKey() != null) SpeechCoordinator.stop()
     }
 
     /** Cancels the pending countdown or the auto-reading in progress; the next copy works again. */
@@ -155,20 +171,68 @@ object AutoReadController {
         }
     }
 
+    /**
+     * Short speaker tap: clipboard ON is clipboard-only, OFF is a master mute.
+     * In particular, neither an older backup nor a previous notification session
+     * is allowed to silently re-enable notification reading on the next tap.
+     */
     fun setEnabled(context: Context, enabled: Boolean) {
         if (!enabled) cancelCurrent()
         val app = context.applicationContext
         if (enabled) start(app)
         scope.launch {
-            prefs.speech.autoReadEnabled.set(enabled)
+            val mode = AutoReadSwitchPolicy.setClipboard(
+                AutoReadSwitchPolicy.Mode(
+                    prefs.speech.autoReadEnabled.get(),
+                    prefs.speech.notificationReadEnabled.get(),
+                ),
+                enabled,
+            )
+            // Disable notifications first to avoid a moment of unwanted reading
+            // while the master clipboard preference is being switched off.
+            if (!mode.notifications) prefs.speech.notificationReadEnabled.set(false)
+            prefs.speech.autoReadEnabled.set(mode.clipboard)
             if (enabled && !canShowWindow(app)) {
-                // Without a way to draw the countdown window the user would hear text with no chance
-                // to cancel it first, so ask for the permission right away.
+                // Without a visible countdown the user would hear text with no cancel opportunity.
                 app.showShortToast(R.string.speech__autoread_needs_overlay_toast)
                 openOverlayPermissionSettings(app)
             } else {
                 app.showShortToast(if (enabled) R.string.speech__autoread_enabled_toast else R.string.speech__autoread_disabled_toast)
             }
+        }
+    }
+
+    /**
+     * Long speaker press: explicitly opt in/out of reading Android notifications.
+     * Requires the clipboard master switch and the OS Notification Access grant.
+     * No permission is silently granted, no notification is spoken on enable.
+     */
+    fun setNotificationsEnabled(context: Context, enabled: Boolean) {
+        val app = context.applicationContext
+        if (enabled && !prefs.speech.autoReadEnabled.get()) {
+            scope.launch { app.showShortToast(R.string.speech__notifications_require_clipboard) }
+            return
+        }
+        if (enabled && !NotificationAccess.granted(app)) {
+            scope.launch { app.showShortToast(R.string.speech__notifications_need_permission) }
+            NotificationAccess.openSettings(app)
+            return
+        }
+        if (!enabled && activeOrigin == Origin.NOTIFICATION) cancelCurrent()
+        scope.launch {
+            val next = AutoReadSwitchPolicy.setNotifications(
+                AutoReadSwitchPolicy.Mode(
+                    prefs.speech.autoReadEnabled.get(),
+                    prefs.speech.notificationReadEnabled.get(),
+                ),
+                enabled,
+            )
+            prefs.speech.notificationReadEnabled.set(next.notifications)
+            if (next.notifications) NotificationAccess.requestRecovery(app)
+            app.showShortToast(
+                if (next.notifications) R.string.speech__notifications_quick_on
+                else R.string.speech__notification_reading_disabled,
+            )
         }
     }
 
@@ -206,7 +270,7 @@ object AutoReadController {
 
     /** From Android NotificationListenerService, independently of clipboard listening. */
     fun onNotification(context: Context, text: String) {
-        if (!prefs.speech.notificationReadEnabled.get()) return
+        if (!AutoReadSwitchPolicy.canReadNotifications(currentMode())) return
         if (text.isBlank() || isLocked(context)) return
         // Never speak an incoming notification without a visible way to pause/cancel it.
         if (!canShowWindow(context) && !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
@@ -264,9 +328,13 @@ object AutoReadController {
         }
     }
 
+    private fun currentMode() = AutoReadSwitchPolicy.Mode(
+        prefs.speech.autoReadEnabled.get(), prefs.speech.notificationReadEnabled.get(),
+    )
+
     private fun isEnabled(origin: Origin): Boolean = when (origin) {
         Origin.CLIPBOARD -> prefs.speech.autoReadEnabled.get()
-        Origin.NOTIFICATION -> prefs.speech.notificationReadEnabled.get()
+        Origin.NOTIFICATION -> AutoReadSwitchPolicy.canReadNotifications(currentMode())
     }
 
     private fun createPrompt(context: Context, origin: Origin): AutoReadPrompt {

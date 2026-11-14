@@ -2322,7 +2322,7 @@
     <string name="pref__speech__autoread_min_chars__label">Do not read texts shorter than</string>
     <string name="pref__speech__autoread_min_chars__value">{v} characters</string>
     <string name="pref__speech__autoread_toggle__label">Auto-read switch in the Smartbar</string>
-    <string name="pref__speech__autoread_toggle__summary">Speaker button at the far left of the keyboard bar. Long press stops a reading.</string>
+    <string name="pref__speech__autoread_toggle__summary">Speaker at the left of the keyboard: tap to read clipboard or mute everything; hold to toggle spoken notifications. A dot means alerts ON.</string>
     <string name="speech__autoread_needs_overlay_toast">Allow “Display over other apps” so the countdown window can appear</string>
     <string name="pref__speech__autoread_overlay__label">Countdown window</string>
     <string name="pref__speech__autoread_overlay__granted">Allowed: the window appears over any app</string>
@@ -2414,4 +2414,10 @@
     <string name="pref__speech__notification_reconnect">Reconnect notification listener</string>
     <string name="backup_and_restore__api_keys_warning">API keys are included in this settings backup: dictation providers and OpenAI, ElevenLabs, Inworld, Azure, Gemini, and Grok speech. The ZIP archive is NOT encrypted. Keep it private; anyone with this file can use the keys.</string>
     <string name="backup_and_restore__api_keys_restore_note">Restoring application settings also restores API keys present in the backup. Older backups cannot restore keys added later. Merge keeps unrelated current settings. Protect the backup ZIP because its contents are not encrypted.</string>
+    <string name="speech__notifications_long_press">Toggle spoken notifications (long press)</string>
+    <string name="speech__autoread_state_with_notifications">Reading clipboard and notifications</string>
+    <string name="speech__notifications_require_clipboard">Enable clipboard reading first</string>
+    <string name="speech__notifications_need_permission">Grant Android notification access, then hold the speaker again</string>
+    <string name="speech__notifications_quick_on">Speaking new notifications is on</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Turn on clipboard auto-read first. Hold the keyboard speaker to toggle alerts.</string>
 </resources>

@@ -2062,4 +2062,11 @@
     <string name="pref__speech__notification_reconnect">Połącz ponownie czytnik powiadomień</string>
     <string name="backup_and_restore__api_keys_warning">Kopia ustawień zawiera klucze API dyktowania i odczytu: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok i innych dostawców. Archiwum ZIP NIE jest szyfrowane. Nie udostępniaj go innym osobom.</string>
     <string name="backup_and_restore__api_keys_restore_note">Przywracanie ustawień odtwarza także klucze API zapisane w archiwum. Starsze kopie mogą nie zawierać kluczy nowych silników. Tryb scalania zachowuje inne obecne ustawienia. ZIP nie jest szyfrowany.</string>
+    <string name="speech__notifications_long_press">Przytrzymaj: odczyt powiadomień</string>
+    <string name="speech__autoread_state_with_notifications">Odczyt schowka i powiadomień włączony</string>
+    <string name="speech__notifications_require_clipboard">Najpierw włącz odczyt schowka</string>
+    <string name="speech__notifications_need_permission">Zezwól Androidowi na dostęp do powiadomień, a następnie przytrzymaj głośnik ponownie</string>
+    <string name="speech__notifications_quick_on">Odczyt nowych powiadomień włączony</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Najpierw włącz odczyt schowka. Przytrzymaj głośnik, aby sterować powiadomieniami.</string>
+    <string name="pref__speech__autoread_toggle__summary">Głośnik z lewej: dotknij — schowek lub wyłącz wszystko; przytrzymaj — powiadomienia. Kropka oznacza włączone powiadomienia.</string>
 </resources>

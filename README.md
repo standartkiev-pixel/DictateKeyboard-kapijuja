@@ -25,6 +25,11 @@ The phone APK uses only `arm64-v8a` native libraries, Android/R8 code shrinking 
 
 The built-in ZIP backup includes all API credentials in the Dictate provider keyring and the speech provider settings (OpenAI, ElevenLabs, Inworld, Azure, Gemini and Grok) when **Application settings** is checked (default ON). Restore imports those preferences, including credential values present in the backup. Older archives cannot supply newer credentials they never contained. The ZIP backup is **not encrypted**, so never share it publicly or store it in an untrusted location.
 
+
+### One-button speech controls
+
+The left Smartbar speaker uses one quick control for clipboard and notification text-to-speech. Tap once to turn on **clipboard-only** reading, tap again to mute **both** clipboard and notification reading. Hold while idle to separately toggle notification announcements (requires Android Notification Access). Hold during active auto-reading or countdown to **Stop**. A small dot on the speaker shows when notification reading is enabled. Android's own notifications are never switched off. See [speech implementation context](docs/context/DRIVER_ASSISTANT_SPEECH.md).
+
 ## Current status
 
 The fork is functional and builds successfully in GitHub Actions.

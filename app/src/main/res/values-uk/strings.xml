@@ -1934,7 +1934,7 @@
     <string name="pref__speech__autoread_min_chars__label">Не читати тексти коротші за</string>
     <string name="pref__speech__autoread_min_chars__value">{v} символів</string>
     <string name="pref__speech__autoread_toggle__label">Кнопка автозачитування на панелі</string>
-    <string name="pref__speech__autoread_toggle__summary">Динамік у крайньому лівому куті панелі клавіатури. Довге натискання зупиняє читання.</string>
+    <string name="pref__speech__autoread_toggle__summary">Динамік ліворуч: коротко — буфер або вимкнути все; утримання — сповіщення. Крапка показує увімкнені сповіщення.</string>
     <string name="speech__autoread_needs_overlay_toast">Дозвольте «Поверх інших застосунків», щоб з\'являлося вікно з відліком</string>
     <string name="pref__speech__autoread_overlay__label">Вікно з відліком</string>
     <string name="pref__speech__autoread_overlay__granted">Дозволено: вікно з\'являється поверх будь-якого застосунку</string>
@@ -1996,4 +1996,10 @@
     <string name="pref__speech__notification_reconnect">Повторно підключити читання сповіщень</string>
     <string name="backup_and_restore__api_keys_warning">У резервній копії налаштувань зберігаються API-ключі диктування й озвучення: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok та інших сервісів. ZIP-архів НЕ зашифрований! Не передавайте його стороннім особам.</string>
     <string name="backup_and_restore__api_keys_restore_note">Під час відновлення налаштувань відновлюються API-ключі, що є в архіві. У старих архівах ключів нових рушіїв може не бути. Режим «Об’єднати» зберігає інші поточні налаштування. ZIP не зашифрований.</string>
+    <string name="speech__notifications_long_press">Довге натискання: читання сповіщень</string>
+    <string name="speech__autoread_state_with_notifications">Читання буфера та сповіщень увімкнено</string>
+    <string name="speech__notifications_require_clipboard">Спочатку увімкніть читання буфера обміну</string>
+    <string name="speech__notifications_need_permission">Надайте Android доступ до сповіщень, а потім утримайте динамік ще раз</string>
+    <string name="speech__notifications_quick_on">Озвучення нових сповіщень увімкнено</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Спочатку увімкніть читання буфера. Утримуйте динамік клавіатури для перемикання сповіщень.</string>
 </resources>

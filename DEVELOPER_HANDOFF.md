@@ -24,6 +24,16 @@ Last verified at the time of this note: the phone artifact is distributed separa
 
 **API-key backup contract:** The built-in backup screen exports the complete `FlorisPreferenceStore` through `JetPref` when `Application settings` is selected (default ON). This includes the Dictate provider keyring `dictate__provider_accounts` and all separate `speech__*_api_key` / `speech__azure_key` preferences for OpenAI, ElevenLabs, Inworld, Google Gemini, xAI Grok and Azure, plus future credentials kept in the same preference store. The matching restore path uses `FlorisPreferenceStore.import` in Merge (default) or Erase mode. **Do not exclude secrets from the data backup or introduce a stale static provider whitelist.** No extra copy of keys is required. The user must be warned that the ZIP is **unencrypted** and should not be shared. If `Application settings` is unchecked, keys are deliberately excluded; old backups cannot recover keys they never contained.
 
+
+## Compact Smartbar speech toggle policy (2026-11-14)
+
+The left speaker is a single quick controller with three states:
+1. **OFF:** clipboard and notification TTS both disabled.
+2. **Clipboard only:** a short tap from OFF enables clipboard alone, never notifications.
+3. **Clipboard + notifications:** a long press at idle explicitly enables/disables notification TTS, but only with clipboard TTS ON and Android Notification Access granted.
+
+Short tap while ON mutes both sources and immediately cancels pending/active automatic reading. Long press during countdown or active reading preserves emergency Stop; no additional Smartbar button was added. An amber dot on the speaker marks notifications ON. The settings switches must call `AutoReadController`; the `AutoReadSwitchPolicy` source and tests define the invariant. Incoming notification guards must always check both switches, including when a restored/older backup contains an inconsistent preference combination. No automatic opt-in to notifications.
+
 ## 1. Purpose
 
 Dictate Kapijuja is an Android voice keyboard forked from Dictate Keyboard, itself based on FlorisBoard.
