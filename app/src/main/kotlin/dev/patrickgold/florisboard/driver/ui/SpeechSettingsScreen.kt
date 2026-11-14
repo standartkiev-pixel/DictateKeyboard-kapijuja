@@ -102,6 +102,8 @@ fun SpeechSettingsScreen() = FlorisScreen {
         val engine by prefs.speech.engine.collectAsState()
         val speechState by SpeechCoordinator.state.collectAsState()
         val notSet = stringRes(R.string.dictate__value_not_set)
+        val clipboardReadingEnabled by prefs.speech.autoReadEnabled.collectAsState()
+        val notificationReadingEnabled by prefs.speech.notificationReadEnabled.collectAsState()
         val masked: (String) -> String = { key -> if (key.isBlank()) notSet else "••••" + key.takeLast(4) }
         DisposableEffect(Unit) { onDispose { if (SpeechCoordinator.isActive(SAMPLE_KEY)) SpeechCoordinator.stop() } }
 
@@ -113,10 +115,11 @@ fun SpeechSettingsScreen() = FlorisScreen {
         )
 
         PreferenceGroup(title = stringRes(R.string.pref__speech__group_autoread)) {
-            SwitchPreference(
-                prefs.speech.autoReadEnabled,
+            SpeechReadingToggle(
                 title = stringRes(R.string.pref__speech__autoread__label),
                 summary = stringRes(R.string.pref__speech__autoread__summary),
+                checked = clipboardReadingEnabled,
+                onChange = { AutoReadController.setEnabled(context, it) },
             )
             DialogSliderPreference(
                 prefs.speech.autoReadDelaySec,
@@ -144,10 +147,15 @@ fun SpeechSettingsScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__speech__group_notifications)) {
-            SwitchPreference(
-                prefs.speech.notificationReadEnabled,
+            SpeechReadingToggle(
                 title = stringRes(R.string.pref__speech__notification_master__label),
-                summary = stringRes(R.string.pref__speech__notification_master__summary),
+                summary = stringRes(
+                    if (clipboardReadingEnabled) R.string.pref__speech__notification_master__summary
+                    else R.string.pref__speech__notifications_require_clipboard_summary
+                ),
+                checked = clipboardReadingEnabled && notificationReadingEnabled,
+                enabled = clipboardReadingEnabled,
+                onChange = { AutoReadController.setNotificationsEnabled(context, it) },
             )
             NotificationPermissionRow()
             SwitchPreference(
@@ -348,6 +356,38 @@ fun SpeechSettingsScreen() = FlorisScreen {
                 PaidProviderSection(engine, masked)
             }
         }
+    }
+}
+
+/**
+ * Two closely related reading preferences are controlled through AutoReadController rather than
+ * raw JetPref SwitchPreference, so switching clipboard OFF always disables alerts and cancels
+ * current speech. The single compact Smartbar speaker uses the same controller.
+ */
+@Composable
+private fun SpeechReadingToggle(
+    title: String,
+    summary: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled) { onChange(!checked) }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(text = summary, style = MaterialTheme.typography.bodyMedium)
+        }
+        Switch(
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = onChange,
+        )
     }
 }
 
