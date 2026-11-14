@@ -1871,7 +1871,7 @@
     <string name="pref__speech__autoread_min_chars__label">Non leggere testi più brevi di</string>
     <string name="pref__speech__autoread_min_chars__value">{v} caratteri</string>
     <string name="pref__speech__autoread_toggle__label">Interruttore nella barra tastiera</string>
-    <string name="pref__speech__autoread_toggle__summary">Altoparlante a sinistra: tocca per appunti o spegnere tutto; tieni premuto per notifiche. Il puntino indica le notifiche attive.</string>
+    <string name="pref__speech__autoread_toggle__summary">Altoparlante: tocca per attivare o disattivare entrambe le fonti. Nella finestra di lettura puoi disattivarle separatamente. Tieni premuto per attivare le notifiche o interrompere la lettura.</string>
     <string name="pref__speech__autoread_note">La finestra richiede il permesso per mostrarsi sopra le altre app. Niente lettura con schermo bloccato, durante la dettatura o per dati sensibili. Filtri qui sotto.</string>
     <string name="pref__speech__history_speaker__label">Altoparlante nella cronologia appunti</string>
     <string name="pref__speech__history_speaker__summary">Legge il testo senza incollarlo</string>
@@ -1920,4 +1920,8 @@
     <string name="speech__notifications_need_permission">Autorizza l’accesso Android alle notifiche, poi tieni premuto di nuovo l’altoparlante</string>
     <string name="speech__notifications_quick_on">Lettura delle nuove notifiche attiva</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Attiva prima la lettura degli appunti. Tieni premuto l’altoparlante per gestire le notifiche.</string>
+    <string name="speech__disable_clipboard_reading">Disattiva appunti</string>
+    <string name="speech__clipboard_reading_disabled">Lettura degli appunti disattivata</string>
+    <string name="speech__all_reading_enabled">Lettura di appunti e notifiche attivata</string>
+    <string name="speech__autoread_state_notifications_only">Solo lettura delle notifiche</string>
 </resources>
