@@ -136,6 +136,9 @@ class FlorisApplication : Application() {
             preferenceStoreLoaded.value = true
             // Driver Assistant auto-read (issue #7): subscribes to new clips; does nothing while it is off.
             dev.patrickgold.florisboard.driver.autoread.AutoReadController.start(this@FlorisApplication)
+            // Recovery after process restart: Android owns notification delivery and binding.
+            // Only request a rebind when the user left reading enabled and granted access.
+            dev.patrickgold.florisboard.driver.notifications.NotificationAccess.requestRecovery(this@FlorisApplication)
             // Keep the Wear OS companion's settings snapshot fresh: re-publish whenever a watch-relevant
             // phone setting changes (#106), so the watch reflects accent/provider/key/prompt automatically.
             DictateWearPublisher.startPublishingOnChange(this@FlorisApplication, scope)
