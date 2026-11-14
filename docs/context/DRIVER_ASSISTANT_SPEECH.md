@@ -59,3 +59,61 @@ most one paid request). Audio is played as it arrives instead of after the whole
 
 Unit tests: `app/src/test/.../driver/speech/SpeechEngineTest.kt` (chunking, WAV/PCM alignment,
 request building). Real audio, voices and each provider with a real key need a device check.
+
+## Notification reader (2026-11-14; versionCode 100015)
+
+Notification reading is separate from the clipboard observer. It uses
+`driver/notifications/KapijujaNotificationListenerService` registered via
+`android.permission.BIND_NOTIFICATION_LISTENER_SERVICE`. Android binds it **only after**
+the user grants Notification Access in system settings; the settings page exposes
+`NotificationAccess.granted/openSettings`. It is **disabled by default**.
+
+Allowed applications only: WhatsApp/WhatsApp Business; Instagram; Gmail, Outlook,
+Samsung Email, K-9/Thunderbird and Yahoo Mail; Viber; Telegram/Telegram Beta/Plus;
+YouTube. Each family has a separate setting; these switches do not affect Android
+notification delivery. This is a strict package allowlist, not a package-name substring
+search. New providers must be added deliberately.
+
+`NotificationTextExtractor` reads only Android's supplied `Notification.extras`:
+`EXTRA_MESSAGES` (MessagingStyle), `EXTRA_BIG_TEXT`, `EXTRA_TEXT_LINES`,
+`EXTRA_TEXT`, `EXTRA_SUB_TEXT`, and a fallback ticker. Expanded content takes
+precedence over collapsed duplicate previews. Per-notification in-memory fingerprints
+prevent duplicate readings across updates and let newly added messages be read without
+repeating all prior messages. At most six recent structured messages are considered.
+No reading of grouped summaries, calls, foreground-service status, or active media; no
+backfilling every active notification on reconnection. No title/body logging or
+persistent message capture. Android sensitive-redaction rules are respected; Android
+cannot provide text that the source application did not put into the notification.
+
+`AutoReadController` now accepts notification text as a second origin. Both origins
+use the same countdown, shared `SpeechCoordinator`, Pause/Resume, Stop, and privacy
+guard (no speech while locked or dictating). The fourth overlay button disables **only
+notification reading**. The third disables automatic reading from both sources.
+The user continues to receive the original Android notifications, unchanged.
+
+`SpeechTextSanitizer` runs before text reaches any TTS engine. It can skip URL
+tokens, long numeric sequences, service-only messages, and symbols. These four
+preferences apply to clipboard and notification speech. Credentials and verification
+codes are suppressed regardless of user filters. When a cloud provider is chosen,
+the cleaned notification text is sent to that provider *only after the countdown*.
+Local Android TTS does not send text via the app's own cloud API.
+
+The Speech screen is a top-level settings item, not nested under Clipboard.
+Its route remains `settings/speech` for backward compatibility. Overlays use
+`SpeechLocaleContext` to match `prefs.other.settingsLanguage` even when launched
+from the app-level service context. App resources are supplied in en/ru/de/fr/it,
+with English fallback for other locales.
+
+QA on Android 17 Samsung:
+1. Install v100015 over 100014 (same package/signature; no uninstall).
+2. Open Speech settings, grant Android Notification Access and enable the master
+   reader and the desired source. Keep the clipboard switch independent.
+3. Verify text from each source with collapsed preview, expanded big text, and
+   MessagingStyle group chat; check revised notifications are not reread.
+4. Copy the same clipboard text twice; verify both copies read.
+5. Test Pause/Continue, Stop, Disable all reading, Disable notification reading.
+6. Switch interface language among en/ru/de/fr/it and verify overlay labels.
+7. Test links, 10-digit codes, OTPs, symbols, screen locked, live dictation.
+8. Check Android TTS after service disconnect and after opening/closing keyboard.
+9. Test cloud TTS only with explicit user settings and ensure no pre-countdown
+   network request.
