@@ -126,6 +126,10 @@ object AutoReadController {
         }
     }
 
+    /** Long-press always retains the previous safety shortcut to stop an active reading. */
+    fun hasActiveReading(): Boolean =
+        countingDown || SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true
+
     /** Cancels the pending countdown or the auto-reading in progress; the next copy works again. */
     fun cancelCurrent() {
         generation++
