@@ -2407,7 +2407,7 @@
     <string name="pref__speech__provider_voice_count">Voices loaded: {count}</string>
     <string name="pref__speech__provider_check_quota">Check ElevenLabs API usage</string>
     <string name="pref__speech__eleven_quota">API period: {used} of {limit} characters used (not the prepaid cash balance).</string>
-    <string name="pref__speech__balance_note">The payment button opens the provider's own billing page to view actual monetary balance and add funds. The app never charges the card itself.</string>
+    <string name="pref__speech__balance_note">The payment button opens the provider\'s own billing page to view actual monetary balance and add funds. The app never charges the card itself.</string>
     <string name="pref__speech__notification_connection">Notification listener connection</string>
     <string name="pref__speech__notification_connected">Service connected and ready</string>
     <string name="pref__speech__notification_recovering">Android permission granted. Request reconnection if notifications are not read.</string>
