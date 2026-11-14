@@ -2412,4 +2412,6 @@
     <string name="pref__speech__notification_connected">Service connected and ready</string>
     <string name="pref__speech__notification_recovering">Android permission granted. Request reconnection if notifications are not read.</string>
     <string name="pref__speech__notification_reconnect">Reconnect notification listener</string>
+    <string name="backup_and_restore__api_keys_warning">API keys are included in this settings backup: dictation providers and OpenAI, ElevenLabs, Inworld, Azure, Gemini, and Grok speech. The ZIP archive is NOT encrypted. Keep it private; anyone with this file can use the keys.</string>
+    <string name="backup_and_restore__api_keys_restore_note">Restoring application settings also restores API keys present in the backup. Older backups cannot restore keys added later. Merge keeps unrelated current settings. Protect the backup ZIP because its contents are not encrypted.</string>
 </resources>

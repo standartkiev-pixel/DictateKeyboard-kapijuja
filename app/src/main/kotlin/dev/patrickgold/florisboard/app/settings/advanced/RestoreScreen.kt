@@ -184,6 +184,9 @@ fun RestoreScreen() = FlorisScreen {
                 .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
             if (file.exists()) {
                 val fileBasedStorage = FileBasedStorage(file.path)
+                // JetPref restores the provider keyring plus independent speech API keys
+                // from backups which contain them. Old backups cannot restore keys they
+                // never saved; Merge remains the default to retain existing local settings.
                 FlorisPreferenceStore.import(importStrategy, fileBasedStorage).getOrThrow()
             }
         }
@@ -461,6 +464,12 @@ fun RestoreScreen() = FlorisScreen {
                     filesSelector = restoreFilesSelector,
                     title = stringRes(R.string.backup_and_restore__restore__files),
                 )
+                if (restoreFilesSelector.jetprefDatastore) {
+                    Text(
+                        text = stringRes(R.string.backup_and_restore__api_keys_restore_note),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
             }
         }
     }

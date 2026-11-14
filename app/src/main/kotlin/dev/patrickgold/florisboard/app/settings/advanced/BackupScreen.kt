@@ -21,9 +21,11 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Text
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
@@ -198,6 +200,10 @@ fun BackupScreen() = FlorisScreen {
     suspend fun prepareBackupWorkspace() {
         val workspace = cacheManager.backupAndRestore.new()
         if (backupFilesSelector.jetprefDatastore) {
+            // Do not filter or redact credentials here: backup/restore of API keys is an
+            // explicit user requirement. The settings checkbox controls this entire export.
+            // Keep using the common JetPref serializer, so newly added provider keys round-trip
+            // without a separate, potentially stale backup-key whitelist.
             val fileBasedStorage = workspace.inputDir
                 .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
                 .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
@@ -383,6 +389,15 @@ fun BackupScreen() = FlorisScreen {
             filesSelector = backupFilesSelector,
             title = stringRes(R.string.backup_and_restore__back_up__files),
         )
+        // The generic JetPref export already includes the entire Dictate keyring and all
+        // independent Speech API keys (OpenAI/ElevenLabs/Inworld/Azure/Gemini/xAI).
+        // The archive is an ordinary, unencrypted ZIP; warn before it can be shared.
+        if (backupFilesSelector.jetprefDatastore) {
+            Text(
+                text = stringRes(R.string.backup_and_restore__api_keys_warning),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
     }
 }
 

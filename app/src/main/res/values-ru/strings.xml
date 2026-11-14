@@ -2197,4 +2197,6 @@
     <string name="pref__speech__notification_connected">Служба подключена и готова</string>
     <string name="pref__speech__notification_recovering">Разрешение Android выдано. Если сообщения не читаются, запросите повторное подключение.</string>
     <string name="pref__speech__notification_reconnect">Переподключить чтение уведомлений</string>
+    <string name="backup_and_restore__api_keys_warning">В резервную копию настроек входят API-ключи диктовки и озвучивания: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok и других провайдеров. ZIP-архив НЕ зашифрован! Не передавайте его посторонним: по ключам можно расходовать ваши средства.</string>
+    <string name="backup_and_restore__api_keys_restore_note">При восстановлении настроек возвращаются и API-ключи, сохранённые в архиве. В старых архивах может не быть ключей новых движков. Режим «Объединить» сохраняет остальные текущие настройки. ZIP не зашифрован.</string>
 </resources>

@@ -49,23 +49,19 @@ jobs:
           chmod +x tools/fetch-sherpa-onnx.sh
           ./tools/fetch-sherpa-onnx.sh
 
-      - name: Compile phone and Wear
-        run: ./gradlew :app:assembleDebug :wear:assembleDebug --stacktrace
+      # Preserve :wear sources without compiling a separate watch APK in routine releases.
+      - name: Compile compact phone APK
+        run: ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Run all JVM unit tests
+      - name: Run phone and core JVM unit tests
         run: |
           timeout 20m ./gradlew \
             :app:testDebugUnitTest \
             :lib:dictate-core:testDebugUnitTest \
-            :wear:testDebugUnitTest \
             --stacktrace
 
-      - name: Strict Android lint for core and Wear
-        run: |
-          ./gradlew \
-            :lib:dictate-core:lintDebug \
-            :wear:lintDebug \
-            --stacktrace
+      - name: Strict Android lint for core
+        run: ./gradlew :lib:dictate-core:lintDebug --stacktrace
 
       # The phone module carries an upstream localization/API lint backlog. Generate its complete report
       # for every RC, then fail on the permission/lifecycle/resource IDs that can crash or leak at runtime.
@@ -135,9 +131,9 @@ jobs:
             'The long-form dictation, recording-input routing, retained-audio recovery and transcription watchdog work from RC6 remain intact. Development handoff material is now split into bounded task-specific context files so maintenance changes do not require loading the full project history.' \
             '' \
             'Validated before publishing:' \
-            '- phone and Wear compilation;' \
-            '- app, dictate-core and Wear unit tests, including network fault, cancellation, auth and quota cases;' \
-            '- strict core/Wear lint and a release-critical phone permission/lifecycle/resource gate;' \
+            '- compact arm64 phone APK compilation (Wear sources retained, not built);' \
+            '- app and dictate-core unit tests, including network fault, cancellation, auth and quota cases;' \
+            '- strict core lint and a release-critical phone permission/lifecycle/resource gate;' \
             '- Cloud/Billing and credential audit;' \
             '- APK package, signature, version code and size verification.' \
             '' \

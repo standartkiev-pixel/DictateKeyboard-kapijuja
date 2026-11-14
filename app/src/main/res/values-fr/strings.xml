@@ -1994,4 +1994,6 @@
     <string name="pref__speech__notification_connected">Service connecté et prêt</string>
     <string name="pref__speech__notification_recovering">Autorisation Android accordée. Reconnectez le service si la lecture ne fonctionne pas.</string>
     <string name="pref__speech__notification_reconnect">Reconnecter les notifications</string>
+    <string name="backup_and_restore__api_keys_warning">La sauvegarde des paramètres inclut les clés API de dictée et de synthèse vocale : OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok et autres. Le ZIP est NON chiffré. Ne le partagez pas.</string>
+    <string name="backup_and_restore__api_keys_restore_note">La restauration des paramètres importe également les clés API présentes dans le ZIP. Les anciennes sauvegardes peuvent manquer des nouvelles clés. Le mode fusion conserve les autres réglages. Le ZIP est non chiffré.</string>
 </resources>
