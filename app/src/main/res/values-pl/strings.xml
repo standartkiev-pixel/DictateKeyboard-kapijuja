@@ -2041,4 +2041,23 @@
     <string name="sticker__source_threema">Threema</string>
     <string name="sticker__source_signal">Signal</string>
     <string name="sticker__source_stickers_folder">Folder z naklejkami</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Naturalny głos w chmurze z własnym kluczem API</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Głos strumieniowy z własnym kluczem API</string>
+    <string name="pref__speech__eleven_note">Modele Eleven v3 i wielojęzyczne. Wpisz klucz API, a następnie pobierz dostępne głosy.</string>
+    <string name="pref__speech__inworld_note">Wklej klucz Inworld „Basic (Base64)” bez zmian, a następnie pobierz głosy.</string>
+    <string name="pref__speech__provider_get_key">🔑 Pobierz klucz</string>
+    <string name="pref__speech__provider_billing">💳 Saldo i płatność</string>
+    <string name="pref__speech__provider_verify">Sprawdź klucz i pobierz głosy</string>
+    <string name="pref__speech__provider_loading">Pobieranie głosów…</string>
+    <string name="pref__speech__provider_failed">Nie można sprawdzić konta. Sprawdź klucz, uprawnienia, sieć lub płatności.</string>
+    <string name="pref__speech__provider_voice_count">Pobrano głosów: {count}</string>
+    <string name="pref__speech__provider_check_quota">Sprawdź użycie API ElevenLabs</string>
+    <string name="pref__speech__eleven_quota">W bieżącym okresie użyto {used} z {limit} znaków (to nie saldo środków).</string>
+    <string name="pref__speech__balance_note">Przycisk otwiera stronę rozliczeń dostawcy, gdzie można sprawdzić saldo i doładować konto. Aplikacja nie pobiera opłat z karty.</string>
+    <string name="pref__speech__notification_connection">Połączenie czytnika powiadomień</string>
+    <string name="pref__speech__notification_connected">Usługa połączona i gotowa</string>
+    <string name="pref__speech__notification_recovering">Zgoda Androida jest udzielona. W razie problemów połącz usługę ponownie.</string>
+    <string name="pref__speech__notification_reconnect">Połącz ponownie czytnik powiadomień</string>
 </resources>
