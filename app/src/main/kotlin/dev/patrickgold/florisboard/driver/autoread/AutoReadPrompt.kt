@@ -27,6 +27,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.driver.ui.SpeechLocaleContext
 
 /**
  * The visible part of an auto-read: a countdown, then "reading", each of which can be paused.
@@ -52,6 +53,7 @@ class OverlayAutoReadPrompt(
     private val onDisableNotifications: () -> Unit,
 ) : AutoReadPrompt {
     private val windowManager = context.getSystemService(WindowManager::class.java)
+    private val localeContext = SpeechLocaleContext.wrap(context)
     private var root: View? = null
     private var title: TextView? = null
     private var pauseButton: Button? = null
@@ -60,22 +62,22 @@ class OverlayAutoReadPrompt(
     override fun showCountdown(secondsLeft: Int, paused: Boolean) {
         ensureShown()
         title?.text = if (paused) {
-            context.getString(if (isNotification) R.string.speech__notification_countdown_paused else R.string.speech__autoread_countdown_paused)
+            localeContext.getString(if (isNotification) R.string.speech__notification_countdown_paused else R.string.speech__autoread_countdown_paused)
         } else {
-            context.getString(if (isNotification) R.string.speech__notification_countdown else R.string.speech__autoread_countdown, secondsLeft)
+            localeContext.getString(if (isNotification) R.string.speech__notification_countdown else R.string.speech__autoread_countdown, secondsLeft)
         }
         pauseButton?.text = pauseLabel(paused)
-        cancelButton?.text = context.getString(R.string.speech__autoread_cancel)
+        cancelButton?.text = localeContext.getString(R.string.speech__autoread_cancel)
     }
 
     override fun showReading(paused: Boolean) {
         ensureShown()
-        title?.text = context.getString(
+        title?.text = localeContext.getString(
             if (paused) (if (isNotification) R.string.speech__notification_reading_paused else R.string.speech__autoread_reading_paused)
             else (if (isNotification) R.string.speech__notification_reading else R.string.speech__autoread_reading)
         )
         pauseButton?.text = pauseLabel(paused)
-        cancelButton?.text = context.getString(R.string.speech__autoread_stop)
+        cancelButton?.text = localeContext.getString(R.string.speech__autoread_stop)
     }
 
     override fun hide() {
@@ -85,7 +87,7 @@ class OverlayAutoReadPrompt(
     }
 
     private fun pauseLabel(paused: Boolean): String =
-        context.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
+        localeContext.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
 
     private fun ensureShown() {
         if (root != null) return
@@ -115,9 +117,9 @@ class OverlayAutoReadPrompt(
             setOnClickListener { onClick() }
         }
         val pause = button(pauseLabel(false), 0xFF1565C0.toInt(), 16f, onPauseToggle)
-        val cancel = button(ctx.getString(R.string.speech__autoread_cancel), 0xFF455A64.toInt(), 16f, onCancel)
-        val disable = button(ctx.getString(R.string.speech__disable_all_reading), 0xFFC62828.toInt(), 14f, onDisable)
-        val disableAlerts = button(ctx.getString(R.string.speech__disable_notification_reading), 0xFF795548.toInt(), 14f, onDisableNotifications)
+        val cancel = button(localeContext.getString(R.string.speech__autoread_cancel), 0xFF455A64.toInt(), 16f, onCancel)
+        val disable = button(localeContext.getString(R.string.speech__disable_all_reading), 0xFFC62828.toInt(), 14f, onDisable)
+        val disableAlerts = button(localeContext.getString(R.string.speech__disable_notification_reading), 0xFF795548.toInt(), 14f, onDisableNotifications)
         fun row(left: Button, right: Button) = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             addView(left, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(6) })
@@ -167,6 +169,7 @@ class OverlayAutoReadPrompt(
  */
 class NotificationAutoReadPrompt(private val context: Context, private val isNotification: Boolean) : AutoReadPrompt {
     private val manager = context.getSystemService(NotificationManager::class.java)
+    private val localeContext = SpeechLocaleContext.wrap(context)
 
     /** What is on screen now, so the 200 ms countdown ticks do not repost the same notification. */
     private var shown: String? = null
@@ -174,11 +177,11 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
     override fun showCountdown(secondsLeft: Int, paused: Boolean) {
         if (!changed("countdown:$paused")) return
         if (paused) {
-            post(build(context.getString(if (isNotification) R.string.speech__notification_countdown_paused else R.string.speech__autoread_countdown_paused), paused, reading = false).setShowWhen(false).build())
+            post(build(localeContext.getString(if (isNotification) R.string.speech__notification_countdown_paused else R.string.speech__autoread_countdown_paused), paused, reading = false).setShowWhen(false).build())
             return
         }
         post(
-            build(context.getString(if (isNotification) R.string.speech__notification_title else R.string.speech__autoread_notification_title), paused, reading = false)
+            build(localeContext.getString(if (isNotification) R.string.speech__notification_title else R.string.speech__autoread_notification_title), paused, reading = false)
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true)
                 .setWhen(System.currentTimeMillis() + secondsLeft * 1000L)
@@ -190,7 +193,7 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
 
     override fun showReading(paused: Boolean) {
         if (!changed("reading:$paused")) return
-        val title = context.getString(
+        val title = localeContext.getString(
             if (isNotification) {
                 if (paused) R.string.speech__notification_reading_paused else R.string.speech__notification_reading
             } else {
@@ -213,8 +216,8 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
 
     private fun build(title: String, paused: Boolean, reading: Boolean): Notification.Builder {
         ensureChannel()
-        val pauseLabel = context.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
-        val cancelLabel = context.getString(if (reading) R.string.speech__autoread_stop else R.string.speech__autoread_cancel)
+        val pauseLabel = localeContext.getString(if (paused) R.string.speech__autoread_resume else R.string.speech__autoread_pause)
+        val cancelLabel = localeContext.getString(if (reading) R.string.speech__autoread_stop else R.string.speech__autoread_cancel)
         return Notification.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_app_icon_monochrome)
             .setContentTitle(title)
@@ -226,7 +229,7 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
             .addAction(Notification.Action.Builder(null, cancelLabel, action(ACTION_CANCEL)).build())
             .addAction(Notification.Action.Builder(
                 null,
-                context.getString(if (isNotification) R.string.speech__disable_notification_reading else R.string.speech__disable_all_reading),
+                localeContext.getString(if (isNotification) R.string.speech__disable_notification_reading else R.string.speech__disable_all_reading),
                 action(if (isNotification) ACTION_DISABLE_NOTIFICATIONS else ACTION_DISABLE)
             ).build())
     }
@@ -247,7 +250,7 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
         if (m.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            context.getString(R.string.speech__autoread_channel),
+            localeContext.getString(R.string.speech__autoread_channel),
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             setSound(null, null)
