@@ -213,6 +213,8 @@ object SpeechCoordinator {
         SpeechEngineId.AZURE -> AzureSpeechSource
         SpeechEngineId.GOOGLE -> GeminiSpeechSource
         SpeechEngineId.XAI -> XaiSpeechSource
+        SpeechEngineId.ELEVENLABS -> ElevenLabsSpeechSource
+        SpeechEngineId.INWORLD -> InworldSpeechSource
         SpeechEngineId.ANDROID -> error("Android is not a cloud source")
     }
 

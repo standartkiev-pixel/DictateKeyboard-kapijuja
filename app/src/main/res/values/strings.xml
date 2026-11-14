@@ -2393,4 +2393,23 @@
     <string name="pref__speech__simplify_symbols">Remove unnecessary symbols</string>
     <string name="pref__speech__cleanup_note">These filters apply to both clipboard and notifications. Security tokens and verification codes are always skipped.</string>
     <string name="pref__speech__notification_restricted_hint">If Android blocks access for a sideloaded APK, open Android Settings → Apps → Kapijuja → ⋮ → Allow restricted settings, then return here.</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Natural cloud speech, own API key; billed by text</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Streaming cloud voice, own API key; billed by text</string>
+    <string name="pref__speech__eleven_note">Eleven v3 and multilingual voices. Enter your ElevenLabs API key, then load voices from your account.</string>
+    <string name="pref__speech__inworld_note">Enter the Inworld Basic (Base64) key exactly as shown in the portal. Then load your available voices.</string>
+    <string name="pref__speech__provider_get_key">🔑 Get key</string>
+    <string name="pref__speech__provider_billing">💳 Balance &amp; payment</string>
+    <string name="pref__speech__provider_verify">Verify key and load voices</string>
+    <string name="pref__speech__provider_loading">Loading voices…</string>
+    <string name="pref__speech__provider_failed">Cannot verify this account right now. Check the key, permissions, network or billing.</string>
+    <string name="pref__speech__provider_voice_count">Voices loaded: {count}</string>
+    <string name="pref__speech__provider_check_quota">Check ElevenLabs API usage</string>
+    <string name="pref__speech__eleven_quota">API period: {used} of {limit} characters used (not the prepaid cash balance).</string>
+    <string name="pref__speech__balance_note">The payment button opens the provider\'s own billing page to view actual monetary balance and add funds. The app never charges the card itself.</string>
+    <string name="pref__speech__notification_connection">Notification listener connection</string>
+    <string name="pref__speech__notification_connected">Service connected and ready</string>
+    <string name="pref__speech__notification_recovering">Android permission granted. Request reconnection if notifications are not read.</string>
+    <string name="pref__speech__notification_reconnect">Reconnect notification listener</string>
 </resources>

@@ -2003,4 +2003,23 @@
     <string name="pref__speech__autoread_last__value">{time}: {result} ({n} Zeichen)</string>
     <string name="pref__speech__autoread_last__none">Seit App-Start nichts kopiert</string>
     <string name="pref__speech__notification_restricted_hint">Wenn Android den Zugriff für eine APK sperrt: Android-Einstellungen → Apps → Kapijuja → ⋮ → Eingeschränkte Einstellungen zulassen, danach hierher zurück.</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Natürliche Cloud-Stimme mit eigenem API-Schlüssel</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Streaming-Sprachausgabe mit eigenem API-Schlüssel</string>
+    <string name="pref__speech__eleven_note">Eleven v3 und mehrsprachige Modelle. API-Schlüssel eingeben und anschließend Stimmen laden.</string>
+    <string name="pref__speech__inworld_note">Inworld-Schlüssel „Basic (Base64)“ unverändert aus dem Portal einfügen, dann Stimmen laden.</string>
+    <string name="pref__speech__provider_get_key">🔑 Schlüssel holen</string>
+    <string name="pref__speech__provider_billing">💳 Guthaben &amp; Zahlung</string>
+    <string name="pref__speech__provider_verify">Schlüssel prüfen und Stimmen laden</string>
+    <string name="pref__speech__provider_loading">Stimmen werden geladen…</string>
+    <string name="pref__speech__provider_failed">Konto kann nicht geprüft werden. Schlüssel, Berechtigungen, Netzwerk und Zahlung prüfen.</string>
+    <string name="pref__speech__provider_voice_count">Geladene Stimmen: {count}</string>
+    <string name="pref__speech__provider_check_quota">ElevenLabs-API-Verbrauch prüfen</string>
+    <string name="pref__speech__eleven_quota">API-Zeitraum: {used} von {limit} Zeichen verbraucht (kein Geldguthaben).</string>
+    <string name="pref__speech__balance_note">Die Zahlungs-Schaltfläche öffnet die Abrechnung beim Anbieter. Die App belastet keine Karte direkt.</string>
+    <string name="pref__speech__notification_connection">Verbindung zum Benachrichtigungsdienst</string>
+    <string name="pref__speech__notification_connected">Dienst verbunden und bereit</string>
+    <string name="pref__speech__notification_recovering">Android-Zugriff erteilt. Bei Ausfall erneut verbinden.</string>
+    <string name="pref__speech__notification_reconnect">Benachrichtigungsdienst neu verbinden</string>
 </resources>

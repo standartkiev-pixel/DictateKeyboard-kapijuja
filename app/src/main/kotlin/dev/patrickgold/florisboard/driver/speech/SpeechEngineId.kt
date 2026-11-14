@@ -21,7 +21,9 @@ enum class SpeechEngineId {
     OPENAI,
     AZURE,
     GOOGLE,
-    XAI;
+    XAI,
+    ELEVENLABS,
+    INWORLD;
 
     val isCloud: Boolean get() = this != ANDROID
 }
@@ -64,6 +66,17 @@ object SpeechVoiceCatalog {
         "Rasalgethi", "Laomedeia", "Achernar", "Alnilam", "Schedar", "Gacrux", "Pulcherrima",
         "Achird", "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat",
     ).map { SpeechVoice(it, it) }
+
+    val elevenModels = listOf(
+        SpeechVoice("eleven_v3", "Eleven v3"),
+        SpeechVoice("eleven_multilingual_v2", "Multilingual v2"),
+        SpeechVoice("eleven_flash_v2_5", "Flash v2.5"),
+    )
+
+    val inworldModels = listOf(
+        SpeechVoice("inworld-tts-2", "TTS-2"),
+        SpeechVoice("inworld-tts-2-flash", "TTS-2 Flash"),
+    )
 
     val xai = listOf(
         "orion", "lux", "perseus", "rigel", "naksh", "atlas", "sal", "rex", "leo", "lumen", "castor",

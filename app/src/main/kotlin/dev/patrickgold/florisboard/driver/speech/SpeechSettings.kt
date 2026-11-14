@@ -36,6 +36,12 @@ data class SpeechSettings(
     val googleVoice: String = "Kore",
     val xaiKey: String = "",
     val xaiVoice: String = "orion",
+    val elevenKey: String = "",
+    val elevenModel: String = "eleven_v3",
+    val elevenVoice: String = "",
+    val inworldKey: String = "",
+    val inworldModel: String = "inworld-tts-2",
+    val inworldVoice: String = "Dennis",
 ) {
     val languageCode: String get() = language.substringBefore('-').lowercase().ifBlank { "ru" }
 
@@ -71,6 +77,12 @@ data class SpeechSettings(
                 googleVoice = s.googleVoice.get().trim().ifBlank { "Kore" },
                 xaiKey = s.xaiApiKey.get().trim(),
                 xaiVoice = s.xaiVoice.get().trim().ifBlank { "orion" },
+                elevenKey = s.elevenApiKey.get().trim(),
+                elevenModel = s.elevenModel.get().trim().ifBlank { "eleven_v3" },
+                elevenVoice = s.elevenVoice.get().trim(),
+                inworldKey = s.inworldApiKey.get().trim(),
+                inworldModel = s.inworldModel.get().trim().ifBlank { "inworld-tts-2" },
+                inworldVoice = s.inworldVoice.get().trim().ifBlank { "Dennis" },
             )
         }
     }

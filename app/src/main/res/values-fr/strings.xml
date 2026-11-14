@@ -1975,4 +1975,23 @@
     <string name="pref__speech__autoread_last__value">{time} : {result} ({n} caractères)</string>
     <string name="pref__speech__autoread_last__none">Aucun texte copié depuis le démarrage</string>
     <string name="pref__speech__notification_restricted_hint">Si Android bloque l’accès à cette APK : Paramètres Android → Applications → Kapijuja → ⋮ → Autoriser les paramètres restreints, puis revenez ici.</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Voix naturelle avec votre propre clé API</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Synthèse vocale en flux avec votre clé API</string>
+    <string name="pref__speech__eleven_note">Modèles Eleven v3 et multilingues. Saisissez la clé API puis chargez les voix disponibles.</string>
+    <string name="pref__speech__inworld_note">Collez la clé Inworld «Basic (Base64)» telle quelle depuis le portail, puis chargez les voix.</string>
+    <string name="pref__speech__provider_get_key">🔑 Obtenir une clé</string>
+    <string name="pref__speech__provider_billing">💳 Solde et paiement</string>
+    <string name="pref__speech__provider_verify">Vérifier la clé et charger les voix</string>
+    <string name="pref__speech__provider_loading">Chargement des voix…</string>
+    <string name="pref__speech__provider_failed">Compte non vérifié. Vérifiez la clé, les droits, le réseau ou la facturation.</string>
+    <string name="pref__speech__provider_voice_count">Voix chargées : {count}</string>
+    <string name="pref__speech__provider_check_quota">Vérifier l’usage API ElevenLabs</string>
+    <string name="pref__speech__eleven_quota">Période API : {used} caractères utilisés sur {limit} (hors solde prépayé).</string>
+    <string name="pref__speech__balance_note">Le bouton de paiement ouvre la facturation du fournisseur pour consulter le solde et recharger. L’application ne débite pas votre carte.</string>
+    <string name="pref__speech__notification_connection">Connexion du service de notifications</string>
+    <string name="pref__speech__notification_connected">Service connecté et prêt</string>
+    <string name="pref__speech__notification_recovering">Autorisation Android accordée. Reconnectez le service si la lecture ne fonctionne pas.</string>
+    <string name="pref__speech__notification_reconnect">Reconnecter les notifications</string>
 </resources>

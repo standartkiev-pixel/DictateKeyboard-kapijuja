@@ -2178,4 +2178,23 @@
     <string name="pref__speech__simplify_symbols">Убирать лишние символы</string>
     <string name="pref__speech__cleanup_note">Фильтры действуют и для буфера обмена, и для уведомлений. Ключи доступа и коды подтверждения пропускаются всегда.</string>
     <string name="pref__speech__notification_restricted_hint">Если Android блокирует доступ для APK, откройте Настройки Android → Приложения → Kapijuja → ⋮ → Разрешить ограниченные настройки, затем вернитесь сюда.</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Естественная облачная озвучка по собственному API-ключу</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Потоковая озвучка по собственному API-ключу</string>
+    <string name="pref__speech__eleven_note">Модели Eleven v3 и Multilingual. Введите API-ключ ElevenLabs, затем загрузите голоса вашего аккаунта.</string>
+    <string name="pref__speech__inworld_note">Введите ключ Inworld «Basic (Base64)» точно как на сайте. Затем загрузите доступные голоса.</string>
+    <string name="pref__speech__provider_get_key">🔑 Получить ключ</string>
+    <string name="pref__speech__provider_billing">💳 Баланс и оплата</string>
+    <string name="pref__speech__provider_verify">Проверить ключ и загрузить голоса</string>
+    <string name="pref__speech__provider_loading">Загрузка голосов…</string>
+    <string name="pref__speech__provider_failed">Не удалось проверить аккаунт. Проверьте ключ, разрешения, сеть или оплату.</string>
+    <string name="pref__speech__provider_voice_count">Загружено голосов: {count}</string>
+    <string name="pref__speech__provider_check_quota">Проверить использование API ElevenLabs</string>
+    <string name="pref__speech__eleven_quota">За расчётный период использовано {used} из {limit} символов. Это не денежный баланс пополнения.</string>
+    <string name="pref__speech__balance_note">Кнопка оплаты открывает сайт провайдера: там можно посмотреть денежный баланс и пополнить счёт. Приложение не списывает деньги с карты напрямую.</string>
+    <string name="pref__speech__notification_connection">Подключение чтения уведомлений</string>
+    <string name="pref__speech__notification_connected">Служба подключена и готова</string>
+    <string name="pref__speech__notification_recovering">Разрешение Android выдано. Если сообщения не читаются, запросите повторное подключение.</string>
+    <string name="pref__speech__notification_reconnect">Переподключить чтение уведомлений</string>
 </resources>

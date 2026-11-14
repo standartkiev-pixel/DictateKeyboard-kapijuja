@@ -6,7 +6,6 @@ package dev.patrickgold.florisboard.driver.notifications
 
 import android.app.KeyguardManager
 import android.app.Notification
-import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -22,6 +21,12 @@ import dev.patrickgold.florisboard.driver.autoread.AutoReadController
  * enumerate active notifications on reconnect, or store notification bodies in logs.
  */
 class KapijujaNotificationListenerService : NotificationListenerService() {
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        seen.clear()
+        NotificationAccess.markConnected()
+    }
+
     private val prefs by FlorisPreferenceStore
     private val seen = object : LinkedHashMap<String, LinkedHashSet<Int>>(128, 0.75f, true) {
         override fun removeEldestEntry(
@@ -91,11 +96,15 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
+        NotificationAccess.markDisconnected()
         seen.clear()
-        // The Android system (not a polling timer) owns binding/rebinding this listener.
-        runCatching {
-            NotificationListenerService.requestRebind(ComponentName(this, KapijujaNotificationListenerService::class.java))
-        }
+        NotificationAccess.requestRecovery(this, force = true)
+        super.onListenerDisconnected()
+    }
+
+    override fun onDestroy() {
+        NotificationAccess.markDisconnected()
+        super.onDestroy()
     }
 
     private fun isSourceEnabled(source: NotificationSource): Boolean = when (source) {

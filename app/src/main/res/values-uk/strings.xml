@@ -1975,4 +1975,23 @@
     <string name="speech__autoread_resume">Продовжити</string>
     <string name="speech__autoread_stop">Стоп</string>
     <string name="speech__autoread_disable_short">Вимкнути</string>
+    <string name="speech__engine_elevenlabs">ElevenLabs</string>
+    <string name="speech__engine_elevenlabs_summary">Природне звучання з власним API-ключем</string>
+    <string name="speech__engine_inworld">Inworld TTS</string>
+    <string name="speech__engine_inworld_summary">Потокове озвучення з власним API-ключем</string>
+    <string name="pref__speech__eleven_note">Моделі Eleven v3 та Multilingual. Введіть API-ключ ElevenLabs і завантажте голоси.</string>
+    <string name="pref__speech__inworld_note">Введіть ключ Inworld «Basic (Base64)» точно як у порталі й завантажте голоси.</string>
+    <string name="pref__speech__provider_get_key">🔑 Отримати ключ</string>
+    <string name="pref__speech__provider_billing">💳 Баланс і оплата</string>
+    <string name="pref__speech__provider_verify">Перевірити ключ і завантажити голоси</string>
+    <string name="pref__speech__provider_loading">Завантаження голосів…</string>
+    <string name="pref__speech__provider_failed">Не вдалося перевірити акаунт. Перевірте ключ, дозволи, мережу чи оплату.</string>
+    <string name="pref__speech__provider_voice_count">Завантажено голосів: {count}</string>
+    <string name="pref__speech__provider_check_quota">Перевірити використання API ElevenLabs</string>
+    <string name="pref__speech__eleven_quota">За розрахунковий період використано {used} із {limit} символів. Це не грошовий баланс.</string>
+    <string name="pref__speech__balance_note">Кнопка відкриває сторінку оплати постачальника, де можна перевірити баланс і поповнити рахунок. Додаток не списує гроші з картки.</string>
+    <string name="pref__speech__notification_connection">Підключення читання сповіщень</string>
+    <string name="pref__speech__notification_connected">Службу підключено й готово</string>
+    <string name="pref__speech__notification_recovering">Дозвіл Android надано. Якщо читання не працює, підключіть службу повторно.</string>
+    <string name="pref__speech__notification_reconnect">Повторно підключити читання сповіщень</string>
 </resources>

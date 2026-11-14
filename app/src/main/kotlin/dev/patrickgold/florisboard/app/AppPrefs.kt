@@ -1570,6 +1570,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "speech__xai_voice",
             default = "orion",
         )
+        // Independent BYOK credentials. Never put providers' keys into source or logs.
+        val elevenApiKey = string(key = "speech__eleven_api_key", default = "")
+        val elevenModel = string(key = "speech__eleven_model", default = "eleven_v3")
+        val elevenVoice = string(key = "speech__eleven_voice", default = "")
+        val inworldApiKey = string(key = "speech__inworld_api_key", default = "")
+        val inworldModel = string(key = "speech__inworld_model", default = "inworld-tts-2")
+        val inworldVoice = string(key = "speech__inworld_voice", default = "Dennis")
     }
 
     val spelling = Spelling()
