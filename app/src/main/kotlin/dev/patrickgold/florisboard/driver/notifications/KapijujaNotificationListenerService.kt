@@ -10,6 +10,7 @@ import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import java.util.LinkedHashMap
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.driver.autoread.AutoReadController
 
@@ -89,7 +90,7 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
         seen.clear()
         // The Android system (not a polling timer) owns binding/rebinding this listener.
         runCatching {
-            requestRebind(ComponentName(this, KapijujaNotificationListenerService::class.java))
+            NotificationListenerService.requestRebind(ComponentName(this, KapijujaNotificationListenerService::class.java))
         }
     }
 
