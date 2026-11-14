@@ -19,7 +19,7 @@ Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md` (issue #7).
   Turning it on without a way to draw the window opens the overlay permission screen. Settings show
   permission status and the last clip's outcome (`AutoReadController.lastClip`, no text kept). Off by default; toggle `AutoReadSmartbarToggle` is the leftmost Smartbar item.
 - Volume: speech uses `USAGE_MEDIA` (media volume) plus a `LoudnessEnhancer` boost (default +6 dB).
-- Not done yet: notification assistant, messenger opening, Microsoft Edge "Read aloud" engine.
+- Not done yet: opening a messenger from its notification, Microsoft Edge "Read aloud" engine.
 - Unverified on devices: whether a default IME gets clipboard callbacks while the keyboard is hidden
   on Samsung/One UI; LoudnessEnhancer on the Android TTS engine's session.
 
@@ -36,6 +36,10 @@ Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md` (issue #7).
   - `AzureSpeechSource` — REST, `raw-24khz-16bit-mono-pcm`, streamed body.
   - `GeminiSpeechSource` — `generateContent` AUDIO, one JSON per piece.
   - `XaiSpeechSource` — `POST /v1/tts`, `codec: pcm`.
+  - `ElevenLabsSpeechSource` — ElevenLabs REST `/v1/text-to-speech/{voice_id}`, raw `pcm_24000`. Requires an explicit user's key AND an account voice. Model defaults to `eleven_v3`.
+  - `InworldSpeechSource` — official `/tts/v1/voice:stream`, NDJSON frames with Base64 24-kHz raw PCM. Basic (Base64) key is passed unchanged; default `inworld-tts-2`.
+- `PaidSpeechAccounts`: reads ElevenLabs `GET /v2/voices` and API character quota, Inworld `GET /voices/v1/voices`. No paid TTS is sent when checking credentials or voices. Payment/balance controls open vendor billing pages; ElevenLabs' API character quota is NOT the monetary PAYG balance. User confirms purchases only on vendor's site.
+- User-selectable model and voice in Speech settings; no keys are bundled in app code. Keys are stored using the app's existing settings storage and never logged. Sources independently implemented from public API docs rather than Reader's GPL-3.0 code.
 - `PcmStreamPlayer` — one `AudioTrack` (MODE_STREAM) for the whole text, ~350 ms prebuffer.
 - `SpeechTextChunker` — first piece ≈220 chars (fast first sound), then ≈900; sentence-aware.
 
@@ -117,3 +121,11 @@ QA on Android 17 Samsung:
 8. Check Android TTS after service disconnect and after opening/closing keyboard.
 9. Test cloud TTS only with explicit user settings and ensure no pre-countdown
    network request.
+
+## Notification reader recovery (2026-11-14)
+
+`NotificationAccess.connected` reflects the system listener binding instead of confusing an OS permission grant with a connected service. On `onListenerConnected` it is true; on disconnect and service destruction it returns to false. A disconnected listener requests an immediate Android `NotificationListenerService.requestRebind` when **both** the user's auto-reading switch and Android's Notification Access remain enabled. Application startup after preferences initialize, and opening the settings screen, also request binding with a 30-second throttle. The Speech screen shows connection status and a manual "Reconnect" button if disconnected.
+
+These are best-effort, event-driven rebind requests — not permanent background polling or a guarantee against manufacturer battery policies. The user must still grant/re-grant Notification Access in Android settings if the OS revokes it. The app never flips the user's notification reader toggle to OFF in a failure or reconnection path.
+
+QA: Simulate service disconnect/force-stop and process restart; reopen Speech settings; verify listener reconnects when Android still grants access, no duplicate backfill and no surprise enable when the user left reading OFF. Test permission revoke and restore; ensure the UI does not claim connected until Android's callback arrives.
