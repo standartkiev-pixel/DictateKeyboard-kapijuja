@@ -5,7 +5,7 @@
 package dev.patrickgold.florisboard.driver.notifications
 
 import android.app.Notification
-import android.os.Bundle
+import android.os.Build
 
 /**
  * Extracts the richest text the sender actually placed in the *notification*.
@@ -30,8 +30,11 @@ internal object NotificationTextExtractor {
         val structured = messages.mapNotNull { message ->
             val body = message.text?.toString()?.trim().orEmpty()
             if (body.isBlank()) return@mapNotNull null
-            val sender = message.senderPerson?.name?.toString()?.trim().orEmpty()
-                .ifBlank { message.sender?.toString()?.trim().orEmpty() }
+            val sender = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                message.senderPerson?.name?.toString()?.trim().orEmpty()
+            } else {
+                message.sender?.toString()?.trim().orEmpty()
+            }
             val display = listOfNotNull(sender.takeIf { it.isNotBlank() }, body)
                 .joinToString(": ").take(12_000)
             Part(
