@@ -31,7 +31,7 @@ import dev.patrickgold.florisboard.driver.ui.SpeechLocaleContext
 
 /**
  * The visible part of an auto-read: a countdown, then "reading", each of which can be paused.
- * Four accessible overlay controls in two rows: pause/resume, stop, stop all reading, stop notification reading.
+ * Four accessible overlay controls: pause/resume, stop, disable clipboard speech, disable notification speech.
  */
 interface AutoReadPrompt {
     fun showCountdown(secondsLeft: Int, paused: Boolean)
@@ -118,7 +118,7 @@ class OverlayAutoReadPrompt(
         }
         val pause = button(pauseLabel(false), 0xFF1565C0.toInt(), 16f, onPauseToggle)
         val cancel = button(localeContext.getString(R.string.speech__autoread_cancel), 0xFF455A64.toInt(), 16f, onCancel)
-        val disable = button(localeContext.getString(R.string.speech__disable_all_reading), 0xFFC62828.toInt(), 14f, onDisable)
+        val disable = button(localeContext.getString(R.string.speech__disable_clipboard_reading), 0xFFC62828.toInt(), 14f, onDisable)
         val disableAlerts = button(localeContext.getString(R.string.speech__disable_notification_reading), 0xFF795548.toInt(), 14f, onDisableNotifications)
         fun row(left: Button, right: Button) = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -229,7 +229,7 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
             .addAction(Notification.Action.Builder(null, cancelLabel, action(ACTION_CANCEL)).build())
             .addAction(Notification.Action.Builder(
                 null,
-                localeContext.getString(if (isNotification) R.string.speech__disable_notification_reading else R.string.speech__disable_all_reading),
+                localeContext.getString(if (isNotification) R.string.speech__disable_notification_reading else R.string.speech__disable_clipboard_reading),
                 action(if (isNotification) ACTION_DISABLE_NOTIFICATIONS else ACTION_DISABLE)
             ).build())
     }

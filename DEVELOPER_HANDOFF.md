@@ -25,14 +25,16 @@ Last verified at the time of this note: the phone artifact is distributed separa
 **API-key backup contract:** The built-in backup screen exports the complete `FlorisPreferenceStore` through `JetPref` when `Application settings` is selected (default ON). This includes the Dictate provider keyring `dictate__provider_accounts` and all separate `speech__*_api_key` / `speech__azure_key` preferences for OpenAI, ElevenLabs, Inworld, Google Gemini, xAI Grok and Azure, plus future credentials kept in the same preference store. The matching restore path uses `FlorisPreferenceStore.import` in Merge (default) or Erase mode. **Do not exclude secrets from the data backup or introduce a stale static provider whitelist.** No extra copy of keys is required. The user must be warned that the ZIP is **unencrypted** and should not be shared. If `Application settings` is unchecked, keys are deliberately excluded; old backups cannot recover keys they never contained.
 
 
-## Compact Smartbar speech toggle policy (2026-11-14)
+## Compact Smartbar speech toggle and independent overlay — 2026-11-14
 
-The left speaker is a single quick controller with three states:
-1. **OFF:** clipboard and notification TTS both disabled.
-2. **Clipboard only:** a short tap from OFF enables clipboard alone, never notifications.
-3. **Clipboard + notifications:** a long press at idle explicitly enables/disables notification TTS, but only with clipboard TTS ON and Android Notification Access granted.
+**User decision (supersedes earlier clipboard-master-only behavior):**
+1. Single **short speaker press from all OFF** turns ON both clipboard and notification TTS if the Android Notification Access grant exists. Without grant, clipboard TTS turns on and the OS permission page opens; notifications remain OFF pending explicit permission.
+2. **Short press when any source ON** turns OFF both, immediately canceling automatic reading.
+3. **Long press while idle** toggles notification TTS alone. **Long press during playback/countdown** remains emergency Stop.
+4. The existing **overlay has two separate source-specific disable actions** — "Disable clipboard" and "Disable notifications". Neither disables the other. Keep Pause/Stop unchanged. Source-specific actions also exist in the status-notification fallback.
+5. In Settings, clipboard and notifications can be toggled independently, including notifications-only. The status/Smartbar dot accurately reflects the active sources. Android notifications themselves are not muted, only spoken announcements.
 
-Short tap while ON mutes both sources and immediately cancels pending/active automatic reading. Long press during countdown or active reading preserves emergency Stop; no additional Smartbar button was added. An amber dot on the speaker marks notifications ON. The settings switches must call `AutoReadController`; the `AutoReadSwitchPolicy` source and tests define the invariant. Incoming notification guards must always check both switches, including when a restored/older backup contains an inconsistent preference combination. No automatic opt-in to notifications.
+Keep this behavior covered by `AutoReadSwitchPolicyTest`. Relevant implementation: `driver/autoread/AutoReadController.kt`, `AutoReadSwitchPolicy.kt`, `AutoReadPrompt.kt`, `driver/notifications/NotificationAccess.kt`, `driver/ui/AutoReadSmartbarToggle.kt`, and `SpeechSettingsScreen.kt`. Do not reintroduce clipboard-as-required-master guards on the notification listener. Keep the phone-only CI compilation; preserve but do not compile Wear sources during routine releases.
 
 ## 1. Purpose
 

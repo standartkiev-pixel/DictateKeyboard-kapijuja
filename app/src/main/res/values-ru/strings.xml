@@ -2107,7 +2107,7 @@
     <string name="pref__speech__autoread_min_chars__label">Не читать тексты короче</string>
     <string name="pref__speech__autoread_min_chars__value">{v} символов</string>
     <string name="pref__speech__autoread_toggle__label">Кнопка автозачитывания на панели</string>
-    <string name="pref__speech__autoread_toggle__summary">Динамик слева: короткое нажатие — буфер или выключить всё; долгое — включить/выключить уведомления. Точка означает, что уведомления читаются.</string>
+    <string name="pref__speech__autoread_toggle__summary">Динамик на клавиатуре: коротко — включить оба источника или выключить оба. В окне чтения можно отключить буфер и уведомления раздельно. Долгое нажатие переключает уведомления либо останавливает чтение.</string>
     <string name="speech__autoread_needs_overlay_toast">Разрешите «Поверх других приложений», чтобы появлялось окно с отсчётом</string>
     <string name="pref__speech__autoread_overlay__label">Окно с отсчётом</string>
     <string name="pref__speech__autoread_overlay__granted">Разрешено: окно появляется поверх любого приложения</string>
@@ -2205,4 +2205,8 @@
     <string name="speech__notifications_need_permission">Разрешите доступ к уведомлениям Android, затем снова удержите динамик</string>
     <string name="speech__notifications_quick_on">Озвучка новых уведомлений включена</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Сначала включите чтение буфера. Затем удерживайте динамик клавиатуры для чтения уведомлений.</string>
+    <string name="speech__disable_clipboard_reading">Отключить буфер</string>
+    <string name="speech__clipboard_reading_disabled">Озвучивание буфера обмена выключено</string>
+    <string name="speech__all_reading_enabled">Озвучивание буфера обмена и уведомлений включено</string>
+    <string name="speech__autoread_state_notifications_only">Включено только чтение уведомлений</string>
 </resources>

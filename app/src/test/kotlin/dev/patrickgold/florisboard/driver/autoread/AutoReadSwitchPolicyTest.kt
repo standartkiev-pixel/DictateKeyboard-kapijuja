@@ -12,27 +12,34 @@ import kotlin.test.assertTrue
 class AutoReadSwitchPolicyTest {
     private val off = AutoReadSwitchPolicy.Mode(false, false)
     private val clips = AutoReadSwitchPolicy.Mode(true, false)
+    private val alerts = AutoReadSwitchPolicy.Mode(false, true)
     private val both = AutoReadSwitchPolicy.Mode(true, true)
 
-    @Test fun `short tap enables only clipboard reading from off`() {
-        assertEquals(clips, AutoReadSwitchPolicy.setClipboard(off, true))
+    @Test fun `master speaker enables both when permission granted`() {
+        assertEquals(both, AutoReadSwitchPolicy.toggleAll(off, notificationPermission = true))
+        assertEquals(clips, AutoReadSwitchPolicy.toggleAll(off, notificationPermission = false))
     }
 
-    @Test fun `short tap disables BOTH reading streams`() {
-        assertEquals(off, AutoReadSwitchPolicy.setClipboard(both, false))
-        assertEquals(off, AutoReadSwitchPolicy.setClipboard(clips, false))
+    @Test fun `master speaker mutes both even after individual modal disable`() {
+        for (current in listOf(clips, alerts, both)) {
+            assertEquals(off, AutoReadSwitchPolicy.toggleAll(current, notificationPermission = true))
+        }
     }
 
-    @Test fun `long press separately toggles notification reading only when clipboard on`() {
-        assertEquals(both, AutoReadSwitchPolicy.setNotifications(clips, true))
+    @Test fun `modal can disable clipboard without disabling notifications`() {
+        assertEquals(alerts, AutoReadSwitchPolicy.setClipboard(both, false))
+        assertTrue(AutoReadSwitchPolicy.canReadNotifications(alerts))
+    }
+
+    @Test fun `modal can disable notifications without disabling clipboard`() {
         assertEquals(clips, AutoReadSwitchPolicy.setNotifications(both, false))
-        assertEquals(off, AutoReadSwitchPolicy.setNotifications(off, true))
+        assertFalse(AutoReadSwitchPolicy.canReadNotifications(clips))
     }
 
-    @Test fun `notifications never resume from stale restored preference when clipboard reenabled`() {
-        val stale = AutoReadSwitchPolicy.Mode(false, true)
-        assertEquals(clips, AutoReadSwitchPolicy.setClipboard(stale, true))
-        assertFalse(AutoReadSwitchPolicy.canReadNotifications(stale))
-        assertTrue(AutoReadSwitchPolicy.canReadNotifications(both))
+    @Test fun `independent settings can recover either reading mode`() {
+        assertEquals(alerts, AutoReadSwitchPolicy.setNotifications(off, true))
+        assertEquals(clips, AutoReadSwitchPolicy.setClipboard(off, true))
+        assertEquals(both, AutoReadSwitchPolicy.setClipboard(alerts, true))
+        assertEquals(both, AutoReadSwitchPolicy.setNotifications(clips, true))
     }
 }

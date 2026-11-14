@@ -91,8 +91,7 @@ cannot provide text that the source application did not put into the notificatio
 
 `AutoReadController` now accepts notification text as a second origin. Both origins
 use the same countdown, shared `SpeechCoordinator`, Pause/Resume, Stop, and privacy
-guard (no speech while locked or dictating). The fourth overlay button disables **only
-notification reading**. The third disables automatic reading from both sources.
+guard (no speech while locked or dictating). The two lower overlay buttons disable **only clipboard reading** and **only notification reading**, respectively, preserving the other source.
 The user continues to receive the original Android notifications, unchanged.
 
 `SpeechTextSanitizer` runs before text reaches any TTS engine. It can skip URL
@@ -110,12 +109,12 @@ with English fallback for other locales.
 
 QA on Android 17 Samsung:
 1. Install v100015 over 100014 (same package/signature; no uninstall).
-2. Open Speech settings, grant Android Notification Access and enable the master
+2. Open Speech settings, grant Android Notification Access and enable the notification switch
    reader and the desired source. Keep the clipboard switch independent.
 3. Verify text from each source with collapsed preview, expanded big text, and
    MessagingStyle group chat; check revised notifications are not reread.
 4. Copy the same clipboard text twice; verify both copies read.
-5. Test Pause/Continue, Stop, Disable all reading, Disable notification reading.
+5. Test Pause/Continue, Stop, Disable clipboard reading, Disable notification reading (independently), and Smartbar master mute.
 6. Switch interface language among en/ru/de/fr/it and verify overlay labels.
 7. Test links, 10-digit codes, OTPs, symbols, screen locked, live dictation.
 8. Check Android TTS after service disconnect and after opening/closing keyboard.
@@ -130,15 +129,14 @@ These are best-effort, event-driven rebind requests — not permanent background
 
 QA: Simulate service disconnect/force-stop and process restart; reopen Speech settings; verify listener reconnects when Android still grants access, no duplicate backfill and no surprise enable when the user left reading OFF. Test permission revoke and restore; ensure the UI does not claim connected until Android's callback arrives.
 
-## One-button reading controls — 2026-11-14 (must preserve)
+## One-button reading controls and separate modal switches — 2026-11-14
 
-One existing left Smartbar speaker remains the **only quick button**. No extra space is taken.
-- **Short tap** with clipboard reading OFF enables **clipboard only**. Notifications remain OFF and are not silently restored from a previous session/backup.
-- **Short tap** with clipboard ON switches **both** clipboard and notification reading OFF, immediately stopping any active automatic reading.
-- **Long press while idle and clipboard ON** toggles spoken notifications explicitly. It does not opt in automatically; Android Notification Access is checked, and if missing the app opens the OS permission page (the user must press again after granting).
-- **Long press during any pending countdown or active automatic speech** preserves the previous emergency **Stop** behavior.
-- A **small amber dot** on the existing speaker indicates that notification reading is ON. The notification settings toggle can also change the state, but only while clipboard master is enabled.
+The left Smartbar speaker is the **only quick button**. No extra keyboard space.
+- **Short tap when BOTH streams OFF:** enables both clipboard and notification reading, provided Android notification access was previously granted. If permission is absent, clipboard reading activates and the OS permission page opens; notification speech remains OFF until explicitly enabled.
+- **Short tap when EITHER stream is ON:** disables BOTH and cancels any in-flight automatic reading.
+- **Long press while idle:** toggles notification speech independently, even when clipboard reading is OFF. Android Notification Access must be granted to enable this source.
+- **Long press during ongoing countdown or any speech:** retains emergency **Stop**.
+- The **amber dot** on the Smartbar speaker means notification speech is ON. A lit speaker means **at least one** source is ON.
 
-The policy is codified in `driver/autoread/AutoReadSwitchPolicy.kt`, enforced in `AutoReadController`, checked on notification delivery in `KapijujaNotificationListenerService` and in `NotificationAccess.requestRecovery`. Setting-screen toggles must call the same controller (not raw JetPref `SwitchPreference`), so clipboard OFF always disables notifications. A legacy/restored inconsistent preference combination (clipboard OFF, notification ON) is **not permitted to speak** and is reset on the AutoReadController startup recovery path.
+The overlay countdown/read-aloud window has four actions in two rows: **Pause/Continue**, **Stop/Cancel**, **Disable clipboard**, and **Disable notifications**. Those last two act on their respective sources **independently**: disabling clipboard leaves notification speech running, and disabling notifications leaves clipboard speech running. If the current reading is from the disabled source, it is canceled; otherwise it is unaffected. The fallback Android status notification exposes its own relevant source's disable action. The master Smartbar button can always switch both sources OFF together.
 
-Do not make the speaker long-press silently turn on notifications when clipboard reading is OFF. Do not remove the emergency stop during active reading. Android notifications themselves are not muted or dismissed, only their TTS. Test all three modes (all OFF, clipboard only, clipboard + notifications), both short/long press, settings toggles, missing permission, restoration of older backups, and avoiding duplicate notification readback. Routine CI builds only the phone and core tests, keeping Wear code without compiling the watch.

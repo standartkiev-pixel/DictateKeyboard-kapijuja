@@ -2068,5 +2068,9 @@
     <string name="speech__notifications_need_permission">Zezwól Androidowi na dostęp do powiadomień, a następnie przytrzymaj głośnik ponownie</string>
     <string name="speech__notifications_quick_on">Odczyt nowych powiadomień włączony</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Najpierw włącz odczyt schowka. Przytrzymaj głośnik, aby sterować powiadomieniami.</string>
-    <string name="pref__speech__autoread_toggle__summary">Głośnik z lewej: dotknij — schowek lub wyłącz wszystko; przytrzymaj — powiadomienia. Kropka oznacza włączone powiadomienia.</string>
+    <string name="pref__speech__autoread_toggle__summary">Głośnik klawiatury: dotknij, aby włączyć obydwa źródła albo wyłączyć oba. W oknie odczytu można wyłączyć schowek i powiadomienia osobno. Przytrzymanie przełącza powiadomienia lub zatrzymuje odczyt.</string>
+    <string name="speech__disable_clipboard_reading">Wyłącz schowek</string>
+    <string name="speech__clipboard_reading_disabled">Odczyt schowka wyłączony</string>
+    <string name="speech__all_reading_enabled">Odczyt schowka i powiadomień włączony</string>
+    <string name="speech__autoread_state_notifications_only">Włączony tylko odczyt powiadomień</string>
 </resources>

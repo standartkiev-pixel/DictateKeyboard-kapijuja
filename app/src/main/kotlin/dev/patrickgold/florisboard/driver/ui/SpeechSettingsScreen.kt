@@ -149,12 +149,8 @@ fun SpeechSettingsScreen() = FlorisScreen {
         PreferenceGroup(title = stringRes(R.string.pref__speech__group_notifications)) {
             SpeechReadingToggle(
                 title = stringRes(R.string.pref__speech__notification_master__label),
-                summary = stringRes(
-                    if (clipboardReadingEnabled) R.string.pref__speech__notification_master__summary
-                    else R.string.pref__speech__notifications_require_clipboard_summary
-                ),
-                checked = clipboardReadingEnabled && notificationReadingEnabled,
-                enabled = clipboardReadingEnabled,
+                summary = stringRes(R.string.pref__speech__notification_master__summary),
+                checked = notificationReadingEnabled,
                 onChange = { AutoReadController.setNotificationsEnabled(context, it) },
             )
             NotificationPermissionRow()

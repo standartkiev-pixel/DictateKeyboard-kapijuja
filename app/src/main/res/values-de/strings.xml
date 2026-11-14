@@ -1981,7 +1981,7 @@
     <string name="pref__speech__autoread_min_chars__label">Nicht vorlesen bei weniger als</string>
     <string name="pref__speech__autoread_min_chars__value">{v} Zeichen</string>
     <string name="pref__speech__autoread_toggle__label">Schalter in der Tastaturleiste</string>
-    <string name="pref__speech__autoread_toggle__summary">Lautsprecher links: tippen für Zwischenablage oder alles aus; halten für Benachrichtigungen. Ein Punkt zeigt aktive Hinweise.</string>
+    <string name="pref__speech__autoread_toggle__summary">Lautsprecher: tippen zum Einschalten oder Ausschalten beider Quellen. Im Vorlesefenster kann jede Quelle einzeln ausgeschaltet werden. Gedrückt halten schaltet Hinweise um oder stoppt die Wiedergabe.</string>
     <string name="pref__speech__autoread_note">Für das Fenster ist die Berechtigung „Über anderen Apps einblenden“ erforderlich. Nicht bei Sperrbildschirm, Diktat oder vertraulichen Daten. Weitere Filter stehen unten.</string>
     <string name="pref__speech__history_speaker__label">Lautsprecher in der Zwischenablage</string>
     <string name="pref__speech__history_speaker__summary">Text ohne Einfügen vorlesen</string>
@@ -2030,4 +2030,8 @@
     <string name="speech__notifications_need_permission">Android-Zugriff auf Benachrichtigungen erlauben, dann Lautsprecher erneut gedrückt halten</string>
     <string name="speech__notifications_quick_on">Vorlesen neuer Benachrichtigungen aktiviert</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Zuerst Zwischenablage-Vorlesen aktivieren. Dann Lautsprecher gedrückt halten, um Benachrichtigungen umzuschalten.</string>
+    <string name="speech__disable_clipboard_reading">Zwischenablage aus</string>
+    <string name="speech__clipboard_reading_disabled">Vorlesen der Zwischenablage ausgeschaltet</string>
+    <string name="speech__all_reading_enabled">Vorlesen von Zwischenablage und Benachrichtigungen eingeschaltet</string>
+    <string name="speech__autoread_state_notifications_only">Nur Benachrichtigungen vorlesen</string>
 </resources>

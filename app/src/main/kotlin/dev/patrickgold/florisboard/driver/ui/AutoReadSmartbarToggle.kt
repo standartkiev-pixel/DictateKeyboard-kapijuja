@@ -46,24 +46,26 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 /**
  * The auto-read switch, at the far left of the Smartbar so it is never confused with the
  * microphone on the right. On: a filled speaker on an accent circle. Off: a crossed-out speaker.
- * Tap toggles clipboard auto-read and mutes both sources on OFF. Long press explicitly
- * toggles notification reading while clipboard mode is ON (or stops an active reading).
- * A small indicator marks alerts ON.
+ * Tap toggles both automatic reading sources as a master control; the overlay can disable each
+ * independently. Long press toggles notification reading at rest or stops active playback.
+ * A small dot indicates notification speech enabled.
  */
 @Composable
 fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
     val visible by prefs.speech.autoReadSmartbarToggle.collectAsState()
     if (!visible) return
-    val enabled by prefs.speech.autoReadEnabled.collectAsState()
+    val clipboard by prefs.speech.autoReadEnabled.collectAsState()
     val notifications by prefs.speech.notificationReadEnabled.collectAsState()
+    val enabled = clipboard || notifications
     val accent by prefs.theme.accentColor.collectAsState()
     val context = LocalContext.current
     val label = stringRes(R.string.speech__autoread_toggle)
     val stateLabel = stringRes(
         when {
             !enabled -> R.string.speech__autoread_state_off
-            notifications -> R.string.speech__autoread_state_with_notifications
+            clipboard && notifications -> R.string.speech__autoread_state_with_notifications
+            notifications -> R.string.speech__autoread_state_notifications_only
             else -> R.string.speech__autoread_state_on
         }
     )
@@ -85,7 +87,7 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
                     if (AutoReadController.hasActiveReading()) AutoReadController.stopActiveReading()
                     else AutoReadController.setNotificationsEnabled(context, !notifications)
                 },
-                onClick = { AutoReadController.setEnabled(context, !enabled) },
+                onClick = { AutoReadController.toggleAll(context) },
             )
             .semantics {
                 contentDescription = label

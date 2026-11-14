@@ -28,7 +28,7 @@ The built-in ZIP backup includes all API credentials in the Dictate provider key
 
 ### One-button speech controls
 
-The left Smartbar speaker uses one quick control for clipboard and notification text-to-speech. Tap once to turn on **clipboard-only** reading, tap again to mute **both** clipboard and notification reading. Hold while idle to separately toggle notification announcements (requires Android Notification Access). Hold during active auto-reading or countdown to **Stop**. A small dot on the speaker shows when notification reading is enabled. Android's own notifications are never switched off. See [speech implementation context](docs/context/DRIVER_ASSISTANT_SPEECH.md).
+A single Smartbar speaker toggles **both** clipboard and notification reading ON (with Android Notification Access) or mutes **both**. During the countdown or read-aloud popup, **Disable clipboard** and **Disable notifications** act independently, leaving the other source on. Hold the speaker at rest to toggle notifications alone; hold during audio to Stop. The small dot marks notification reading. Android notifications remain unaffected. See [speech implementation context](docs/context/DRIVER_ASSISTANT_SPEECH.md).
 
 ## Current status
 
