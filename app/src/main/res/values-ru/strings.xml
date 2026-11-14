@@ -2107,7 +2107,7 @@
     <string name="pref__speech__autoread_min_chars__label">Не читать тексты короче</string>
     <string name="pref__speech__autoread_min_chars__value">{v} символов</string>
     <string name="pref__speech__autoread_toggle__label">Кнопка автозачитывания на панели</string>
-    <string name="pref__speech__autoread_toggle__summary">Динамик в самом левом углу панели клавиатуры. Долгое нажатие останавливает чтение.</string>
+    <string name="pref__speech__autoread_toggle__summary">Динамик слева: короткое нажатие — буфер или выключить всё; долгое — включить/выключить уведомления. Точка означает, что уведомления читаются.</string>
     <string name="speech__autoread_needs_overlay_toast">Разрешите «Поверх других приложений», чтобы появлялось окно с отсчётом</string>
     <string name="pref__speech__autoread_overlay__label">Окно с отсчётом</string>
     <string name="pref__speech__autoread_overlay__granted">Разрешено: окно появляется поверх любого приложения</string>
@@ -2199,4 +2199,10 @@
     <string name="pref__speech__notification_reconnect">Переподключить чтение уведомлений</string>
     <string name="backup_and_restore__api_keys_warning">В резервную копию настроек входят API-ключи диктовки и озвучивания: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok и других провайдеров. ZIP-архив НЕ зашифрован! Не передавайте его посторонним: по ключам можно расходовать ваши средства.</string>
     <string name="backup_and_restore__api_keys_restore_note">При восстановлении настроек возвращаются и API-ключи, сохранённые в архиве. В старых архивах может не быть ключей новых движков. Режим «Объединить» сохраняет остальные текущие настройки. ZIP не зашифрован.</string>
+    <string name="speech__notifications_long_press">Долгое нажатие: чтение уведомлений</string>
+    <string name="speech__autoread_state_with_notifications">Чтение буфера и уведомлений включено</string>
+    <string name="speech__notifications_require_clipboard">Сначала включите озвучку буфера обмена</string>
+    <string name="speech__notifications_need_permission">Разрешите доступ к уведомлениям Android, затем снова удержите динамик</string>
+    <string name="speech__notifications_quick_on">Озвучка новых уведомлений включена</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Сначала включите чтение буфера. Затем удерживайте динамик клавиатуры для чтения уведомлений.</string>
 </resources>
