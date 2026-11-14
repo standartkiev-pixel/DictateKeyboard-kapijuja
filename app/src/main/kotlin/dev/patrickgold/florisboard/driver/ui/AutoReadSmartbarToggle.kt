@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
@@ -38,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.driver.autoread.AutoReadController
-import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -46,7 +46,8 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 /**
  * The auto-read switch, at the far left of the Smartbar so it is never confused with the
  * microphone on the right. On: a filled speaker on an accent circle. Off: a crossed-out speaker.
- * Tap toggles auto-read; long press stops any reading in progress.
+ * Tap toggles clipboard auto-read and mutes both sources on OFF. Long press explicitly
+ * toggles notification reading while clipboard mode is ON. A small indicator marks alerts ON.
  */
 @Composable
 fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
@@ -54,10 +55,17 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
     val visible by prefs.speech.autoReadSmartbarToggle.collectAsState()
     if (!visible) return
     val enabled by prefs.speech.autoReadEnabled.collectAsState()
+    val notifications by prefs.speech.notificationReadEnabled.collectAsState()
     val accent by prefs.theme.accentColor.collectAsState()
     val context = LocalContext.current
     val label = stringRes(R.string.speech__autoread_toggle)
-    val stateLabel = stringRes(if (enabled) R.string.speech__autoread_state_on else R.string.speech__autoread_state_off)
+    val stateLabel = stringRes(
+        when {
+            !enabled -> R.string.speech__autoread_state_off
+            notifications -> R.string.speech__autoread_state_with_notifications
+            else -> R.string.speech__autoread_state_on
+        }
+    )
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -69,7 +77,8 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(),
                 role = Role.Switch,
-                onLongClick = { SpeechCoordinator.stop() },
+                onLongClickLabel = stringRes(R.string.speech__notifications_long_press),
+                onLongClick = { AutoReadController.setNotificationsEnabled(context, !notifications) },
                 onClick = { AutoReadController.setEnabled(context, !enabled) },
             )
             .semantics {
@@ -81,5 +90,16 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
         SnyggIcon(
             imageVector = if (enabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
         )
+        if (enabled && notifications) {
+            // A visible dot without another full-size Smartbar button.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(1.dp)
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFFC04A)),
+            )
+        }
     }
 }
