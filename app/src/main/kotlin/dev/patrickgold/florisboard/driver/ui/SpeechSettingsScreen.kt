@@ -649,9 +649,14 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.NotificationPermissionRow()
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     var granted by remember { mutableStateOf(NotificationAccess.granted(context)) }
-    DisposableEffect(owner) {
+    val connected by NotificationAccess.connected.collectAsState()
+    val enabled by prefs.speech.notificationReadEnabled.collectAsState()
+    DisposableEffect(owner, enabled) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) granted = NotificationAccess.granted(context)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                granted = NotificationAccess.granted(context)
+                if (enabled && granted) NotificationAccess.requestRecovery(context)
+            }
         }
         owner.lifecycle.addObserver(observer)
         onDispose { owner.lifecycle.removeObserver(observer) }
@@ -665,6 +670,22 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.NotificationPermissionRow()
         onClick = { NotificationAccess.openSettings(context) },
     )
     if (!granted) Note(stringRes(R.string.pref__speech__notification_restricted_hint))
+    if (granted && enabled) {
+        Preference(
+            title = stringRes(R.string.pref__speech__notification_connection),
+            summary = stringRes(
+                if (connected) R.string.pref__speech__notification_connected
+                else R.string.pref__speech__notification_recovering
+            ),
+            onClick = { NotificationAccess.requestRecovery(context, force = true) },
+        )
+        if (!connected) {
+            Button(
+                onClick = { NotificationAccess.requestRecovery(context, force = true) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(stringRes(R.string.pref__speech__notification_reconnect)) }
+        }
+    }
 }
 
 @Composable
