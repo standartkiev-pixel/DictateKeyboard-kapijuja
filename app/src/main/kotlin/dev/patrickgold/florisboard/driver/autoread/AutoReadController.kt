@@ -17,6 +17,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.os.SystemClock
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
@@ -207,6 +208,8 @@ object AutoReadController {
     fun onNotification(context: Context, text: String) {
         if (!prefs.speech.notificationReadEnabled.get()) return
         if (text.isBlank() || isLocked(context)) return
+        // Never speak an incoming notification without a visible way to pause/cancel it.
+        if (!canShowWindow(context) && !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         if (DictateController.state.value is DictateController.UiState.Recording) return
         beginRead(context, text, Origin.NOTIFICATION)
     }
