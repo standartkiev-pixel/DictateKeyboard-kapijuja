@@ -6,6 +6,22 @@
 
 This is the current authoritative handoff for the project. Read this document before changing code.
 
+## Mandatory build baseline and Wear preservation — 2026-11-14
+
+**User decision:** Continue all keyboard development and phone APK releases from the current, **slim-derived** `main` branch. The historical reduction checkpoint is `slim/arm64-no-bubble-no-addons` (commit `eda2d1dd4dce55223648974b6df227e96f66af84`), and it is **already an ancestor of `main`**. Do not directly build or reset to the old slim branch: that would lose subsequent improvements, including speech/notification work. Do not take future code or build inputs from older pre-slim releases merely because they compile.
+
+**Retain the slim APK build configuration for every subsequent phone build:**
+- In `app/build.gradle.kts`, keep `ndk.abiFilters = arm64-v8a` for the supported phone test build. Do not silently bundle other CPU architectures and thereby inflate the APK.
+- Keep R8 code shrinking (`isMinifyEnabled = true`) and Android resource shrinking (`isShrinkResources = true`) enabled for debug and release. Retain the tested proguard rules and the pinned native dependencies. Monitor output size after changes; compare the actual APK bytes (not only the smaller compressed GitHub artifact ZIP).
+- Do not reintroduce the removed bubble/add-on components or other old bulk without an explicit product decision; do not remove current features merely to chase a size target.
+- Only publish the `app` module phone APK as the **phone** artifact. The `wear` module is a separate APK, not bundled into the phone APK. Keep the signing certificate/package identity consistent for in-place phone updates and do not install the higher-version Wear APK onto the phone.
+
+**User decision about smartwatches:** **Do not delete or disable Wear OS support.** The user does not currently wear a smartwatch, but wants to preserve the possibility of speech-based input on a small future watch. Retain `:wear`, shared phone/watch integration, and the Wear build/tests, provided they do not accidentally expand the phone package. There is no request to create a new watch feature in this change; leave the existing watch behavior intact.
+
+Last verified at the time of this note: the phone artifact is distributed separately, the previous uncompressed phone APK was roughly 54 MB while the artifact ZIP was roughly 32 MB, and the old RC7 phone APK was about 130 MB. These are **historical measurements, not hard size guarantees**; future changes should be assessed against the most recent successful slim-derived phone APK. The 2026-11-14 CI run on `main` passed app/Wear compilation, artifact upload, signature check and all JVM unit tests.
+
+
+
 ## 1. Purpose
 
 Dictate Kapijuja is an Android voice keyboard forked from Dictate Keyboard, itself based on FlorisBoard.
