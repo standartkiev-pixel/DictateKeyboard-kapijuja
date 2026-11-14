@@ -1892,4 +1892,5 @@
     <string name="pref__speech__autoread_last__label">Ultimo testo copiato</string>
     <string name="pref__speech__autoread_last__value">{time}: {result} ({n} caratteri)</string>
     <string name="pref__speech__autoread_last__none">Nessun testo copiato dall’avvio</string>
+    <string name="pref__speech__notification_restricted_hint">Se Android blocca questa APK: Impostazioni Android → App → Kapijuja → ⋮ → Consenti impostazioni limitate, poi torna qui.</string>
 </resources>
