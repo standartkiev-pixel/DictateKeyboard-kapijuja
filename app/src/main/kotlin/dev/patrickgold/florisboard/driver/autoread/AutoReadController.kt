@@ -85,11 +85,6 @@ object AutoReadController {
     fun start(context: Context) {
         val app = context.applicationContext
         appContext = app
-        // A legacy backup can contain notifications=ON while clipboard=OFF. Treat
-        // the clipboard speaker as master, without ever reading such alerts.
-        if (!prefs.speech.autoReadEnabled.get() && prefs.speech.notificationReadEnabled.get()) {
-            scope.launch { prefs.speech.notificationReadEnabled.set(false) }
-        }
         if (subscriptionJob?.isActive == true) return
         subscriptionJob = scope.launch {
             while (isActive) {
@@ -149,15 +144,24 @@ object AutoReadController {
         activeOrigin = null
     }
 
-    /** The third overlay button disables both automatic reading sources, not Android alerts. */
-    fun disable(context: Context) = disableAll(context)
+    /** Backward-compatible notification action: the clipboard-only disable button. */
+    fun disable(context: Context) = disableClipboard(context)
+
+    /** Overlay window: disable clipboard speech without affecting notification speech. */
+    fun disableClipboard(context: Context) {
+        if (activeOrigin == Origin.CLIPBOARD) cancelCurrent()
+        scope.launch {
+            prefs.speech.autoReadEnabled.set(false)
+            context.applicationContext.showShortToast(R.string.speech__clipboard_reading_disabled)
+        }
+    }
 
     fun disableAll(context: Context) {
         cancelCurrent()
         val app = context.applicationContext
         scope.launch {
-            prefs.speech.autoReadEnabled.set(false)
             prefs.speech.notificationReadEnabled.set(false)
+            prefs.speech.autoReadEnabled.set(false)
             app.showShortToast(R.string.speech__all_reading_disabled)
         }
     }
@@ -171,29 +175,14 @@ object AutoReadController {
         }
     }
 
-    /**
-     * Short speaker tap: clipboard ON is clipboard-only, OFF is a master mute.
-     * In particular, neither an older backup nor a previous notification session
-     * is allowed to silently re-enable notification reading on the next tap.
-     */
+    /** Settings switch: change clipboard reading only. Modals use disableClipboard(). */
     fun setEnabled(context: Context, enabled: Boolean) {
-        if (!enabled) cancelCurrent()
+        if (!enabled && activeOrigin == Origin.CLIPBOARD) cancelCurrent()
         val app = context.applicationContext
         if (enabled) start(app)
         scope.launch {
-            val mode = AutoReadSwitchPolicy.setClipboard(
-                AutoReadSwitchPolicy.Mode(
-                    prefs.speech.autoReadEnabled.get(),
-                    prefs.speech.notificationReadEnabled.get(),
-                ),
-                enabled,
-            )
-            // Disable notifications first to avoid a moment of unwanted reading
-            // while the master clipboard preference is being switched off.
-            if (!mode.notifications) prefs.speech.notificationReadEnabled.set(false)
-            prefs.speech.autoReadEnabled.set(mode.clipboard)
+            prefs.speech.autoReadEnabled.set(enabled)
             if (enabled && !canShowWindow(app)) {
-                // Without a visible countdown the user would hear text with no cancel opportunity.
                 app.showShortToast(R.string.speech__autoread_needs_overlay_toast)
                 openOverlayPermissionSettings(app)
             } else {
@@ -203,16 +192,40 @@ object AutoReadController {
     }
 
     /**
-     * Long speaker press: explicitly opt in/out of reading Android notifications.
-     * Requires the clipboard master switch and the OS Notification Access grant.
-     * No permission is silently granted, no notification is spoken on enable.
+     * Single Smartbar speaker: from all OFF, enable clipboard AND notifications if
+     * Android has already granted notification access. Otherwise, enable clipboard
+     * and direct the user to the Android permission page. From any ON, mute both.
+     * The modal window can still disable sources separately.
      */
-    fun setNotificationsEnabled(context: Context, enabled: Boolean) {
+    fun toggleAll(context: Context) {
         val app = context.applicationContext
-        if (enabled && !prefs.speech.autoReadEnabled.get()) {
-            scope.launch { app.showShortToast(R.string.speech__notifications_require_clipboard) }
+        val current = currentMode()
+        val access = NotificationAccess.granted(app)
+        val target = AutoReadSwitchPolicy.toggleAll(current, notificationPermission = access)
+        if (!target.anyEnabled) {
+            disableAll(app)
             return
         }
+        start(app)
+        scope.launch {
+            prefs.speech.autoReadEnabled.set(target.clipboard)
+            prefs.speech.notificationReadEnabled.set(target.notifications)
+            if (target.notifications) NotificationAccess.requestRecovery(app)
+            if (!access) {
+                app.showShortToast(R.string.speech__notifications_need_permission)
+                NotificationAccess.openSettings(app)
+            } else if (!canShowWindow(app)) {
+                app.showShortToast(R.string.speech__autoread_needs_overlay_toast)
+                openOverlayPermissionSettings(app)
+            } else {
+                app.showShortToast(R.string.speech__all_reading_enabled)
+            }
+        }
+    }
+
+    /** Long speaker press or Settings: independently toggle notifications with Android permission. */
+    fun setNotificationsEnabled(context: Context, enabled: Boolean) {
+        val app = context.applicationContext
         if (enabled && !NotificationAccess.granted(app)) {
             scope.launch { app.showShortToast(R.string.speech__notifications_need_permission) }
             NotificationAccess.openSettings(app)
@@ -345,7 +358,7 @@ object AutoReadController {
                 isNotification = notification,
                 onPauseToggle = { togglePause() },
                 onCancel = { cancelCurrent() },
-                onDisable = { disableAll(context) },
+                onDisable = { disableClipboard(context) },
                 onDisableNotifications = { disableNotifications(context) },
             )
         }
