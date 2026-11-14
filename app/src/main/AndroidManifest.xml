@@ -66,6 +66,18 @@
             <meta-data android:name="android.view.im" android:resource="@xml/method"/>
         </service>
 
+        <!-- Explicit opt-in "Notification access": Android binds this listener only after the user
+             enables it in system settings. Does not read another app without OS approval. -->
+        <service
+            android:name="dev.patrickgold.florisboard.driver.notifications.KapijujaNotificationListenerService"
+            android:label="@string/speech__notification_access_service"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <!-- Driver Assistant auto-read notification buttons (issue #7): cancel / turn off. -->
         <receiver
             android:name="dev.patrickgold.florisboard.driver.autoread.AutoReadActionReceiver"
