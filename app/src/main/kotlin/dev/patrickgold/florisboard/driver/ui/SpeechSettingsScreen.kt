@@ -518,6 +518,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.NotificationPermissionRow()
         ),
         onClick = { NotificationAccess.openSettings(context) },
     )
+    if (!granted) Note(stringRes(R.string.pref__speech__notification_restricted_hint))
 }
 
 @Composable
