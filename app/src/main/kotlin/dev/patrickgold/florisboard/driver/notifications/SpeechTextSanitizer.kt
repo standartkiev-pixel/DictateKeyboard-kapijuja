@@ -44,7 +44,7 @@ object SpeechTextSanitizer {
         if (options.simplifySymbols) text = junkSymbols.replace(text, " ")
         text = whitespace.replace(text, " ")
         text = spacesAroundPunctuation.replace(text, "$1")
-        val result = text.trim(' ', ',', '.', ';', ':', '-')
+        val result = text.trim(' ', ',', ';', ':', '-')
         if (result.none(Char::isLetterOrDigit)) return ""
         if (options.skipServiceMessages && serviceOnly.matches(result)) return ""
         return result
