@@ -5,6 +5,14 @@ This guide is the compact engineering contract for continuing the fork.
 For full historical context and the exact 2026-09-09 handoff, read
 [`FULL_PROJECT_HANDOFF_2026-09-09.txt`](FULL_PROJECT_HANDOFF_2026-09-09.txt) first.
 
+## Build baseline invariant: slim phone APK, optional Wear preserved (2026-11-14)
+
+Use the newest `main` for all development and releases. `slim/arm64-no-bubble-no-addons` is the historical slim baseline and **ancestor** of `main`, not a branch to reset to or publish directly. Never accidentally restore the pre-slim ~130 MB packaging.
+
+Preserve `app/build.gradle.kts` size controls: `arm64-v8a`-only native binaries for the supported phone artifact, `isMinifyEnabled = true` (R8), `isShrinkResources = true`, pinned native libraries, and verified signing. Track actual APK size, not GitHub ZIP size. Any deliberate increase should be documented and reviewed. Do not drop useful keyboard features solely for size.
+
+Keep `:wear`, the shared phone/watch code and both build/test tasks. The user wants to retain the **future possibility** of voice input on watches but does not use them now. Wear is a separate APK; it must never be substituted for the phone APK or accidentally packaged with it. No demand to implement or ship a separate smartwatch release right now. See `DEVELOPER_HANDOFF.md` for details.
+
 ## 1. Repository and baseline
 
 Repository: `standartkiev-pixel/DictateKeyboard-kapijuja`
