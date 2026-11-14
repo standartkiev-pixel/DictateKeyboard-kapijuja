@@ -1953,7 +1953,7 @@
     <string name="pref__speech__autoread_min_chars__label">Ne pas lire les textes de moins de</string>
     <string name="pref__speech__autoread_min_chars__value">{v} caractères</string>
     <string name="pref__speech__autoread_toggle__label">Bouton de lecture dans la barre</string>
-    <string name="pref__speech__autoread_toggle__summary">Haut-parleur à gauche : appui court pour le presse-papiers ou tout désactiver ; appui long pour les notifications. Un point indique qu’elles sont activées.</string>
+    <string name="pref__speech__autoread_toggle__summary">Haut-parleur : toucher pour activer ou couper les deux sources. Dans la fenêtre de lecture, chaque source peut être coupée séparément. Maintenir pour basculer les notifications ou arrêter la lecture.</string>
     <string name="pref__speech__autoread_note">La fenêtre requiert l’autorisation de superposition. Pas de lecture sur écran verrouillé, pendant une dictée ni pour les données sensibles. Filtres ci-dessous.</string>
     <string name="pref__speech__history_speaker__label">Haut-parleur dans le presse-papiers</string>
     <string name="pref__speech__history_speaker__summary">Lire le texte sans le coller</string>
@@ -2002,4 +2002,8 @@
     <string name="speech__notifications_need_permission">Autorisez l’accès Android aux notifications, puis maintenez le haut-parleur à nouveau</string>
     <string name="speech__notifications_quick_on">Lecture des nouvelles notifications activée</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Activez d’abord la lecture du presse-papiers. Maintenez le haut-parleur pour gérer les notifications.</string>
+    <string name="speech__disable_clipboard_reading">Couper presse-papiers</string>
+    <string name="speech__clipboard_reading_disabled">Lecture du presse-papiers désactivée</string>
+    <string name="speech__all_reading_enabled">Lecture du presse-papiers et des notifications activée</string>
+    <string name="speech__autoread_state_notifications_only">Lecture des notifications uniquement</string>
 </resources>
