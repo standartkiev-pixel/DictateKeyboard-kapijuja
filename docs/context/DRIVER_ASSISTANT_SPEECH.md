@@ -91,8 +91,7 @@ cannot provide text that the source application did not put into the notificatio
 
 `AutoReadController` now accepts notification text as a second origin. Both origins
 use the same countdown, shared `SpeechCoordinator`, Pause/Resume, Stop, and privacy
-guard (no speech while locked or dictating). The fourth overlay button disables **only
-notification reading**. The third disables automatic reading from both sources.
+guard (no speech while locked or dictating). The two lower overlay buttons disable **only clipboard reading** and **only notification reading**, respectively, preserving the other source.
 The user continues to receive the original Android notifications, unchanged.
 
 `SpeechTextSanitizer` runs before text reaches any TTS engine. It can skip URL
@@ -110,12 +109,12 @@ with English fallback for other locales.
 
 QA on Android 17 Samsung:
 1. Install v100015 over 100014 (same package/signature; no uninstall).
-2. Open Speech settings, grant Android Notification Access and enable the master
+2. Open Speech settings, grant Android Notification Access and enable the notification switch
    reader and the desired source. Keep the clipboard switch independent.
 3. Verify text from each source with collapsed preview, expanded big text, and
    MessagingStyle group chat; check revised notifications are not reread.
 4. Copy the same clipboard text twice; verify both copies read.
-5. Test Pause/Continue, Stop, Disable all reading, Disable notification reading.
+5. Test Pause/Continue, Stop, Disable clipboard reading, Disable notification reading (independently), and Smartbar master mute.
 6. Switch interface language among en/ru/de/fr/it and verify overlay labels.
 7. Test links, 10-digit codes, OTPs, symbols, screen locked, live dictation.
 8. Check Android TTS after service disconnect and after opening/closing keyboard.
