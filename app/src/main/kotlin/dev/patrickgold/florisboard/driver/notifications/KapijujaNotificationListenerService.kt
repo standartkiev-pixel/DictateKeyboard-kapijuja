@@ -77,7 +77,7 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
             val spokenText = fresh.map { SpeechTextSanitizer.clean(it.text, options) }
                 .filter(String::isNotBlank)
                 .joinToString(". ")
-                .take(18_000)
+                .take(60_000)
             if (spokenText.isBlank()) return
             AutoReadController.onNotification(applicationContext, spokenText)
         } catch (e: Exception) {
