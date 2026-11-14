@@ -72,8 +72,12 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
                 skipServiceMessages = prefs.speech.skipSpokenServiceMessages.get(),
                 simplifySymbols = prefs.speech.simplifySpokenSymbols.get(),
             )
-            val text = fresh.joinToString(". ") { it.text }.take(18_000)
-            val spokenText = SpeechTextSanitizer.clean(text, options)
+            // Filter each message separately: a single OTP in a group chat must not
+            // prevent the other legitimate new messages from being spoken.
+            val spokenText = fresh.map { SpeechTextSanitizer.clean(it.text, options) }
+                .filter(String::isNotBlank)
+                .joinToString(". ")
+                .take(18_000)
             if (spokenText.isBlank()) return
             AutoReadController.onNotification(applicationContext, spokenText)
         } catch (e: Exception) {
