@@ -6,6 +6,7 @@ package dev.patrickgold.florisboard.driver.notifications
 
 import android.app.Notification
 import android.os.Build
+import android.os.Bundle
 
 /**
  * Extracts the richest text the sender actually placed in the *notification*.
@@ -20,25 +21,36 @@ internal object NotificationTextExtractor {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty().trim()
         val titlePrefix = title.takeIf { it.isNotBlank() && it.length <= 160 }
 
-        // MessagingStyle is more complete than the collapsed visible notification preview.
-        val messages = runCatching {
-            Notification.MessagingStyle.Message.getMessagesFromBundleArray(
-                extras.getParcelableArray(Notification.EXTRA_MESSAGES)
-            )
-        }.getOrNull().orEmpty()
-
-        val structured = messages.mapNotNull { message ->
-            val body = message.text?.toString()?.trim().orEmpty()
-            if (body.isBlank()) return@mapNotNull null
-            val sender = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                message.senderPerson?.name?.toString()?.trim().orEmpty()
+        // MessagingStyle is more complete than the collapsed notification preview.
+        // Android's public getMessagesFromBundleArray() exists only on API 30+.
+        // Parse the documented bundles on API 26–29 instead.
+        data class Entry(val sender: String, val body: String, val timestamp: Long)
+        val entries: List<Entry> = runCatching {
+            val array = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Notification.MessagingStyle.Message.getMessagesFromBundleArray(array).map { msg ->
+                    Entry(
+                        sender = msg.senderPerson?.name?.toString()?.trim().orEmpty(),
+                        body = msg.text?.toString()?.trim().orEmpty(),
+                        timestamp = msg.timestamp,
+                    )
+                }
             } else {
-                message.sender?.toString()?.trim().orEmpty()
+                array.orEmpty().filterIsInstance<Bundle>().map { bundle ->
+                    Entry(
+                        sender = bundle.getCharSequence("sender")?.toString()?.trim().orEmpty(),
+                        body = bundle.getCharSequence("text")?.toString()?.trim().orEmpty(),
+                        timestamp = bundle.getLong("time"),
+                    )
+                }
             }
-            val display = listOfNotNull(sender.takeIf { it.isNotBlank() }, body)
+        }.getOrDefault(emptyList())
+        val structured = entries.mapNotNull { msg ->
+            if (msg.body.isBlank()) return@mapNotNull null
+            val display = listOfNotNull(msg.sender.takeIf { it.isNotBlank() }, msg.body)
                 .joinToString(": ").take(12_000)
             Part(
-                fingerprint = (sender + "\u0000" + body + "\u0000" + message.timestamp).hashCode(),
+                fingerprint = (msg.sender + "\u0000" + msg.body + "\u0000" + msg.timestamp).hashCode(),
                 text = display,
             )
         }.takeLast(6)
