@@ -15,8 +15,10 @@ import java.util.Locale
  * for strings shown over other apps, without changing Android's global language.
  */
 object SpeechLocaleContext {
+    private val prefs by FlorisPreferenceStore
+
     fun wrap(context: Context): Context {
-        val tag = runCatching { FlorisPreferenceStore.value.other.settingsLanguage.get() }
+        val tag = runCatching { prefs.other.settingsLanguage.get() }
             .getOrDefault("auto")
         if (tag.isBlank() || tag == "auto") return context
         return runCatching {
