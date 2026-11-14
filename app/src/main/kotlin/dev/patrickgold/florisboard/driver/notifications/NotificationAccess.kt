@@ -35,8 +35,7 @@ object NotificationAccess {
      */
     @Synchronized
     fun requestRecovery(context: Context, force: Boolean = false): Boolean {
-        if (_connected.value || !prefs.speech.autoReadEnabled.get() ||
-            !prefs.speech.notificationReadEnabled.get() || !granted(context)) return false
+        if (_connected.value || !prefs.speech.notificationReadEnabled.get() || !granted(context)) return false
         val now = SystemClock.elapsedRealtime()
         if (!force && now - lastRebindMillis < REBIND_COOLDOWN_MS) return false
         lastRebindMillis = now
