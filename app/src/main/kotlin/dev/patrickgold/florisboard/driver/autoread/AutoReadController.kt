@@ -126,9 +126,15 @@ object AutoReadController {
         }
     }
 
-    /** Long-press always retains the previous safety shortcut to stop an active reading. */
+    /** Long press remains the emergency Stop for any active TTS, including manual history speech. */
     fun hasActiveReading(): Boolean =
-        countingDown || SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true
+        countingDown || SpeechCoordinator.activeKey() != null
+
+    fun stopActiveReading() {
+        if (countingDown || activeOrigin != null) cancelCurrent()
+        // The previous long press stopped manual TTS as well; do not regress that safety behavior.
+        if (SpeechCoordinator.activeKey() != null) SpeechCoordinator.stop()
+    }
 
     /** Cancels the pending countdown or the auto-reading in progress; the next copy works again. */
     fun cancelCurrent() {
