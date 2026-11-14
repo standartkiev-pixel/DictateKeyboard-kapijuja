@@ -204,11 +204,11 @@ object AutoReadController {
     fun setNotificationsEnabled(context: Context, enabled: Boolean) {
         val app = context.applicationContext
         if (enabled && !prefs.speech.autoReadEnabled.get()) {
-            app.showShortToast(R.string.speech__notifications_require_clipboard)
+            scope.launch { app.showShortToast(R.string.speech__notifications_require_clipboard) }
             return
         }
         if (enabled && !NotificationAccess.granted(app)) {
-            app.showShortToast(R.string.speech__notifications_need_permission)
+            scope.launch { app.showShortToast(R.string.speech__notifications_need_permission) }
             NotificationAccess.openSettings(app)
             return
         }
