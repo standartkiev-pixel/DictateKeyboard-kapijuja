@@ -48,12 +48,12 @@ internal object NotificationTextExtractor {
         val structured = entries.mapNotNull { msg ->
             if (msg.body.isBlank()) return@mapNotNull null
             val display = listOfNotNull(msg.sender.takeIf { it.isNotBlank() }, msg.body)
-                .joinToString(": ").take(12_000)
+                .joinToString(": ").take(60_000)
             Part(
                 fingerprint = (msg.sender + "\u0000" + msg.body + "\u0000" + msg.timestamp).hashCode(),
                 text = display,
             )
-        }.takeLast(6)
+        }.takeLast(20)
         if (structured.isNotEmpty()) return Result(structured, true)
 
         val candidates = buildList {
@@ -75,7 +75,7 @@ internal object NotificationTextExtractor {
         }
         if (chosen.isEmpty()) return Result(emptyList(), false)
         val combined = listOfNotNull(titlePrefix, chosen.joinToString(". ")).joinToString(". ")
-            .take(15_000)
+            .take(60_000)
         return Result(listOf(Part(combined.hashCode(), combined)), false)
     }
 }
