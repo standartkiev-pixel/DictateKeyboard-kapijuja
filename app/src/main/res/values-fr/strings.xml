@@ -1974,4 +1974,5 @@
     <string name="pref__speech__autoread_last__label">Dernier texte copié</string>
     <string name="pref__speech__autoread_last__value">{time} : {result} ({n} caractères)</string>
     <string name="pref__speech__autoread_last__none">Aucun texte copié depuis le démarrage</string>
+    <string name="pref__speech__notification_restricted_hint">Si Android bloque l’accès à cette APK : Paramètres Android → Applications → Kapijuja → ⋮ → Autoriser les paramètres restreints, puis revenez ici.</string>
 </resources>
