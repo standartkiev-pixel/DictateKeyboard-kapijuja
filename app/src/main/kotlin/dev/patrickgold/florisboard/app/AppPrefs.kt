@@ -1476,6 +1476,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "speech__auto_read_smartbar_toggle",
             default = true,
         )
+        // Notification access is separate from clipboard access and requires explicit OS approval.
+        // Nothing is spoken until notificationReadEnabled has been enabled by the user.
+        val notificationReadEnabled = boolean(
+            key = "speech__notification_read_enabled",
+            default = false,
+        )
+        val notifyWhatsApp = boolean(key = "speech__notify_whatsapp", default = true)
+        val notifyInstagram = boolean(key = "speech__notify_instagram", default = true)
+        val notifyEmail = boolean(key = "speech__notify_email", default = true)
+        val notifyViber = boolean(key = "speech__notify_viber", default = true)
+        val notifyTelegram = boolean(key = "speech__notify_telegram", default = true)
+        val notifyYouTube = boolean(key = "speech__notify_youtube", default = true)
+
+        // Optional readability filters; secret/token suppression remains mandatory for safety.
+        val skipSpokenLinks = boolean(key = "speech__skip_links", default = true)
+        val skipSpokenLongNumbers = boolean(key = "speech__skip_long_numbers", default = true)
+        val skipSpokenServiceMessages = boolean(key = "speech__skip_service_messages", default = true)
+        val simplifySpokenSymbols = boolean(key = "speech__simplify_symbols", default = true)
         val engine = enum(
             key = "speech__engine",
             default = SpeechEngineId.ANDROID,
