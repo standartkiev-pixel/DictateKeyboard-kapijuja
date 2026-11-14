@@ -82,7 +82,7 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
                 onLongClick = {
                     // Preserve the familiar emergency Stop while a countdown or reading is active.
                     // At rest, the same gesture toggles notifications without a second button.
-                    if (AutoReadController.hasActiveReading()) AutoReadController.cancelCurrent()
+                    if (AutoReadController.hasActiveReading()) AutoReadController.stopActiveReading()
                     else AutoReadController.setNotificationsEnabled(context, !notifications)
                 },
                 onClick = { AutoReadController.setEnabled(context, !enabled) },
