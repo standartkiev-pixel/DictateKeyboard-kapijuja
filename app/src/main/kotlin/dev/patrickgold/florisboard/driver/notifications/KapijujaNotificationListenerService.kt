@@ -60,7 +60,7 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
             // instead of announcing the whole history on every new post.
             extracted.parts.forEach { known.add(it.fingerprint) }
             if (known.size > 40) {
-                val retained = known.takeLast(40)
+                val retained = known.toList().takeLast(40)
                 known.clear()
                 known.addAll(retained)
             }
@@ -82,7 +82,7 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
             AutoReadController.onNotification(applicationContext, spokenText)
         } catch (e: Exception) {
             // No notification bodies or identifying titles are included in failure logs.
-            Log.w("KapijujaNotification", "Notification processing failed: \${e.javaClass.simpleName}")
+            Log.w("KapijujaNotification", "Notification processing failed: ${e.javaClass.simpleName}")
         }
     }
 
