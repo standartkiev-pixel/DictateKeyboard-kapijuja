@@ -13,6 +13,14 @@ Plain-text copies are available as **[FULL_PROJECT_HANDOFF_2026-09-09.txt](FULL_
 **[KAPIJUJA_VOICE_PROJECT_HANDOFF_2026-09-09.txt](KAPIJUJA_VOICE_PROJECT_HANDOFF_2026-09-09.txt)**.
 Developers should also read **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** and **[NEXT_CHAT.md](NEXT_CHAT.md)** before changing recovery/network code.
 
+## Phone builds: preserve the slim version; keep optional Wear OS support
+
+**Authoritative source for future builds: the latest `main`**, which already contains the historical slim `slim/arm64-no-bubble-no-addons` optimization. Do **not** release from the old slim branch or from the old ~130 MB pre-slim RC builds; that would discard newer fixes and features.
+
+The phone APK uses only `arm64-v8a` native libraries, Android/R8 code shrinking and resource shrinking. Maintain these settings for debug and release, measure the actual output APK independently of GitHub's compressed artifact ZIP, and investigate unexpected growth. There is no fixed 30 MB APK promise.
+
+**Wear OS is intentionally retained for future voice typing on a smartwatch.** It is a separate Gradle module and a separate APK; keeping/building `:wear` does not mean the watch APK is included in the phone APK. The user currently does not use a watch but expressly asked not to remove this capability. Keep Wear builds and tests, and publish only the phone artifact as the phone download. More details are in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md).
+
 ## Current status
 
 The fork is functional and builds successfully in GitHub Actions.
