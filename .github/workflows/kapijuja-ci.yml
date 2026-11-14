@@ -29,6 +29,9 @@ jobs:
       - name: Prevent controller growth and source corruption
         run: bash scripts/architecture-audit.sh
 
+      - name: Audit full settings backup includes API credentials
+        run: python3 scripts/audit-backup-credentials.py
+
       # Use the same intentionally public test identity as prereleases. Without this step each clean
       # runner creates a random certificate and its debug artifact cannot update an earlier CI build.
       - name: Install pinned public prerelease signing key
