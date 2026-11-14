@@ -47,7 +47,8 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
  * The auto-read switch, at the far left of the Smartbar so it is never confused with the
  * microphone on the right. On: a filled speaker on an accent circle. Off: a crossed-out speaker.
  * Tap toggles clipboard auto-read and mutes both sources on OFF. Long press explicitly
- * toggles notification reading while clipboard mode is ON. A small indicator marks alerts ON.
+ * toggles notification reading while clipboard mode is ON (or stops an active reading).
+ * A small indicator marks alerts ON.
  */
 @Composable
 fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
@@ -78,7 +79,12 @@ fun AutoReadSmartbarToggle(modifier: Modifier = Modifier) {
                 indication = ripple(),
                 role = Role.Switch,
                 onLongClickLabel = stringRes(R.string.speech__notifications_long_press),
-                onLongClick = { AutoReadController.setNotificationsEnabled(context, !notifications) },
+                onLongClick = {
+                    // Preserve the familiar emergency Stop while a countdown or reading is active.
+                    // At rest, the same gesture toggles notifications without a second button.
+                    if (AutoReadController.hasActiveReading()) AutoReadController.cancelCurrent()
+                    else AutoReadController.setNotificationsEnabled(context, !notifications)
+                },
                 onClick = { AutoReadController.setEnabled(context, !enabled) },
             )
             .semantics {
