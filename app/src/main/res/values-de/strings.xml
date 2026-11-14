@@ -2022,4 +2022,6 @@
     <string name="pref__speech__notification_connected">Dienst verbunden und bereit</string>
     <string name="pref__speech__notification_recovering">Android-Zugriff erteilt. Bei Ausfall erneut verbinden.</string>
     <string name="pref__speech__notification_reconnect">Benachrichtigungsdienst neu verbinden</string>
+    <string name="backup_and_restore__api_keys_warning">Die Einstellungssicherung enthält API-Schlüssel für Diktat und Sprachausgabe, darunter OpenAI, ElevenLabs, Inworld, Azure, Gemini und Grok. Die ZIP-Datei ist NICHT verschlüsselt. Nicht weitergeben!</string>
+    <string name="backup_and_restore__api_keys_restore_note">Beim Wiederherstellen der Einstellungen werden auch vorhandene API-Schlüssel importiert. Alte Backups enthalten eventuell keine Schlüssel neuer Anbieter. Zusammenführen bewahrt andere vorhandene Einstellungen. ZIP ist unverschlüsselt.</string>
 </resources>
