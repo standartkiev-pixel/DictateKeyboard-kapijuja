@@ -130,15 +130,14 @@ These are best-effort, event-driven rebind requests — not permanent background
 
 QA: Simulate service disconnect/force-stop and process restart; reopen Speech settings; verify listener reconnects when Android still grants access, no duplicate backfill and no surprise enable when the user left reading OFF. Test permission revoke and restore; ensure the UI does not claim connected until Android's callback arrives.
 
-## One-button reading controls — 2026-11-14 (must preserve)
+## One-button reading controls and separate modal switches — 2026-11-14
 
-One existing left Smartbar speaker remains the **only quick button**. No extra space is taken.
-- **Short tap** with clipboard reading OFF enables **clipboard only**. Notifications remain OFF and are not silently restored from a previous session/backup.
-- **Short tap** with clipboard ON switches **both** clipboard and notification reading OFF, immediately stopping any active automatic reading.
-- **Long press while idle and clipboard ON** toggles spoken notifications explicitly. It does not opt in automatically; Android Notification Access is checked, and if missing the app opens the OS permission page (the user must press again after granting).
-- **Long press during any pending countdown or active automatic speech** preserves the previous emergency **Stop** behavior.
-- A **small amber dot** on the existing speaker indicates that notification reading is ON. The notification settings toggle can also change the state, but only while clipboard master is enabled.
+The left Smartbar speaker is the **only quick button**. No extra keyboard space.
+- **Short tap when BOTH streams OFF:** enables both clipboard and notification reading, provided Android notification access was previously granted. If permission is absent, clipboard reading activates and the OS permission page opens; notification speech remains OFF until explicitly enabled.
+- **Short tap when EITHER stream is ON:** disables BOTH and cancels any in-flight automatic reading.
+- **Long press while idle:** toggles notification speech independently, even when clipboard reading is OFF. Android Notification Access must be granted to enable this source.
+- **Long press during ongoing countdown or any speech:** retains emergency **Stop**.
+- The **amber dot** on the Smartbar speaker means notification speech is ON. A lit speaker means **at least one** source is ON.
 
-The policy is codified in `driver/autoread/AutoReadSwitchPolicy.kt`, enforced in `AutoReadController`, checked on notification delivery in `KapijujaNotificationListenerService` and in `NotificationAccess.requestRecovery`. Setting-screen toggles must call the same controller (not raw JetPref `SwitchPreference`), so clipboard OFF always disables notifications. A legacy/restored inconsistent preference combination (clipboard OFF, notification ON) is **not permitted to speak** and is reset on the AutoReadController startup recovery path.
+The overlay countdown/read-aloud window has four actions in two rows: **Pause/Continue**, **Stop/Cancel**, **Disable clipboard**, and **Disable notifications**. Those last two act on their respective sources **independently**: disabling clipboard leaves notification speech running, and disabling notifications leaves clipboard speech running. If the current reading is from the disabled source, it is canceled; otherwise it is unaffected. The fallback Android status notification exposes its own relevant source's disable action. The master Smartbar button can always switch both sources OFF together.
 
-Do not make the speaker long-press silently turn on notifications when clipboard reading is OFF. Do not remove the emergency stop during active reading. Android notifications themselves are not muted or dismissed, only their TTS. Test all three modes (all OFF, clipboard only, clipboard + notifications), both short/long press, settings toggles, missing permission, restoration of older backups, and avoiding duplicate notification readback. Routine CI builds only the phone and core tests, keeping Wear code without compiling the watch.
