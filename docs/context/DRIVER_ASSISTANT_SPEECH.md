@@ -79,7 +79,7 @@ search. New providers must be added deliberately.
 `EXTRA_TEXT`, `EXTRA_SUB_TEXT`, and a fallback ticker. Expanded content takes
 precedence over collapsed duplicate previews. Per-notification in-memory fingerprints
 prevent duplicate readings across updates and let newly added messages be read without
-repeating all prior messages. At most six recent structured messages are considered.
+repeating all prior messages. At most twenty recent structured messages are considered (cloud synthesis still caps audio input to 8,000 characters per reading; local Android TTS may read up to 60,000).
 No reading of grouped summaries, calls, foreground-service status, or active media; no
 backfilling every active notification on reconnection. No title/body logging or
 persistent message capture. Android sensitive-redaction rules are respected; Android
