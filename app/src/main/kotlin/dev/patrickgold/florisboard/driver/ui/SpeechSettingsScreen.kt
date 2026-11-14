@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.settings.dictate.TextInputPreference
 import dev.patrickgold.florisboard.driver.autoread.AutoReadController
+import dev.patrickgold.florisboard.driver.notifications.NotificationAccess
 import dev.patrickgold.florisboard.driver.speech.GeminiSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiRealtimeSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiSpeechModels
@@ -134,6 +135,60 @@ fun SpeechSettingsScreen() = FlorisScreen {
             )
             AutoReadStatusRows()
             Note(stringRes(R.string.pref__speech__autoread_note))
+        }
+
+        PreferenceGroup(title = stringRes(R.string.pref__speech__group_notifications)) {
+            SwitchPreference(
+                prefs.speech.notificationReadEnabled,
+                title = stringRes(R.string.pref__speech__notification_master__label),
+                summary = stringRes(R.string.pref__speech__notification_master__summary),
+            )
+            NotificationPermissionRow()
+            SwitchPreference(
+                prefs.speech.notifyWhatsApp,
+                title = stringRes(R.string.pref__speech__source_whatsapp),
+            )
+            SwitchPreference(
+                prefs.speech.notifyInstagram,
+                title = stringRes(R.string.pref__speech__source_instagram),
+            )
+            SwitchPreference(
+                prefs.speech.notifyEmail,
+                title = stringRes(R.string.pref__speech__source_email),
+            )
+            SwitchPreference(
+                prefs.speech.notifyViber,
+                title = stringRes(R.string.pref__speech__source_viber),
+            )
+            SwitchPreference(
+                prefs.speech.notifyTelegram,
+                title = stringRes(R.string.pref__speech__source_telegram),
+            )
+            SwitchPreference(
+                prefs.speech.notifyYouTube,
+                title = stringRes(R.string.pref__speech__source_youtube),
+            )
+            Note(stringRes(R.string.pref__speech__notification_privacy_note))
+        }
+
+        PreferenceGroup(title = stringRes(R.string.pref__speech__group_cleanup)) {
+            SwitchPreference(
+                prefs.speech.skipSpokenLinks,
+                title = stringRes(R.string.pref__speech__skip_links),
+            )
+            SwitchPreference(
+                prefs.speech.skipSpokenLongNumbers,
+                title = stringRes(R.string.pref__speech__skip_numbers),
+            )
+            SwitchPreference(
+                prefs.speech.skipSpokenServiceMessages,
+                title = stringRes(R.string.pref__speech__skip_service_messages),
+            )
+            SwitchPreference(
+                prefs.speech.simplifySpokenSymbols,
+                title = stringRes(R.string.pref__speech__simplify_symbols),
+            )
+            Note(stringRes(R.string.pref__speech__cleanup_note))
         }
 
         // The short way to the one cloud voice most people want; the full list is right below.
@@ -443,6 +498,28 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.VoicePickerPreference(
  * Why the countdown window may not appear and what happened to the last copied text, so a missing
  * window or a skipped clip can be explained on the device without logs (no text is shown or stored).
  */
+@Composable
+private fun PreferenceUiScope<FlorisPreferenceModel>.NotificationPermissionRow() {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    var granted by remember { mutableStateOf(NotificationAccess.granted(context)) }
+    DisposableEffect(owner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) granted = NotificationAccess.granted(context)
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    Preference(
+        title = stringRes(R.string.pref__speech__notification_permission),
+        summary = stringRes(
+            if (granted) R.string.pref__speech__notification_permission_granted
+            else R.string.pref__speech__notification_permission_missing
+        ),
+        onClick = { NotificationAccess.openSettings(context) },
+    )
+}
+
 @Composable
 private fun PreferenceUiScope<FlorisPreferenceModel>.AutoReadStatusRows() {
     val context = LocalContext.current
