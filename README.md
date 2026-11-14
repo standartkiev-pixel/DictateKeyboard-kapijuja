@@ -19,7 +19,11 @@ Developers should also read **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** and **[
 
 The phone APK uses only `arm64-v8a` native libraries, Android/R8 code shrinking and resource shrinking. Maintain these settings for debug and release, measure the actual output APK independently of GitHub's compressed artifact ZIP, and investigate unexpected growth. There is no fixed 30 MB APK promise.
 
-**Wear OS is intentionally retained for future voice typing on a smartwatch.** It is a separate Gradle module and a separate APK; keeping/building `:wear` does not mean the watch APK is included in the phone APK. The user currently does not use a watch but expressly asked not to remove this capability. Keep Wear builds and tests, and publish only the phone artifact as the phone download. More details are in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md).
+**Wear OS is intentionally retained for future voice typing on a smartwatch.** It is a separate Gradle module and a separate APK; keeping `:wear` source code does not mean the watch APK is included in the phone APK. The user currently does not use a watch but expressly asked not to remove this capability. Routine GitHub Actions builds **only the compact phone APK and phone/core tests**; the watch is **not built or tested** unless a future task explicitly calls for it. Publish only the phone artifact. More details are in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md).
+
+### Backing up provider API keys
+
+The built-in ZIP backup includes all API credentials in the Dictate provider keyring and the speech provider settings (OpenAI, ElevenLabs, Inworld, Azure, Gemini and Grok) when **Application settings** is checked (default ON). Restore imports those preferences, including credential values present in the backup. Older archives cannot supply newer credentials they never contained. The ZIP backup is **not encrypted**, so never share it publicly or store it in an untrusted location.
 
 ## Current status
 
