@@ -11,7 +11,9 @@ Use the newest `main` for all development and releases. `slim/arm64-no-bubble-no
 
 Preserve `app/build.gradle.kts` size controls: `arm64-v8a`-only native binaries for the supported phone artifact, `isMinifyEnabled = true` (R8), `isShrinkResources = true`, pinned native libraries, and verified signing. Track actual APK size, not GitHub ZIP size. Any deliberate increase should be documented and reviewed. Do not drop useful keyboard features solely for size.
 
-Keep `:wear`, the shared phone/watch code and both build/test tasks. The user wants to retain the **future possibility** of voice input on watches but does not use them now. Wear is a separate APK; it must never be substituted for the phone APK or accidentally packaged with it. No demand to implement or ship a separate smartwatch release right now. See `DEVELOPER_HANDOFF.md` for details.
+Keep `:wear` and shared phone/watch code in Git, but **skip all `:wear:` compile/test/lint targets in normal CI and release workflows**; build Wear only for an explicitly requested future watch task. The user wants to retain the **future possibility** of voice input on watches but does not use them now. Wear is a separate APK; it must never be substituted for the phone APK or accidentally packaged with it. No demand to implement or ship a separate smartwatch release right now. See `DEVELOPER_HANDOFF.md` for details.
+
+**Backup invariant:** Selecting application settings in the ZIP backup (enabled by default) includes the full provider keyring and the new OpenAI/ElevenLabs/Inworld/cloud-speech keys because the app exports the whole JetPref store. Restore imports the same store. Never redact API keys from an explicitly requested full backup; instead warn that the ZIP is not encrypted. Protect the archive and do not log credentials.
 
 ## 1. Repository and baseline
 
