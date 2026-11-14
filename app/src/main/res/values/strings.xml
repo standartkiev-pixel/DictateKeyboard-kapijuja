@@ -2392,4 +2392,5 @@
     <string name="pref__speech__skip_service_messages">Skip service-only notifications</string>
     <string name="pref__speech__simplify_symbols">Remove unnecessary symbols</string>
     <string name="pref__speech__cleanup_note">These filters apply to both clipboard and notifications. Security tokens and verification codes are always skipped.</string>
+    <string name="pref__speech__notification_restricted_hint">If Android blocks access for a sideloaded APK, open Android Settings → Apps → Kapijuja → ⋮ → Allow restricted settings, then return here.</string>
 </resources>
