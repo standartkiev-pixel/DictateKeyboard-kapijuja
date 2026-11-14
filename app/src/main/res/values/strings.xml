@@ -2263,7 +2263,7 @@
     <string name="dictate__providers_automatic_rewording_summary">Automatically run formatting and auto-apply prompts after dictation. Manual magic-wand prompts and translation stay available.</string>
     <!-- Read aloud (Driver Assistant, issue #7) -->
     <string name="settings__speech__title">Read aloud</string>
-    <string name="settings__speech__summary">Speech engine, voice and the speaker button in clipboard history</string>
+    <string name="settings__speech__summary">Voice, clipboard, notifications and speech filters</string>
     <string name="speech__speak_clip">Read aloud</string>
     <string name="speech__stop">Stop reading</string>
     <string name="speech__error_toast">Could not read aloud: {message}</string>
@@ -2343,7 +2343,7 @@
     <string name="speech__autoread_outcome_link">skipped, a link</string>
     <string name="speech__autoread_outcome_locked">skipped, screen locked</string>
     <string name="speech__autoread_outcome_dictating">skipped, dictation in progress</string>
-    <string name="pref__speech__autoread_note">The window needs “Display over other apps”; otherwise it is a notification. Not read: the lock screen, during dictation, links, sensitive clips, one-time codes and password-like text. Nothing is sent to a cloud engine before the countdown ends.</string>
+    <string name="pref__speech__autoread_note">The countdown requires “Display over other apps”; otherwise it is shown as a notification. Screen lock, active dictation, sensitive clips and verification codes are not read. Optional filters for links, numbers and service messages are below.</string>
     <string name="settings__theme__manage_themes">Manage themes</string>
     <string name="dictate__import_copy_failed">The transcript is too long for the clipboard. Use Save or Share instead.</string>
     <string name="pref__speech__chatgpt__label">Read aloud with ChatGPT</string>
@@ -2363,4 +2363,33 @@
     <string name="speech__autoread_resume">Continue</string>
     <string name="speech__autoread_stop">Stop</string>
     <string name="speech__autoread_disable_short">Turn off</string>
+    <string name="speech__notification_access_service">Read incoming notifications</string>
+    <string name="speech__all_reading_disabled">Automatic reading is off</string>
+    <string name="speech__notification_reading_disabled">Reading notifications is off</string>
+    <string name="speech__notification_countdown">Reading the notification in %1$d s</string>
+    <string name="speech__notification_countdown_paused">Notification reading is paused</string>
+    <string name="speech__notification_reading">Reading the notification…</string>
+    <string name="speech__notification_reading_paused">Notification paused</string>
+    <string name="speech__notification_title">Reading an incoming notification</string>
+    <string name="speech__disable_all_reading">Turn off reading</string>
+    <string name="speech__disable_notification_reading">Turn off alerts</string>
+    <string name="pref__speech__group_notifications">Incoming notifications</string>
+    <string name="pref__speech__notification_master__label">Read incoming notifications aloud</string>
+    <string name="pref__speech__notification_master__summary">Only selected apps, after granting Android notification access</string>
+    <string name="pref__speech__notification_permission">Android notification access</string>
+    <string name="pref__speech__notification_permission_granted">Allowed; tap to review permission</string>
+    <string name="pref__speech__notification_permission_missing">Not allowed; tap to grant access</string>
+    <string name="pref__speech__source_whatsapp">WhatsApp</string>
+    <string name="pref__speech__source_instagram">Instagram</string>
+    <string name="pref__speech__source_email">Email (Gmail, Outlook and others)</string>
+    <string name="pref__speech__source_viber">Viber</string>
+    <string name="pref__speech__source_telegram">Telegram</string>
+    <string name="pref__speech__source_youtube">YouTube</string>
+    <string name="pref__speech__notification_privacy_note">Only new notifications from enabled sources are read. No reading while the screen is locked. Text unavailable or hidden by Android cannot be recovered. Cloud voices send spoken text to the chosen provider.</string>
+    <string name="pref__speech__group_cleanup">Speech text cleanup</string>
+    <string name="pref__speech__skip_links">Do not read web links</string>
+    <string name="pref__speech__skip_numbers">Skip long numeric sequences</string>
+    <string name="pref__speech__skip_service_messages">Skip service-only notifications</string>
+    <string name="pref__speech__simplify_symbols">Remove unnecessary symbols</string>
+    <string name="pref__speech__cleanup_note">These filters apply to both clipboard and notifications. Security tokens and verification codes are always skipped.</string>
 </resources>
