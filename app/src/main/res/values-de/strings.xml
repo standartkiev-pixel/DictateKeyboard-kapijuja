@@ -1981,7 +1981,7 @@
     <string name="pref__speech__autoread_min_chars__label">Nicht vorlesen bei weniger als</string>
     <string name="pref__speech__autoread_min_chars__value">{v} Zeichen</string>
     <string name="pref__speech__autoread_toggle__label">Schalter in der Tastaturleiste</string>
-    <string name="pref__speech__autoread_toggle__summary">Lautsprecher links in der Tastaturleiste; lang drücken zum Stoppen</string>
+    <string name="pref__speech__autoread_toggle__summary">Lautsprecher links: tippen für Zwischenablage oder alles aus; halten für Benachrichtigungen. Ein Punkt zeigt aktive Hinweise.</string>
     <string name="pref__speech__autoread_note">Für das Fenster ist die Berechtigung „Über anderen Apps einblenden“ erforderlich. Nicht bei Sperrbildschirm, Diktat oder vertraulichen Daten. Weitere Filter stehen unten.</string>
     <string name="pref__speech__history_speaker__label">Lautsprecher in der Zwischenablage</string>
     <string name="pref__speech__history_speaker__summary">Text ohne Einfügen vorlesen</string>
@@ -2024,4 +2024,10 @@
     <string name="pref__speech__notification_reconnect">Benachrichtigungsdienst neu verbinden</string>
     <string name="backup_and_restore__api_keys_warning">Die Einstellungssicherung enthält API-Schlüssel für Diktat und Sprachausgabe, darunter OpenAI, ElevenLabs, Inworld, Azure, Gemini und Grok. Die ZIP-Datei ist NICHT verschlüsselt. Nicht weitergeben!</string>
     <string name="backup_and_restore__api_keys_restore_note">Beim Wiederherstellen der Einstellungen werden auch vorhandene API-Schlüssel importiert. Alte Backups enthalten eventuell keine Schlüssel neuer Anbieter. Zusammenführen bewahrt andere vorhandene Einstellungen. ZIP ist unverschlüsselt.</string>
+    <string name="speech__notifications_long_press">Lange drücken: Benachrichtigungen vorlesen</string>
+    <string name="speech__autoread_state_with_notifications">Zwischenablage und Benachrichtigungen vorlesen</string>
+    <string name="speech__notifications_require_clipboard">Zuerst automatisches Vorlesen der Zwischenablage aktivieren</string>
+    <string name="speech__notifications_need_permission">Android-Zugriff auf Benachrichtigungen erlauben, dann Lautsprecher erneut gedrückt halten</string>
+    <string name="speech__notifications_quick_on">Vorlesen neuer Benachrichtigungen aktiviert</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Zuerst Zwischenablage-Vorlesen aktivieren. Dann Lautsprecher gedrückt halten, um Benachrichtigungen umzuschalten.</string>
 </resources>
