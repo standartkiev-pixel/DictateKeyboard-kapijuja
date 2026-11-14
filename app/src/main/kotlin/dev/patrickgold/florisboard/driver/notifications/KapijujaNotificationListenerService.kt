@@ -36,8 +36,8 @@ class KapijujaNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         try {
-            // Clipboard speaker is the master switch for all automatic reading.
-            if (!prefs.speech.autoReadEnabled.get() || !prefs.speech.notificationReadEnabled.get()) return
+            // Disabling clipboard in the overlay must not disable notification reading.
+            if (!prefs.speech.notificationReadEnabled.get()) return
             val source = NotificationSources.fromPackage(sbn.packageName) ?: return
             if (!isSourceEnabled(source)) return
             val notification = sbn.notification ?: return
