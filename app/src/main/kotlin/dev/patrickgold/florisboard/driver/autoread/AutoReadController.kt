@@ -17,11 +17,14 @@ import android.net.Uri
 import android.provider.Settings
 import android.os.SystemClock
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.dictate.DictateController
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
+import dev.patrickgold.florisboard.driver.notifications.SpeechTextSanitizer
+import dev.patrickgold.florisboard.driver.notifications.SpokenTextOptions
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import kotlinx.coroutines.CancellationException
@@ -53,6 +56,8 @@ import org.florisboard.lib.android.showShortToast
 object AutoReadController {
     private const val KEY_PREFIX = "auto-"
     private const val TAG = "KapijujaAutoRead"
+    private enum class Origin { CLIPBOARD, NOTIFICATION }
+    private var activeOrigin: Origin? = null
 
     private val prefs by FlorisPreferenceStore
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -125,10 +130,30 @@ object AutoReadController {
         prompt?.hide()
         prompt = null
         if (SpeechCoordinator.activeKey()?.startsWith(KEY_PREFIX) == true) SpeechCoordinator.stop()
+        activeOrigin = null
     }
 
-    /** Turns auto-read off until it is switched on again, stopping whatever it is doing. */
-    fun disable(context: Context) = setEnabled(context, false)
+    /** The third overlay button disables both automatic reading sources, not Android alerts. */
+    fun disable(context: Context) = disableAll(context)
+
+    fun disableAll(context: Context) {
+        cancelCurrent()
+        val app = context.applicationContext
+        scope.launch {
+            prefs.speech.autoReadEnabled.set(false)
+            prefs.speech.notificationReadEnabled.set(false)
+            app.showShortToast(R.string.speech__all_reading_disabled)
+        }
+    }
+
+    /** Fourth overlay button: only stop reading notifications, keep clipboard mode unchanged. */
+    fun disableNotifications(context: Context) {
+        if (activeOrigin == Origin.NOTIFICATION) cancelCurrent()
+        scope.launch {
+            prefs.speech.notificationReadEnabled.set(false)
+            context.applicationContext.showShortToast(R.string.speech__notification_reading_disabled)
+        }
+    }
 
     fun setEnabled(context: Context, enabled: Boolean) {
         if (!enabled) cancelCurrent()
@@ -166,23 +191,48 @@ object AutoReadController {
             isSensitive = item.isSensitive || item.type != ItemType.TEXT,
             minChars = prefs.speech.autoReadMinChars.get(),
             ownCopy = ownCopy,
+            skipLinks = prefs.speech.skipSpokenLinks.get(),
+            skipLongNumbers = prefs.speech.skipSpokenLongNumbers.get(),
         )
         if (verdict != AutoReadFilter.Verdict.READ) return record(Outcome.valueOf(verdict.name), item)
         if (isLocked(context)) return record(Outcome.LOCKED, item)
         if (DictateController.state.value is DictateController.UiState.Recording) return record(Outcome.DICTATING, item)
-        record(Outcome.READ, item)
 
+        val cleaned = SpeechTextSanitizer.clean(item.text.orEmpty(), cleanupOptions())
+        if (cleaned.isBlank()) return record(Outcome.EMPTY, item)
+        record(Outcome.READ, item)
+        beginRead(context, cleaned, Origin.CLIPBOARD)
+    }
+
+    /** From Android NotificationListenerService, independently of clipboard listening. */
+    fun onNotification(context: Context, text: String) {
+        if (!prefs.speech.notificationReadEnabled.get()) return
+        if (text.isBlank() || isLocked(context)) return
+        // Never speak an incoming notification without a visible way to pause/cancel it.
+        if (!canShowWindow(context) && !NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+        if (DictateController.state.value is DictateController.UiState.Recording) return
+        beginRead(context, text, Origin.NOTIFICATION)
+    }
+
+    private fun cleanupOptions() = SpokenTextOptions(
+        skipLinks = prefs.speech.skipSpokenLinks.get(),
+        skipLongNumbers = prefs.speech.skipSpokenLongNumbers.get(),
+        skipServiceMessages = prefs.speech.skipSpokenServiceMessages.get(),
+        simplifySymbols = prefs.speech.simplifySpokenSymbols.get(),
+    )
+
+    /** One common countdown, Pause/Resume and audio player for clipboard + notifications. */
+    private fun beginRead(context: Context, text: String, origin: Origin) {
+        appContext = context.applicationContext
         cancelCurrent()
+        activeOrigin = origin
         val myGeneration = ++generation
-        val text = item.text.orEmpty()
         val key = "$KEY_PREFIX$myGeneration"
         val delaySeconds = prefs.speech.autoReadDelaySec.get().coerceIn(1, 30)
-        val shownPrompt = createPrompt(context)
+        val shownPrompt = createPrompt(context, origin)
         prompt = shownPrompt
         job = scope.launch {
             try {
-                // A paused countdown simply stops losing time, so the remaining time is counted
-                // down here instead of being compared with a fixed deadline.
                 var left = delaySeconds * 1000L
                 var last = SystemClock.elapsedRealtime()
                 countingDown = true
@@ -195,7 +245,8 @@ object AutoReadController {
                     last = now
                 }
                 countingDown = false
-                if (generation != myGeneration || !prefs.speech.autoReadEnabled.get()) return@launch
+                if (generation != myGeneration || !isEnabled(origin)) return@launch
+                if (isLocked(context)) return@launch
                 if (DictateController.state.value is DictateController.UiState.Recording) return@launch
                 SpeechCoordinator.speak(context, text, key)
                 SpeechCoordinator.state
@@ -207,22 +258,30 @@ object AutoReadController {
                     shownPrompt.hide()
                     prompt = null
                     job = null
+                    activeOrigin = null
                 }
             }
         }
     }
 
-    private fun createPrompt(context: Context): AutoReadPrompt {
-        // A window with "display over other apps", otherwise a heads-up notification.
+    private fun isEnabled(origin: Origin): Boolean = when (origin) {
+        Origin.CLIPBOARD -> prefs.speech.autoReadEnabled.get()
+        Origin.NOTIFICATION -> prefs.speech.notificationReadEnabled.get()
+    }
+
+    private fun createPrompt(context: Context, origin: Origin): AutoReadPrompt {
+        val notification = origin == Origin.NOTIFICATION
         if (canDrawOverlays(context)) {
             return OverlayAutoReadPrompt(
                 context = context,
+                isNotification = notification,
                 onPauseToggle = { togglePause() },
                 onCancel = { cancelCurrent() },
-                onDisable = { disable(context) },
+                onDisable = { disableAll(context) },
+                onDisableNotifications = { disableNotifications(context) },
             )
         }
-        return NotificationAutoReadPrompt(context)
+        return NotificationAutoReadPrompt(context, isNotification = notification)
     }
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)

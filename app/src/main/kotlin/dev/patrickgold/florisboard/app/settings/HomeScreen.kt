@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Assignment
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
@@ -244,6 +245,11 @@ fun HomeScreen() = FlorisScreen {
             icon = Icons.AutoMirrored.Outlined.Assignment,
             title = stringRes(R.string.settings__clipboard__title),
             onClick = { navController.navigate(Routes.Settings.Clipboard) },
+        )
+        Preference(
+            icon = Icons.AutoMirrored.Filled.VolumeUp,
+            title = stringRes(R.string.settings__speech__title),
+            onClick = { navController.navigate(Routes.Settings.Speech) },
         )
         Preference(
             icon = Icons.Default.SentimentSatisfiedAlt,

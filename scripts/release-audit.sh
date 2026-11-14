@@ -15,7 +15,7 @@ git grep -q 'applicationId = "net.kapijuja.dictate"' -- app/build.gradle.kts
 git grep -q 'rootProject.name = "DictateKapijuja"' -- settings.gradle.kts
 # A pinned versionCode would block every later in-place upgrade.
 version_code="$(sed -n 's/^projectVersionCode=//p' gradle.properties)"
-[[ "$version_code" =~ ^[0-9]+$ ]] && (( version_code >= 100014 )) || {
+[[ "$version_code" =~ ^[0-9]+$ ]] && (( version_code >= 100015 )) || {
   echo "Release audit rejected old versionCode: $version_code" >&2
   exit 1
 }
