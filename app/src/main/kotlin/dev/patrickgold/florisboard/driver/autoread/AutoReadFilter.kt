@@ -23,6 +23,8 @@ object AutoReadFilter {
         isSensitive: Boolean,
         minChars: Int,
         ownCopy: String? = null,
+        skipLinks: Boolean = true,
+        skipLongNumbers: Boolean = true,
     ): Verdict {
         val trimmed = text?.trim().orEmpty()
         return when {
@@ -30,8 +32,8 @@ object AutoReadFilter {
             isSensitive -> Verdict.SENSITIVE
             ownCopy != null && ownCopy.trim() == trimmed -> Verdict.OWN_COPY
             trimmed.length < minChars -> Verdict.TOO_SHORT
-            looksLikeLink(trimmed) -> Verdict.LINK
-            looksLikeSecret(trimmed) -> Verdict.LOOKS_SECRET
+            skipLinks && looksLikeLink(trimmed) -> Verdict.LINK
+            looksLikeSecret(trimmed, skipLongNumbers) -> Verdict.LOOKS_SECRET
             else -> Verdict.READ
         }
     }
@@ -39,9 +41,9 @@ object AutoReadFilter {
     internal fun looksLikeLink(text: String): Boolean =
         !text.any { it.isWhitespace() } && LinkRegex.matches(text)
 
-    internal fun looksLikeSecret(text: String): Boolean {
+    internal fun looksLikeSecret(text: String, skipLongNumbers: Boolean = true): Boolean {
         // One-time codes, card and account numbers: digits with optional spaces or dashes only.
-        if (DigitsOnly.matches(text)) return true
+        if (skipLongNumbers && DigitsOnly.matches(text)) return true
         if (text.any { it.isWhitespace() }) return false
         if (KnownTokenPrefixes.any { text.startsWith(it) }) return true
         if (text.length !in 6..128) return false
