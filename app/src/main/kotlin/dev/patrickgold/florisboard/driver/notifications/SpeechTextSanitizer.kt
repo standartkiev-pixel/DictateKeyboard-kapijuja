@@ -21,10 +21,12 @@ object SpeechTextSanitizer {
     private val spacesAroundPunctuation = Regex("""\s+([,.!?])""")
     private val junkSymbols = Regex("""[^\p{L}\p{N}\p{M}\s.,!?;:()'"«»„“”%-]""")
     private val serviceOnly = Regex(
-        """(?i)^(?:\d+\s+)?(?:new (?:messages?|notifications?|posts?)|unread messages?|sync(?:ing| complete)?|download(?:ing| complete)?|typing(?:\.\.\.)?|checking for (?:new )?messages?|connecting|new messages? available|новых? сообщений|непрочитанных? сообщений|синхронизация|загрузка|neue nachrichten|nouveaux messages|nuovi messaggi|neue benachrichtigungen)\.?$"""
+        """^(?:.{1,60}[.:]\s+)?(?:\d+\s+)?(?:new (?:messages?|notifications?|posts?)(?:\s+from\s+.+)?|unread messages?|sync(?:ing| complete)?|download(?:ing| complete)?|typing(?:\.\.\.)?|checking for (?:new )?messages?|connecting|new messages? available|новых? сообщений|непрочитанных? сообщений|синхронизация|загрузка|neue nachrichten|nouveaux messages|nuovi messaggi|neue benachrichtigungen)\.?$""",
+        RegexOption.IGNORE_CASE,
     )
     private val verification = Regex(
-        """(?i)\b(?:one.time|otp|2fa|verification|verify|security code|login code|passcode|код подтверждения|одноразов|проверочн\w* код|code de vérification|codice di verifica|bestätigungscode)\b"""
+        """\b(?:one.time|otp|2fa|verification|verify|security code|login code|passcode|код подтверждения|одноразов\w*|проверочн\w* код|code de vérification|codice di verifica|bestätigungscode)\b""",
+        RegexOption.IGNORE_CASE,
     )
 
     /** Never read OTP/security codes, regardless of optional "long numbers" preference. */
