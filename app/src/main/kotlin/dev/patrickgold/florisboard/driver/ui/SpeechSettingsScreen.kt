@@ -12,9 +12,11 @@ package dev.patrickgold.florisboard.driver.ui
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +61,7 @@ import dev.patrickgold.florisboard.driver.notifications.NotificationAccess
 import dev.patrickgold.florisboard.driver.speech.GeminiSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiRealtimeSpeechSource
 import dev.patrickgold.florisboard.driver.speech.OpenAiSpeechModels
+import dev.patrickgold.florisboard.driver.speech.PaidSpeechAccounts
 import dev.patrickgold.florisboard.driver.speech.SpeechCoordinator
 import dev.patrickgold.florisboard.driver.speech.SpeechEngineId
 import dev.patrickgold.florisboard.driver.speech.SpeechSettings
@@ -76,6 +81,7 @@ import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import java.util.Date
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import org.florisboard.lib.compose.florisDialogScroll
 import org.florisboard.lib.compose.stringRes
 
@@ -236,6 +242,16 @@ fun SpeechSettingsScreen() = FlorisScreen {
                     stringRes(R.string.speech__engine_xai),
                     stringRes(R.string.speech__engine_xai_summary),
                 )
+                entry(
+                    SpeechEngineId.ELEVENLABS,
+                    stringRes(R.string.speech__engine_elevenlabs),
+                    stringRes(R.string.speech__engine_elevenlabs_summary),
+                )
+                entry(
+                    SpeechEngineId.INWORLD,
+                    stringRes(R.string.speech__engine_inworld),
+                    stringRes(R.string.speech__engine_inworld_summary),
+                )
             },
         )
 
@@ -325,8 +341,138 @@ fun SpeechSettingsScreen() = FlorisScreen {
                 VoicePickerPreference(prefs.speech.xaiVoice, SpeechVoiceCatalog.xai)
                 Note(stringRes(R.string.pref__speech__cloud_privacy))
             }
+            SpeechEngineId.ELEVENLABS -> PreferenceGroup(title = stringRes(R.string.speech__engine_elevenlabs)) {
+                PaidProviderSection(engine, masked)
+            }
+            SpeechEngineId.INWORLD -> PreferenceGroup(title = stringRes(R.string.speech__engine_inworld)) {
+                PaidProviderSection(engine, masked)
+            }
         }
     }
+}
+
+/**
+ * BYOK cloud providers use official list-only (free) API requests to verify the key and load
+ * voices. Billing opens the vendor's account page, never performs a purchase inside this app.
+ * Do not copy Reader's GPL code into this Apache-2.0 project.
+ */
+@Composable
+private fun PreferenceUiScope<FlorisPreferenceModel>.PaidProviderSection(
+    engine: SpeechEngineId,
+    masked: (String) -> String,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val eleven = engine == SpeechEngineId.ELEVENLABS
+    val keyPref = if (eleven) prefs.speech.elevenApiKey else prefs.speech.inworldApiKey
+    val voicePref = if (eleven) prefs.speech.elevenVoice else prefs.speech.inworldVoice
+    val modelPref = if (eleven) prefs.speech.elevenModel else prefs.speech.inworldModel
+    val key by keyPref.collectAsState()
+    var voices by remember(engine, key) { mutableStateOf<List<SpeechVoice>>(emptyList()) }
+    var loading by remember(engine, key) { mutableStateOf(false) }
+    var error by remember(engine, key) { mutableStateOf(false) }
+    var verifiedCount by remember(engine, key) { mutableStateOf<Int?>(null) }
+    var quota by remember(key) { mutableStateOf<PaidSpeechAccounts.Quota?>(null) }
+    var quotaError by remember(key) { mutableStateOf(false) }
+
+    val keyUrl = if (eleven) PaidSpeechAccounts.ELEVEN_KEY_URL else PaidSpeechAccounts.INWORLD_KEY_URL
+    val billingUrl = if (eleven) PaidSpeechAccounts.ELEVEN_BILLING_URL else PaidSpeechAccounts.INWORLD_BILLING_URL
+    val openSite: (String) -> Unit = { url ->
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
+    TextInputPreference(
+        pref = keyPref,
+        title = stringRes(R.string.pref__speech__api_key__label),
+        isSecret = true,
+        summaryProvider = masked,
+    )
+    Note(stringRes(
+        if (eleven) R.string.pref__speech__eleven_note else R.string.pref__speech__inworld_note
+    ))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton(onClick = { openSite(keyUrl) }, modifier = Modifier.weight(1f)) {
+            Text(stringRes(R.string.pref__speech__provider_get_key))
+        }
+        OutlinedButton(onClick = { openSite(billingUrl) }, modifier = Modifier.weight(1f)) {
+            Text(stringRes(R.string.pref__speech__provider_billing))
+        }
+    }
+    VoicePickerPreference(
+        modelPref,
+        if (eleven) SpeechVoiceCatalog.elevenModels else SpeechVoiceCatalog.inworldModels,
+        title = stringRes(R.string.pref__speech__model__label),
+        allowCustom = false,
+    )
+    VoicePickerPreference(
+        voicePref,
+        voices,
+        loadingLabel = if (loading) stringRes(R.string.pref__speech__provider_loading) else null,
+    )
+    Button(
+        onClick = {
+            scope.launch {
+                loading = true
+                error = false
+                try {
+                    val found = PaidSpeechAccounts.fetchVoices(engine, key.trim())
+                    voices = found
+                    verifiedCount = found.size
+                    if (found.isNotEmpty()) {
+                        val current = voicePref.get()
+                        if (found.none { it.id == current }) voicePref.set(found.first().id)
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    error = true
+                } finally {
+                    loading = false
+                }
+            }
+        },
+        enabled = key.isNotBlank() && !loading,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(stringRes(R.string.pref__speech__provider_verify))
+    }
+    if (error) Note(stringRes(R.string.pref__speech__provider_failed))
+    verifiedCount?.let { count ->
+        Note(stringRes(R.string.pref__speech__provider_voice_count, "count" to count))
+    }
+    if (eleven) {
+        OutlinedButton(
+            onClick = {
+                scope.launch {
+                    quotaError = false
+                    try {
+                        quota = PaidSpeechAccounts.elevenQuota(key.trim())
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        quotaError = true
+                    }
+                }
+            },
+            enabled = key.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(stringRes(R.string.pref__speech__provider_check_quota)) }
+        quota?.let {
+            Note(stringRes(
+                R.string.pref__speech__eleven_quota,
+                "used" to it.usedCharacters,
+                "limit" to it.allowedCharacters,
+            ))
+        }
+        if (quotaError) Note(stringRes(R.string.pref__speech__provider_failed))
+    }
+    Note(stringRes(R.string.pref__speech__balance_note))
+    Note(stringRes(R.string.pref__speech__cloud_privacy))
 }
 
 /**
