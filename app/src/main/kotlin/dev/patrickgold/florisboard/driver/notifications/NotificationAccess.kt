@@ -16,7 +16,14 @@ object NotificationAccess {
     fun granted(context: Context): Boolean {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return false
         val component = ComponentName(context, KapijujaNotificationListenerService::class.java)
-        return manager.isNotificationListenerAccessGranted(component)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            manager.isNotificationListenerAccessGranted(component)
+        } else {
+            val enabled = Settings.Secure.getString(
+                context.contentResolver, "enabled_notification_listeners"
+            ).orEmpty()
+            enabled.split(':').any { it == component.flattenToString() }
+        }
     }
 
     fun openSettings(context: Context) {
