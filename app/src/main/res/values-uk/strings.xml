@@ -1994,4 +1994,6 @@
     <string name="pref__speech__notification_connected">Службу підключено й готово</string>
     <string name="pref__speech__notification_recovering">Дозвіл Android надано. Якщо читання не працює, підключіть службу повторно.</string>
     <string name="pref__speech__notification_reconnect">Повторно підключити читання сповіщень</string>
+    <string name="backup_and_restore__api_keys_warning">У резервній копії налаштувань зберігаються API-ключі диктування й озвучення: OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok та інших сервісів. ZIP-архів НЕ зашифрований! Не передавайте його стороннім особам.</string>
+    <string name="backup_and_restore__api_keys_restore_note">Під час відновлення налаштувань відновлюються API-ключі, що є в архіві. У старих архівах ключів нових рушіїв може не бути. Режим «Об’єднати» зберігає інші поточні налаштування. ZIP не зашифрований.</string>
 </resources>
