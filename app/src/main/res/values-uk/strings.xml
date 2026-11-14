@@ -1934,7 +1934,7 @@
     <string name="pref__speech__autoread_min_chars__label">Не читати тексти коротші за</string>
     <string name="pref__speech__autoread_min_chars__value">{v} символів</string>
     <string name="pref__speech__autoread_toggle__label">Кнопка автозачитування на панелі</string>
-    <string name="pref__speech__autoread_toggle__summary">Динамік ліворуч: коротко — буфер або вимкнути все; утримання — сповіщення. Крапка показує увімкнені сповіщення.</string>
+    <string name="pref__speech__autoread_toggle__summary">Динамік клавіатури: натисніть, щоб увімкнути обидва джерела або вимкнути їх. У вікні читання буфер і сповіщення можна вимкнути окремо. Утримання перемикає сповіщення або зупиняє читання.</string>
     <string name="speech__autoread_needs_overlay_toast">Дозвольте «Поверх інших застосунків», щоб з\'являлося вікно з відліком</string>
     <string name="pref__speech__autoread_overlay__label">Вікно з відліком</string>
     <string name="pref__speech__autoread_overlay__granted">Дозволено: вікно з\'являється поверх будь-якого застосунку</string>
@@ -2002,4 +2002,8 @@
     <string name="speech__notifications_need_permission">Надайте Android доступ до сповіщень, а потім утримайте динамік ще раз</string>
     <string name="speech__notifications_quick_on">Озвучення нових сповіщень увімкнено</string>
     <string name="pref__speech__notifications_require_clipboard_summary">Спочатку увімкніть читання буфера. Утримуйте динамік клавіатури для перемикання сповіщень.</string>
+    <string name="speech__disable_clipboard_reading">Вимкнути буфер</string>
+    <string name="speech__clipboard_reading_disabled">Озвучення буфера обміну вимкнено</string>
+    <string name="speech__all_reading_enabled">Озвучення буфера та сповіщень увімкнено</string>
+    <string name="speech__autoread_state_notifications_only">Увімкнено лише читання сповіщень</string>
 </resources>
