@@ -49,22 +49,21 @@ jobs:
           chmod +x tools/fetch-sherpa-onnx.sh
           ./tools/fetch-sherpa-onnx.sh
 
-      # Compile BOTH distributable Android surfaces. The Wear module is a separate application module;
-      # building only :app can leave watch-only Kotlin errors completely invisible.
-      - name: Build phone and Wear debug APKs
-        run: ./gradlew :app:assembleDebug :wear:assembleDebug --stacktrace
+      # User decision 2026-11-14: only build the compact arm64 phone APK on every CI run.
+      # Wear OS sources remain in :wear for possible future use; do NOT compile it routinely.
+      - name: Build compact phone debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
 
-      # Fail the run if any debug APK is signed by anything other than the pinned test certificate,
-      # so a CI artifact can always be installed as an in-place update of the previous test build.
-      - name: Verify debug APK signing certificate
+      # Only the phone APK is built and installed; verify its pinned upgrade-compatible certificate.
+      - name: Verify phone APK signing certificate
         shell: bash
         run: |
           set -euo pipefail
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
-          for apk in app/build/outputs/apk/debug/*.apk wear/build/outputs/apk/debug/*.apk; do
-            "$build_tools/apksigner" verify --print-certs "$apk" | tee apk-signature.txt
-            grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
-          done
+          apk="app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$apk"
+          "$build_tools/apksigner" verify --print-certs "$apk" | tee apk-signature.txt
+          grep -qi "certificate SHA-256 digest: 22b02aed48a0ca0aeaa96e276e78ddefa000478edd824c8cb89da6575f068884" apk-signature.txt
 
       - name: Upload phone debug APK
         uses: actions/upload-artifact@v4
@@ -74,12 +73,8 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # The Wear APK is compiled and signature-checked above but deliberately NOT published as an
-      # artifact. It shares the phone's application ID and certificate with a much higher versionCode,
-      # so sideloading it onto a phone replaces the keyboard and then blocks the phone APK as a downgrade.
-
-      # :lib:dictate-core owns the provider/network fault tests; :app alone does not execute them.
-      # Keep Wear in the test graph too so a future watch-side unit test cannot silently be omitted.
-      - name: Run app, core and Wear unit tests
+      # :wear stays in source control but is deliberately excluded from routine builds/tests.
+      # Shared provider/network fault tests still run in :lib:dictate-core.
+      - name: Run phone and core unit tests
         run: |
-          ./gradlew             :app:testDebugUnitTest             :lib:dictate-core:testDebugUnitTest             :wear:testDebugUnitTest             --stacktrace
+          ./gradlew :app:testDebugUnitTest :lib:dictate-core:testDebugUnitTest --stacktrace
