@@ -1953,7 +1953,7 @@
     <string name="pref__speech__autoread_min_chars__label">Ne pas lire les textes de moins de</string>
     <string name="pref__speech__autoread_min_chars__value">{v} caractères</string>
     <string name="pref__speech__autoread_toggle__label">Bouton de lecture dans la barre</string>
-    <string name="pref__speech__autoread_toggle__summary">Haut-parleur à gauche ; appui long pour arrêter</string>
+    <string name="pref__speech__autoread_toggle__summary">Haut-parleur à gauche : appui court pour le presse-papiers ou tout désactiver ; appui long pour les notifications. Un point indique qu’elles sont activées.</string>
     <string name="pref__speech__autoread_note">La fenêtre requiert l’autorisation de superposition. Pas de lecture sur écran verrouillé, pendant une dictée ni pour les données sensibles. Filtres ci-dessous.</string>
     <string name="pref__speech__history_speaker__label">Haut-parleur dans le presse-papiers</string>
     <string name="pref__speech__history_speaker__summary">Lire le texte sans le coller</string>
@@ -1996,4 +1996,10 @@
     <string name="pref__speech__notification_reconnect">Reconnecter les notifications</string>
     <string name="backup_and_restore__api_keys_warning">La sauvegarde des paramètres inclut les clés API de dictée et de synthèse vocale : OpenAI, ElevenLabs, Inworld, Azure, Gemini, Grok et autres. Le ZIP est NON chiffré. Ne le partagez pas.</string>
     <string name="backup_and_restore__api_keys_restore_note">La restauration des paramètres importe également les clés API présentes dans le ZIP. Les anciennes sauvegardes peuvent manquer des nouvelles clés. Le mode fusion conserve les autres réglages. Le ZIP est non chiffré.</string>
+    <string name="speech__notifications_long_press">Maintenir : lire les notifications</string>
+    <string name="speech__autoread_state_with_notifications">Lecture du presse-papiers et des notifications activée</string>
+    <string name="speech__notifications_require_clipboard">Activez d’abord la lecture du presse-papiers</string>
+    <string name="speech__notifications_need_permission">Autorisez l’accès Android aux notifications, puis maintenez le haut-parleur à nouveau</string>
+    <string name="speech__notifications_quick_on">Lecture des nouvelles notifications activée</string>
+    <string name="pref__speech__notifications_require_clipboard_summary">Activez d’abord la lecture du presse-papiers. Maintenez le haut-parleur pour gérer les notifications.</string>
 </resources>
