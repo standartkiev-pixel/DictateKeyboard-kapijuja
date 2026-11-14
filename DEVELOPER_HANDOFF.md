@@ -6,7 +6,7 @@
 
 This is the current authoritative handoff for the project. Read this document before changing code.
 
-## Mandatory build baseline and Wear preservation — 2026-11-14
+## Mandatory phone-only build baseline and Wear source preservation — 2026-11-14
 
 **User decision:** Continue all keyboard development and phone APK releases from the current, **slim-derived** `main` branch. The historical reduction checkpoint is `slim/arm64-no-bubble-no-addons` (commit `eda2d1dd4dce55223648974b6df227e96f66af84`), and it is **already an ancestor of `main`**. Do not directly build or reset to the old slim branch: that would lose subsequent improvements, including speech/notification work. Do not take future code or build inputs from older pre-slim releases merely because they compile.
 
@@ -14,13 +14,15 @@ This is the current authoritative handoff for the project. Read this document be
 - In `app/build.gradle.kts`, keep `ndk.abiFilters = arm64-v8a` for the supported phone test build. Do not silently bundle other CPU architectures and thereby inflate the APK.
 - Keep R8 code shrinking (`isMinifyEnabled = true`) and Android resource shrinking (`isShrinkResources = true`) enabled for debug and release. Retain the tested proguard rules and the pinned native dependencies. Monitor output size after changes; compare the actual APK bytes (not only the smaller compressed GitHub artifact ZIP).
 - Do not reintroduce the removed bubble/add-on components or other old bulk without an explicit product decision; do not remove current features merely to chase a size target.
-- Only publish the `app` module phone APK as the **phone** artifact. The `wear` module is a separate APK, not bundled into the phone APK. Keep the signing certificate/package identity consistent for in-place phone updates and do not install the higher-version Wear APK onto the phone.
+- Only publish the `app` module phone APK as the **phone** artifact. The `wear` module is retained as a separate, currently unbuilt source module. Keep the signing certificate/package identity consistent for in-place phone updates and do not install any Wear APK onto the phone.
 
-**User decision about smartwatches:** **Do not delete or disable Wear OS support.** The user does not currently wear a smartwatch, but wants to preserve the possibility of speech-based input on a small future watch. Retain `:wear`, shared phone/watch integration, and the Wear build/tests, provided they do not accidentally expand the phone package. There is no request to create a new watch feature in this change; leave the existing watch behavior intact.
+**User decision about smartwatches:** **Do not delete or disable Wear OS support.** The user does not currently wear a smartwatch, but wants to preserve the possibility of speech-based input on a small future watch. Retain `:wear` and shared phone/watch integration in source control, but **do not compile, test or package the Wear APK in routine GitHub Actions runs**. Wear may be built only for a separate, explicitly requested watch development task. There is no request to create a new watch feature in this change; leave the existing watch behavior intact.
 
-Last verified at the time of this note: the phone artifact is distributed separately, the previous uncompressed phone APK was roughly 54 MB while the artifact ZIP was roughly 32 MB, and the old RC7 phone APK was about 130 MB. These are **historical measurements, not hard size guarantees**; future changes should be assessed against the most recent successful slim-derived phone APK. The 2026-11-14 CI run on `main` passed app/Wear compilation, artifact upload, signature check and all JVM unit tests.
+Last verified at the time of this note: the phone artifact is distributed separately, the previous uncompressed phone APK was roughly 54 MB while the artifact ZIP was roughly 32 MB, and the old RC7 phone APK was about 130 MB. These are **historical measurements, not hard size guarantees**; future changes should be assessed against the most recent successful slim-derived phone APK. Historical 2026-11-14 CI ran both phone and Wear tests. **From this change forward CI and release workflows must run only `:app:assembleDebug`, `:app:testDebugUnitTest`, and `:lib:dictate-core:testDebugUnitTest`** (and the phone/core release lint gates). The Wear sources are deliberately preserved without routine builds.
 
 
+
+**API-key backup contract:** The built-in backup screen exports the complete `FlorisPreferenceStore` through `JetPref` when `Application settings` is selected (default ON). This includes the Dictate provider keyring `dictate__provider_accounts` and all separate `speech__*_api_key` / `speech__azure_key` preferences for OpenAI, ElevenLabs, Inworld, Google Gemini, xAI Grok and Azure, plus future credentials kept in the same preference store. The matching restore path uses `FlorisPreferenceStore.import` in Merge (default) or Erase mode. **Do not exclude secrets from the data backup or introduce a stale static provider whitelist.** No extra copy of keys is required. The user must be warned that the ZIP is **unencrypted** and should not be shared. If `Application settings` is unchecked, keys are deliberately excluded; old backups cannot recover keys they never contained.
 
 ## 1. Purpose
 
