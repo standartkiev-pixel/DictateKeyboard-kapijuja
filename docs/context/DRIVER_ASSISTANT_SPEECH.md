@@ -160,3 +160,36 @@ The overlay countdown/read-aloud window has four actions in two rows: **Pause/Co
 5. Seek to ~50% in a long text, confirm speech restarts near that location; seek while paused and after resuming; then copy new text (latest wins).
 6. Test Android TTS and each configured cloud engine separately; observe extra cloud synthesis on seek, voice cutoff/cancellation, no key/content logging.
 7. Turn notifications off in Android settings; verify overlay remains the only controls and no sensitive text appears on lockscreen. Test permissions and service restarts.
+
+
+## Unified manual + automatic speech playback — 2026-11-16 (follow-up)
+
+**Important correction:** The first seekable MediaSession lived only inside AutoReadPrompt;
+manual taps on the speaker in clipboard history called SpeechCoordinator directly and had NO
+notification/seekbar. This follow-up fixes that gap.
+
+- `SpeechCoordinator` now exclusively owns one `SpeechPlaybackNotification` for both
+  `auto-*` (automatic clipboard/notification reading) and `clip-*` (manual clipboard-history
+  speaker). Voice previews from Speech Settings intentionally do not show a media player.
+- Android MediaSession publishes `METADATA_KEY_DURATION` (estimated from text),
+  `ACTION_SEEK_TO` (finger draggable system progress), and `PlaybackState` progress/position.
+  Transport commands: Pause/Resume, Stop, −1 min, +1 min, +10 min; MediaSession callbacks
+  also accept −10 min rewind, +10 min fast-forward, and relative jumps from supported clients.
+  All jumps are clamped and restart near a word/sentence boundary of the stored *current* text.
+- No user text is sent as a notification title or playback metadata; no need to reopen the
+  clipboard or paste anything in order to jump.
+- SpeechCoordinator owns cleanup of the media session on completion/cancel/new playback.
+  AutoReadPrompt owns only the countdown notification and optional top overlay. Swiping the
+  top overlay while reading removes ONLY that overlay. Manual and automatic playbacks therefore
+  cannot create competing MediaSessions or cancel each other's notification by ID.
+- The two notification IDs differ: countdown `0xA7D0`, media playback `0xA7D1`.
+  The playback broadcast receiver is explicitly non-exported in AndroidManifest.
+- When a cloud TTS voice is selected, every jump can trigger new provider synthesis and charges.
+  Timeline minutes are approximations, not exact file timestamps; display includes `≈`.
+- On Android devices that suppress app notifications or system media seekbars, the controls may
+  differ. Verify Notification Access/POST_NOTIFICATIONS and the device media controls manually.
+
+QA: long manual clipboard history text, manual Pause/Stop, scrub to 50%, +1 and +10 min,
+switch between manual and auto text while playing, swipe overlay without stopping audio, fallback
+when display-over-apps is not granted, verify notification ID cleanup, Android system TTS and
+optional paid voice. Check that Speech Settings voice previews do NOT produce a media notification.
