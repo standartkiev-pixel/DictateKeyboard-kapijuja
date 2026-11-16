@@ -13,6 +13,7 @@ package dev.patrickgold.florisboard.driver.speech
 import android.content.Context
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.os.SystemClock
 import android.util.Log
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -24,6 +25,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,6 +85,24 @@ object SpeechCoordinator {
     /** Whether the current reading has produced sound yet (decides the state after [resume]). */
     private var audible = false
 
+    /** The current source text, not its synthesized audio; needed for approximate sentence seeking. */
+    private data class Reading(
+        val context: Context,
+        val text: String,
+        val key: String,
+        val adjust: (SpeechSettings) -> SpeechSettings,
+    )
+    private var reading: Reading? = null
+
+    private val _progress = MutableStateFlow(0f)
+    /** Fraction of the text already spoken (best-effort, updated by TTS callbacks). */
+    val progress: StateFlow<Float> = _progress.asStateFlow()
+
+    private val _estimatedDurationMs = MutableStateFlow(3_000L)
+    /** Estimated duration, not measured synthesized audio length. */
+    val estimatedDurationMs: StateFlow<Long> = _estimatedDurationMs.asStateFlow()
+
+
     /** Key of the reading being prepared, spoken or paused, or null when idle. */
     fun activeKey(): String? = keyOf(_state.value)
 
@@ -110,33 +131,93 @@ object SpeechCoordinator {
         text: String,
         key: String,
         adjust: (SpeechSettings) -> SpeechSettings = { it },
+    ) = begin(context.applicationContext, text, key, adjust, startAt = 0, retainingKey = false)
+
+    /** Seek the currently playing text to a sentence/word boundary near [fraction]. */
+    fun seekToFraction(fraction: Float) {
+        val session = reading ?: return
+        if (activeKey() != session.key) return
+        val startAt = SpeechSeekPosition.offset(session.text, fraction)
+        begin(session.context, session.text, session.key, session.adjust, startAt, retainingKey = true)
+    }
+
+    private fun begin(
+        context: Context,
+        text: String,
+        key: String,
+        adjust: (SpeechSettings) -> SpeechSettings,
+        startAt: Int,
+        retainingKey: Boolean,
     ) {
-        val appContext = context.applicationContext
         watchDictation()
-        stop()
+        if (retainingKey) {
+            // Do not broadcast Idle when seeking: AutoReadController tracks this key and would
+            // otherwise mistake the temporary restart for the end of the whole reading.
+            generation++
+            currentJob?.cancel()
+            currentJob = null
+            android?.stop()
+            abandonFocus()
+            pauseRequested.value = false
+            audible = false
+        } else {
+            stop()
+        }
+        val cappedText = text.take(MAX_LOCAL_CHARS)
         val myGeneration = ++generation
+        reading = Reading(context, cappedText, key, adjust)
+        _progress.value = if (cappedText.isEmpty()) 0f else startAt.toFloat() / cappedText.length
+        _estimatedDurationMs.value = SpeechSeekPosition.estimatedDurationMs(cappedText, 1f)
         _state.value = State.Preparing(key)
+
         currentJob = scope.launch {
-            val settings = adjust(withContext(Dispatchers.IO) { SpeechSettings.from(prefs) })
-            requestFocus(appContext)
+            var progressClock: Job? = null
             try {
-                read(appContext, text, settings) {
+                val settings = adjust(withContext(Dispatchers.IO) { SpeechSettings.from(prefs) })
+                val playable = cappedText.take(if (settings.engine.isCloud) MAX_CLOUD_CHARS else MAX_LOCAL_CHARS)
+                if (generation != myGeneration) return@launch
+                reading = Reading(context, playable, key, adjust)
+                val offset = startAt.coerceIn(0, playable.length)
+                _estimatedDurationMs.value = SpeechSeekPosition.estimatedDurationMs(playable, settings.speed)
+                _progress.value = if (playable.isEmpty()) 0f else offset.toFloat() / playable.length
+                requestFocus(context)
+                progressClock = launch {
+                    var last = SystemClock.elapsedRealtime()
+                    while (isActive) {
+                        delay(500L)
+                        val now = SystemClock.elapsedRealtime()
+                        if (generation == myGeneration && _state.value is State.Speaking) {
+                            val advance = (now - last).toFloat() / _estimatedDurationMs.value.coerceAtLeast(1L)
+                            _progress.value = (_progress.value + advance).coerceAtMost(0.995f)
+                        }
+                        last = now
+                    }
+                }
+                read(context, playable.substring(offset), settings, onStarted = {
                     if (generation == myGeneration) {
                         audible = true
                         if (_state.value is State.Preparing) _state.value = State.Speaking(key)
                     }
-                }
+                }, onProgress = { spokenInRemainder ->
+                    if (generation == myGeneration && playable.isNotEmpty()) {
+                        val exact = ((offset + spokenInRemainder).toFloat() / playable.length).coerceIn(0f, 0.995f)
+                        if (exact > _progress.value) _progress.value = exact
+                    }
+                })
+                if (generation == myGeneration) _progress.value = 1f
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                Log.w(TAG, "reading failed: engine=${settings.engine} error=${e.javaClass.simpleName}")
+                Log.w(TAG, "reading failed: error=${e.javaClass.simpleName}")
                 val message = (e as? SpeechEngineException)?.message ?: e.javaClass.simpleName
-                appContext.showShortToast(R.string.speech__error_toast, "message" to message)
+                context.showShortToast(R.string.speech__error_toast, "message" to message)
             } finally {
+                progressClock?.cancel()
                 if (generation == myGeneration) {
                     abandonFocus()
                     pauseRequested.value = false
                     audible = false
+                    reading = null
                     _state.value = State.Idle
                 }
             }
@@ -147,6 +228,7 @@ object SpeechCoordinator {
         generation++
         currentJob?.cancel()
         currentJob = null
+        reading = null
         android?.stop()
         abandonFocus()
         pauseRequested.value = false
@@ -179,32 +261,32 @@ object SpeechCoordinator {
     fun androidEngine(context: Context): AndroidSpeechEngine =
         android ?: AndroidSpeechEngine(context).also { android = it }
 
-    private suspend fun read(context: Context, text: String, settings: SpeechSettings, onStarted: () -> Unit) {
+    private suspend fun read(context: Context, text: String, settings: SpeechSettings, onStarted: () -> Unit, onProgress: (Int) -> Unit) {
         if (!settings.engine.isCloud) {
-            androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted)
+            androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted, onProgress)
             return
         }
         val source = sourceFor(settings.engine)
         if (!source.isConfigured(settings)) {
             if (settings.fallbackToAndroid) {
                 context.showShortToast(R.string.speech__fallback_not_configured_toast, "engine" to settings.engine.name)
-                androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted)
+                androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted, onProgress)
                 return
             }
             throw SpeechEngineException(context.stringRes(R.string.speech__not_configured_error, "engine" to settings.engine.name))
         }
         var started = false
         try {
-            playCloud(source, text.take(MAX_CLOUD_CHARS), settings) {
+            playCloud(source, text.take(MAX_CLOUD_CHARS), settings, onStarted = {
                 started = true
                 onStarted()
-            }
+            }, onProgress = onProgress)
         } catch (e: SpeechEngineException) {
             // Fall back only when nothing was heard yet: repeating a half-read text on another
             // engine is confusing, and retrying the cloud would risk paying twice.
             if (!settings.fallbackToAndroid || started) throw e
             context.showShortToast(R.string.speech__fallback_error_toast, "message" to e.message)
-            androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted)
+            androidEngine(context).speak(text.take(MAX_LOCAL_CHARS), settings, pauseRequested, onStarted, onProgress)
         }
     }
 
@@ -233,9 +315,17 @@ object SpeechCoordinator {
         text: String,
         settings: SpeechSettings,
         onStarted: () -> Unit,
+        onProgress: (Int) -> Unit,
     ) = coroutineScope {
         val pieces = SpeechTextChunker.split(text)
         if (pieces.isEmpty()) return@coroutineScope
+        val chunkOffsets = buildList {
+            var count = 0
+            for (piece in pieces) {
+                add(count)
+                count += piece.length
+            }
+        }
         val channel = Channel<Piece>(Channel.UNLIMITED)
         val playing = MutableStateFlow(-1)
         val producer = launch(Dispatchers.IO) {
@@ -258,7 +348,10 @@ object SpeechCoordinator {
             try {
                 for (piece in channel) {
                     when (piece) {
-                        is Piece.Start -> playing.value = piece.index
+                        is Piece.Start -> {
+                            playing.value = piece.index
+                            onProgress(chunkOffsets[piece.index])
+                        }
                         is Piece.Audio -> {
                             player.write(piece.pcm)
                             if (!announced) {
