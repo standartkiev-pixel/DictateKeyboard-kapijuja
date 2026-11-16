@@ -63,10 +63,11 @@ class AndroidSpeechEngine(context: Context) {
         settings: SpeechSettings,
         paused: StateFlow<Boolean>,
         onStarted: () -> Unit,
+        onProgress: (Int) -> Unit = {},
     ) {
         var spoken = false
         try {
-            speakOnce(text, settings, paused) {
+            speakOnce(text, settings, paused, onProgress) {
                 spoken = true
                 onStarted()
             }
@@ -78,7 +79,7 @@ class AndroidSpeechEngine(context: Context) {
             if (spoken) throw e
             withContext(Dispatchers.Main) { shutdown() }
             delay(250)
-            speakOnce(text, settings, paused, onStarted)
+            speakOnce(text, settings, paused, onProgress, onStarted)
         }
     }
 
@@ -86,6 +87,7 @@ class AndroidSpeechEngine(context: Context) {
         text: String,
         settings: SpeechSettings,
         paused: StateFlow<Boolean>,
+        onProgress: (Int) -> Unit,
         onStarted: () -> Unit,
     ) {
         val engine = obtain(settings.androidEnginePackage)
@@ -93,6 +95,13 @@ class AndroidSpeechEngine(context: Context) {
         val maxLength = (TextToSpeech.getMaxSpeechInputLength() - 1).coerceIn(200, PIECE_MAX)
         val pieces = SpeechTextChunker.split(text, firstChunkMax = maxLength, chunkMax = maxLength)
         if (pieces.isEmpty()) return
+        val offsets = buildList {
+            var total = 0
+            for (piece in pieces) {
+                add(total)
+                total += piece.length
+            }
+        }
         // Our own audio session for the engine's output, so the loudness boost can be attached to it.
         val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         val audioSession = audioManager?.generateAudioSessionId() ?: AudioManager.AUDIO_SESSION_ID_GENERATE
@@ -106,7 +115,7 @@ class AndroidSpeechEngine(context: Context) {
             var next = 0
             while (next < pieces.size) {
                 paused.first { !it }
-                next = speakFrom(engine, pieces, next, params, paused, onStarted)
+                next = speakFrom(engine, pieces, next, params, paused, onStarted, offsets, onProgress)
             }
         } finally {
             runCatching { loudness?.release() }
@@ -124,6 +133,8 @@ class AndroidSpeechEngine(context: Context) {
         params: Bundle,
         paused: StateFlow<Boolean>,
         onStarted: () -> Unit,
+        offsets: List<Int>,
+        onProgress: (Int) -> Unit,
     ): Int = coroutineScope {
         val prefix = "kapijuja-${++utteranceSession}-"
         val lastId = prefix + pieces.lastIndex
@@ -142,10 +153,21 @@ class AndroidSpeechEngine(context: Context) {
                     override fun onStart(utteranceId: String?) {
                         val id = utteranceId ?: return
                         if (!id.startsWith(prefix)) return
-                        id.removePrefix(prefix).toIntOrNull()?.let { current.set(it) }
+                        id.removePrefix(prefix).toIntOrNull()?.let {
+                            current.set(it)
+                            onProgress(offsets[it])
+                        }
                         if (!announced) {
                             announced = true
                             onStarted()
+                        }
+                    }
+
+                    override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                        val id = utteranceId ?: return
+                        if (!id.startsWith(prefix)) return
+                        id.removePrefix(prefix).toIntOrNull()?.let { index ->
+                            if (index in offsets.indices) onProgress(offsets[index] + start)
                         }
                     }
 

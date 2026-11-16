@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -182,6 +183,12 @@ object AutoReadController {
         if (enabled) start(app)
         scope.launch {
             prefs.speech.autoReadEnabled.set(enabled)
+            if (enabled) {
+                // The Bluetooth/speaker-style Smartbar switch is also a recovery point. Android
+                // can stop delivering clipboard callbacks after an IME/background transition.
+                // Reattach now, while the user is interacting with the keyboard.
+                app.clipboardManager().value.refreshClipboardObservation(reconcileCurrent = false)
+            }
             if (enabled && !canShowWindow(app)) {
                 app.showShortToast(R.string.speech__autoread_needs_overlay_toast)
                 openOverlayPermissionSettings(app)
@@ -210,6 +217,11 @@ object AutoReadController {
         scope.launch {
             prefs.speech.autoReadEnabled.set(target.clipboard)
             prefs.speech.notificationReadEnabled.set(target.notifications)
+            if (target.clipboard) {
+                // OFF → ON must repair the listener too; re-enabling a preference alone cannot
+                // restore an OS callback that was dropped while the keyboard was hidden.
+                app.clipboardManager().value.refreshClipboardObservation(reconcileCurrent = false)
+            }
             if (target.notifications) NotificationAccess.requestRecovery(app)
             if (!access) {
                 app.showShortToast(R.string.speech__notifications_need_permission)
@@ -326,7 +338,7 @@ object AutoReadController {
                 if (isLocked(context)) return@launch
                 if (DictateController.state.value is DictateController.UiState.Recording) return@launch
                 SpeechCoordinator.speak(context, text, key)
-                SpeechCoordinator.state
+                combine(SpeechCoordinator.state, SpeechCoordinator.progress) { state, _ -> state }
                     .takeWhile { SpeechCoordinator.keyOf(it) == key }
                     .collect { shownPrompt.showReading(paused = it is SpeechCoordinator.State.Paused) }
             } finally {

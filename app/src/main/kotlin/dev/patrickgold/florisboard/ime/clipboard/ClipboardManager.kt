@@ -193,11 +193,14 @@ class ClipboardManager(
      * Reattach after the IME becomes visible. This is event-driven (not a polling timer).
      * Reconcile a missed clipboard change once; timestamp dedup prevents replay of an old copy.
      */
-    fun refreshClipboardObservation() {
+    fun refreshClipboardObservation(reconcileCurrent: Boolean = true) {
         runCatching {
             systemClipboardManager.removePrimaryClipChangedListener(this)
             systemClipboardManager.addPrimaryClipChangedListener(this)
-            onPrimaryClipChanged()
+            // Turning auto-read back ON must restore observation without speaking an unrelated
+            // clipboard item that was copied while the reader was OFF. When the keyboard actually
+            // reappears, reconcile one missed change through the existing timestamp deduplication.
+            if (reconcileCurrent) onPrimaryClipChanged()
         }.onFailure { Log.w(TAG, "Failed to reattach clipboard listener", it) }
     }
 

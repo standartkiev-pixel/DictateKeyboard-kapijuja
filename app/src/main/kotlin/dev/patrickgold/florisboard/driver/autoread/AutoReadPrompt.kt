@@ -21,6 +21,7 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -58,6 +59,10 @@ class OverlayAutoReadPrompt(
     private var title: TextView? = null
     private var pauseButton: Button? = null
     private var cancelButton: Button? = null
+    private var readingStarted = false
+    private var dismissedBySwipe = false
+    // A reading must remain controllable after the overlay is swiped away.
+    private val statusPrompt by lazy { NotificationAutoReadPrompt(context, isNotification) }
 
     override fun showCountdown(secondsLeft: Int, paused: Boolean) {
         ensureShown()
@@ -71,6 +76,11 @@ class OverlayAutoReadPrompt(
     }
 
     override fun showReading(paused: Boolean) {
+        readingStarted = true
+        // Keep the notification available even while the overlay is on screen. Swiping the
+        // overlay only removes its window; it does not stop speech or remove its controls.
+        statusPrompt.showReading(paused)
+        if (dismissedBySwipe) return
         ensureShown()
         title?.text = localeContext.getString(
             if (paused) (if (isNotification) R.string.speech__notification_reading_paused else R.string.speech__autoread_reading_paused)
@@ -81,9 +91,24 @@ class OverlayAutoReadPrompt(
     }
 
     override fun hide() {
+        statusPrompt.hide()
+        removeWindow()
+    }
+
+    private fun removeWindow() {
         val view = root ?: return
         root = null
+        title = null
+        pauseButton = null
+        cancelButton = null
         runCatching { windowManager?.removeViewImmediate(view) }
+    }
+
+    private fun dismissWindowOnly() {
+        // Countdown cannot be dismissed: it would otherwise start reading with no visible Stop.
+        if (!readingStarted) return
+        dismissedBySwipe = true
+        removeWindow()
     }
 
     private fun pauseLabel(paused: Boolean): String =
@@ -132,7 +157,25 @@ class OverlayAutoReadPrompt(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(6) })
         }
-        val panel = LinearLayout(ctx).apply {
+        val panel = object : LinearLayout(ctx) {
+            private var downY: Float? = null
+
+            override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> downY = event.rawY
+                    MotionEvent.ACTION_UP -> {
+                        val movement = downY?.let { kotlin.math.abs(event.rawY - it) } ?: 0f
+                        downY = null
+                        if (readingStarted && movement >= dp(56)) {
+                            dismissWindowOnly()
+                            return true
+                        }
+                    }
+                    MotionEvent.ACTION_CANCEL -> downY = null
+                }
+                return super.dispatchTouchEvent(event)
+            }
+        }.apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(12))
             background = GradientDrawable().apply {
@@ -170,6 +213,7 @@ class OverlayAutoReadPrompt(
 class NotificationAutoReadPrompt(private val context: Context, private val isNotification: Boolean) : AutoReadPrompt {
     private val manager = context.getSystemService(NotificationManager::class.java)
     private val localeContext = SpeechLocaleContext.wrap(context)
+    private val media by lazy { AutoReadMediaNotification(context, isNotification) }
 
     /** What is on screen now, so the 200 ms countdown ticks do not repost the same notification. */
     private var shown: String? = null
@@ -192,19 +236,15 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
     }
 
     override fun showReading(paused: Boolean) {
-        if (!changed("reading:$paused")) return
-        val title = localeContext.getString(
-            if (isNotification) {
-                if (paused) R.string.speech__notification_reading_paused else R.string.speech__notification_reading
-            } else {
-                if (paused) R.string.speech__autoread_reading_paused else R.string.speech__autoread_reading
-            }
-        )
-        post(build(title, paused, reading = true).setShowWhen(false).build())
+        // Keep the actual playback position and seek controls in the Android media card.
+        // A plain Notification.setProgress() bar is not draggable.
+        shown = "media"
+        media.showReading(paused)
     }
 
     override fun hide() {
         shown = null
+        media.hide()
         runCatching { manager?.cancel(NOTIFICATION_ID) }
     }
 
