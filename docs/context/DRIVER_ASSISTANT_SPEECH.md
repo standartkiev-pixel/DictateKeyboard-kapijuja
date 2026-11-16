@@ -140,3 +140,23 @@ The left Smartbar speaker is the **only quick button**. No extra keyboard space.
 
 The overlay countdown/read-aloud window has four actions in two rows: **Pause/Continue**, **Stop/Cancel**, **Disable clipboard**, and **Disable notifications**. Those last two act on their respective sources **independently**: disabling clipboard leaves notification speech running, and disabling notifications leaves clipboard speech running. If the current reading is from the disabled source, it is canceled; otherwise it is unaffected. The fallback Android status notification exposes its own relevant source's disable action. The master Smartbar button can always switch both sources OFF together.
 
+
+## Clipboard recovery and long-text media controls — 2026-11-16
+
+- The Smartbar speaker OFF→ON and Speech Settings clipboard ON actions explicitly **reattach the existing Android clipboard listener**. The reattachment does not replay the last clip copied while disabled. Opening the keyboard still reconciles one missed clipboard event via timestamp deduplication. This is an event-driven recovery action, not background clipboard polling or permission bypass.
+- Swipe the top overlay vertically by at least 56 dp **while speech is playing** to hide the overlay without stopping TTS; the system playback notification remains. During the countdown, swipe-dismiss is deliberately disabled because invisible delayed autoplay would be unsafe. The Stop control (or a later new copy) still cancels the current read. One shared TTS session remains.
+- Both clipboard and allowed notification text use a **MediaSession transport notification** during playback. Android's media UI uses `PlaybackState.ACTION_SEEK_TO` and `MediaMetadata.METADATA_KEY_DURATION` for a draggable seekbar. `Notification.setProgress()` is intentionally not used as a fake interactive seekbar.
+- Seek position is calculated from source text as an approximate fraction, rounded backward to a nearby sentence boundary (within 240 chars) or word boundary. A seek cancels ongoing synthesis and restarts the remainder. Android TTS tracks utterance ranges; cloud progress tracks chunks and estimated playback. The displayed duration (marked `≈`) is **estimated**, not measured PCM duration.
+- **Cloud caveat:** a seek triggers a new cloud synthesis request for the remaining text and can incur additional usage charges. Do not continuously resynthesize while dragging or cache sensitive message content. No raw clipboard text is put in media metadata/logs.
+- Preserve `AutoReadController` key continuity through seek; exposing a transient Idle state during a seek would cause the controller to tear down its overlay and notification.
+- The 2026-11-16 device bugreport upload had local ZIP members but no main `bugreport.txt`/logcat and no central directory; no conclusive Android system trace was available. Validate auto-reading on the actual Samsung/Android 17 device.
+
+### Device QA checklist
+
+1. Keyboard visible: copy new text; auto countdown and speech work. Toggle Smartbar OFF→ON and repeat; do not read an old unrelated copy.
+2. Keyboard hidden: copy in WhatsApp/Chrome/etc.; confirm OS delivers to default IME or note device clipboard restrictions, then show keyboard to trigger reconciliation.
+3. Repeat exactly the same clipboard text twice: each real copy should trigger a new event; own dictation copies and sensitive text must not speak.
+4. During playback, swipe overlay up/down; audio must continue; Android media notification must offer Pause/Stop and a draggable seekbar.
+5. Seek to ~50% in a long text, confirm speech restarts near that location; seek while paused and after resuming; then copy new text (latest wins).
+6. Test Android TTS and each configured cloud engine separately; observe extra cloud synthesis on seek, voice cutoff/cancellation, no key/content logging.
+7. Turn notifications off in Android settings; verify overlay remains the only controls and no sensitive text appears on lockscreen. Test permissions and service restarts.
