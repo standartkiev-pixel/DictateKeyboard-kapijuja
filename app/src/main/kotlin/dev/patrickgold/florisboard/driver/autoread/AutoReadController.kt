@@ -182,6 +182,12 @@ object AutoReadController {
         if (enabled) start(app)
         scope.launch {
             prefs.speech.autoReadEnabled.set(enabled)
+            if (enabled) {
+                // The Bluetooth/speaker-style Smartbar switch is also a recovery point. Android
+                // can stop delivering clipboard callbacks after an IME/background transition.
+                // Reattach now, while the user is interacting with the keyboard.
+                app.clipboardManager().value.refreshClipboardObservation(reconcileCurrent = false)
+            }
             if (enabled && !canShowWindow(app)) {
                 app.showShortToast(R.string.speech__autoread_needs_overlay_toast)
                 openOverlayPermissionSettings(app)
@@ -210,6 +216,11 @@ object AutoReadController {
         scope.launch {
             prefs.speech.autoReadEnabled.set(target.clipboard)
             prefs.speech.notificationReadEnabled.set(target.notifications)
+            if (target.clipboard) {
+                // OFF → ON must repair the listener too; re-enabling a preference alone cannot
+                // restore an OS callback that was dropped while the keyboard was hidden.
+                app.clipboardManager().value.refreshClipboardObservation(reconcileCurrent = false)
+            }
             if (target.notifications) NotificationAccess.requestRecovery(app)
             if (!access) {
                 app.showShortToast(R.string.speech__notifications_need_permission)
