@@ -213,6 +213,7 @@ class OverlayAutoReadPrompt(
 class NotificationAutoReadPrompt(private val context: Context, private val isNotification: Boolean) : AutoReadPrompt {
     private val manager = context.getSystemService(NotificationManager::class.java)
     private val localeContext = SpeechLocaleContext.wrap(context)
+    private val media by lazy { AutoReadMediaNotification(context, isNotification) }
 
     /** What is on screen now, so the 200 ms countdown ticks do not repost the same notification. */
     private var shown: String? = null
@@ -235,19 +236,15 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
     }
 
     override fun showReading(paused: Boolean) {
-        if (!changed("reading:$paused")) return
-        val title = localeContext.getString(
-            if (isNotification) {
-                if (paused) R.string.speech__notification_reading_paused else R.string.speech__notification_reading
-            } else {
-                if (paused) R.string.speech__autoread_reading_paused else R.string.speech__autoread_reading
-            }
-        )
-        post(build(title, paused, reading = true).setShowWhen(false).build())
+        // Keep the actual playback position and seek controls in the Android media card.
+        // A plain Notification.setProgress() bar is not draggable.
+        shown = "media"
+        media.showReading(paused)
     }
 
     override fun hide() {
         shown = null
+        media.hide()
         runCatching { manager?.cancel(NOTIFICATION_ID) }
     }
 
