@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -337,7 +338,7 @@ object AutoReadController {
                 if (isLocked(context)) return@launch
                 if (DictateController.state.value is DictateController.UiState.Recording) return@launch
                 SpeechCoordinator.speak(context, text, key)
-                SpeechCoordinator.state
+                combine(SpeechCoordinator.state, SpeechCoordinator.progress) { state, _ -> state }
                     .takeWhile { SpeechCoordinator.keyOf(it) == key }
                     .collect { shownPrompt.showReading(paused = it is SpeechCoordinator.State.Paused) }
             } finally {
