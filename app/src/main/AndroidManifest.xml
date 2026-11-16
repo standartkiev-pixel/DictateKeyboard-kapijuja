@@ -82,6 +82,10 @@
         <receiver
             android:name="dev.patrickgold.florisboard.driver.autoread.AutoReadActionReceiver"
             android:exported="false"/>
+        <!-- Shared speech transport for clipboard history and auto-read; internal commands only. -->
+        <receiver
+            android:name="dev.patrickgold.florisboard.driver.speech.SpeechPlaybackActionReceiver"
+            android:exported="false"/>
 
         <!-- Spellchecker service -->
         <service
