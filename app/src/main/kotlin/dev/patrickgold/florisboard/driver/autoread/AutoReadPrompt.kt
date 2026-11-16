@@ -61,8 +61,7 @@ class OverlayAutoReadPrompt(
     private var cancelButton: Button? = null
     private var readingStarted = false
     private var dismissedBySwipe = false
-    // A reading must remain controllable after the overlay is swiped away.
-    private val statusPrompt by lazy { NotificationAutoReadPrompt(context, isNotification) }
+    // SpeechCoordinator owns the shared notification while reading, even after a swipe.
 
     override fun showCountdown(secondsLeft: Int, paused: Boolean) {
         ensureShown()
@@ -77,9 +76,7 @@ class OverlayAutoReadPrompt(
 
     override fun showReading(paused: Boolean) {
         readingStarted = true
-        // Keep the notification available even while the overlay is on screen. Swiping the
-        // overlay only removes its window; it does not stop speech or remove its controls.
-        statusPrompt.showReading(paused)
+        // A separate system MediaSession notification stays available after a swipe.
         if (dismissedBySwipe) return
         ensureShown()
         title?.text = localeContext.getString(
@@ -91,7 +88,6 @@ class OverlayAutoReadPrompt(
     }
 
     override fun hide() {
-        statusPrompt.hide()
         removeWindow()
     }
 
@@ -213,7 +209,8 @@ class OverlayAutoReadPrompt(
 class NotificationAutoReadPrompt(private val context: Context, private val isNotification: Boolean) : AutoReadPrompt {
     private val manager = context.getSystemService(NotificationManager::class.java)
     private val localeContext = SpeechLocaleContext.wrap(context)
-    private val media by lazy { AutoReadMediaNotification(context, isNotification) }
+    // The fallback notification is for the countdown only. The reading notification is
+    // shared by all SpeechCoordinator calls (including manual clipboard history speech).
 
     /** What is on screen now, so the 200 ms countdown ticks do not repost the same notification. */
     private var shown: String? = null
@@ -236,15 +233,15 @@ class NotificationAutoReadPrompt(private val context: Context, private val isNot
     }
 
     override fun showReading(paused: Boolean) {
-        // Keep the actual playback position and seek controls in the Android media card.
-        // A plain Notification.setProgress() bar is not draggable.
-        shown = "media"
-        media.showReading(paused)
+        // Countdown is over: remove it. SpeechCoordinator provides the seekable media card.
+        if (shown != "reading") {
+            shown = "reading"
+            runCatching { manager?.cancel(NOTIFICATION_ID) }
+        }
     }
 
     override fun hide() {
         shown = null
-        media.hide()
         runCatching { manager?.cancel(NOTIFICATION_ID) }
     }
 

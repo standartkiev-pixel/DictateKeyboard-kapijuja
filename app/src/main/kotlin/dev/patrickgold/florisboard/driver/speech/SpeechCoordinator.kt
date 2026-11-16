@@ -78,6 +78,8 @@ object SpeechCoordinator {
     private var android: AndroidSpeechEngine? = null
     private var dictationWatch: Job? = null
     private var focusRequest: AudioFocusRequest? = null
+    /** Shared player notification for copied text AND tapped clipboard-history entries. */
+    private var playbackNotification: SpeechPlaybackNotification? = null
 
     /** True while the current reading is held by [pause]; the engines watch it. */
     private val pauseRequested = MutableStateFlow(false)
@@ -141,6 +143,31 @@ object SpeechCoordinator {
         begin(session.context, session.text, session.key, session.adjust, startAt, retainingKey = true)
     }
 
+    /** Move relative to the *estimated* playback time; no audio file is cached for seeking. */
+    fun seekByMillis(deltaMillis: Long) {
+        if (reading == null || activeKey() == null) return
+        val target = SpeechSeekPosition.shiftedFraction(
+            progress = _progress.value,
+            deltaMillis = deltaMillis,
+            durationMillis = _estimatedDurationMs.value,
+        )
+        seekToFraction(target)
+    }
+
+    /** Notification button receiver; commands are routed only to the one active player. */
+    fun onPlaybackNotificationAction(action: String?) {
+        playbackNotification?.dispatchAction(action)
+    }
+
+    private fun publishPlayback(context: Context) {
+        val key = activeKey() ?: return
+        if (!SpeechPlaybackNotification.shouldDisplay(key)) return
+        val notification = playbackNotification
+            ?: SpeechPlaybackNotification(context.applicationContext).also { playbackNotification = it }
+        notification.show(key, isPaused)
+    }
+
+
     private fun begin(
         context: Context,
         text: String,
@@ -169,6 +196,7 @@ object SpeechCoordinator {
         _progress.value = if (cappedText.isEmpty()) 0f else startAt.toFloat() / cappedText.length
         _estimatedDurationMs.value = SpeechSeekPosition.estimatedDurationMs(cappedText, 1f)
         _state.value = State.Preparing(key)
+        publishPlayback(context)
 
         currentJob = scope.launch {
             var progressClock: Job? = null
@@ -180,6 +208,7 @@ object SpeechCoordinator {
                 val offset = startAt.coerceIn(0, playable.length)
                 _estimatedDurationMs.value = SpeechSeekPosition.estimatedDurationMs(playable, settings.speed)
                 _progress.value = if (playable.isEmpty()) 0f else offset.toFloat() / playable.length
+                publishPlayback(context)
                 requestFocus(context)
                 progressClock = launch {
                     var last = SystemClock.elapsedRealtime()
@@ -191,12 +220,14 @@ object SpeechCoordinator {
                             _progress.value = (_progress.value + advance).coerceAtMost(0.995f)
                         }
                         last = now
+                        if (generation == myGeneration) publishPlayback(context)
                     }
                 }
                 read(context, playable.substring(offset), settings, onStarted = {
                     if (generation == myGeneration) {
                         audible = true
                         if (_state.value is State.Preparing) _state.value = State.Speaking(key)
+                        scope.launch { if (generation == myGeneration) publishPlayback(context) }
                     }
                 }, onProgress = { spokenInRemainder ->
                     if (generation == myGeneration && playable.isNotEmpty()) {
@@ -219,6 +250,7 @@ object SpeechCoordinator {
                     audible = false
                     reading = null
                     _state.value = State.Idle
+                    playbackNotification?.hide()
                 }
             }
         }
@@ -226,6 +258,7 @@ object SpeechCoordinator {
 
     fun stop() {
         generation++
+        playbackNotification?.hide()
         currentJob?.cancel()
         currentJob = null
         reading = null
@@ -243,6 +276,7 @@ object SpeechCoordinator {
         pauseRequested.value = true
         abandonFocus()
         _state.value = State.Paused(key)
+        reading?.let { publishPlayback(it.context) }
     }
 
     /** Continues a reading held by [pause]. */
@@ -251,6 +285,7 @@ object SpeechCoordinator {
         requestFocus(context.applicationContext)
         _state.value = if (audible) State.Speaking(paused.key) else State.Preparing(paused.key)
         pauseRequested.value = false
+        reading?.let { publishPlayback(it.context) }
     }
 
     fun togglePause(context: Context) {

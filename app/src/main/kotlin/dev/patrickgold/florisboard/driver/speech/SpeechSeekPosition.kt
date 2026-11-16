@@ -31,6 +31,14 @@ internal object SpeechSeekPosition {
         return wordBoundary?.plus(1) ?: target
     }
 
+    /** Relative skip in the approximate playback timeline, constrained to the text bounds. */
+    fun shiftedFraction(progress: Float, deltaMillis: Long, durationMillis: Long): Float {
+        if (durationMillis <= 0L) return progress.coerceIn(0f, 1f)
+        val fraction = progress.coerceIn(0f, 1f) +
+            deltaMillis.toDouble() / durationMillis.toDouble()
+        return fraction.coerceIn(0.0, 1.0).toFloat()
+    }
+
     /** Estimate only: actual TTS duration depends on language, voice and network engine. */
     fun estimatedDurationMs(text: String, speed: Float): Long {
         val charsPerSecond = 13f * speed.coerceIn(0.25f, 4f)

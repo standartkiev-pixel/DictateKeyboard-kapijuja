@@ -44,4 +44,21 @@ class SpeechSeekPositionTest {
             SpeechSeekPosition.estimatedDurationMs(text, 1f))
         assertTrue(SpeechSeekPosition.estimatedDurationMs("", 1f) >= 3000L)
     }
+
+    @Test
+    fun `one-minute jump changes progress according to estimated ten-minute duration`() {
+        assertEquals(0.6f, SpeechSeekPosition.shiftedFraction(0.5f, 60_000L, 600_000L), 0.001f)
+        assertEquals(0.4f, SpeechSeekPosition.shiftedFraction(0.5f, -60_000L, 600_000L), 0.001f)
+    }
+
+    @Test
+    fun `ten-minute skips cannot run past the beginning or end`() {
+        assertEquals(1f, SpeechSeekPosition.shiftedFraction(0.25f, 600_000L, 120_000L))
+        assertEquals(0f, SpeechSeekPosition.shiftedFraction(0.25f, -600_000L, 120_000L))
+    }
+
+    @Test
+    fun `broken duration avoids division by zero`() {
+        assertEquals(0.25f, SpeechSeekPosition.shiftedFraction(0.25f, 60_000L, 0L))
+    }
 }
