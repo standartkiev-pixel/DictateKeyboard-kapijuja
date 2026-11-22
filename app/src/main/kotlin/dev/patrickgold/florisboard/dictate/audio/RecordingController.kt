@@ -15,6 +15,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.NoiseSuppressor
 import java.io.File
 import java.io.RandomAccessFile
 
@@ -47,6 +48,10 @@ class RecordingController(private val cacheDir: File) {
     @Volatile private var recording = false
     @Volatile private var paused = false
     @Volatile private var pcmBytes = 0L
+    /** Software noise suppression for this recording (null = off, level 0). Touched only by the capture thread and [stop]. */
+    private var reducer: NoiseReducer? = null
+    /** The phone's own noise suppressor for this AudioRecord session, if the device exposes one. */
+    private var platformSuppressor: NoiseSuppressor? = null
     /** Peak |sample| (0..32767) seen since the last [maxAmplitude] call; drives the waveform. */
     @Volatile private var peak = 0
 
@@ -81,11 +86,16 @@ class RecordingController(private val cacheDir: File) {
      * (so the batch path / fallback / resend flows are intact). The buffer is reused after the callback
      * returns, so consumers must synchronously copy/encode/queue the first [len] bytes if they need to keep
      * them. Called on the capture thread; keep it non-blocking (hand the bytes to a queue/socket and return).
+     *
+     * [noiseLevel] (0..10, experimental) sets the noise suppression strength: 0 turns our software reducer
+     * off and asks the phone to disable its own suppressor; 1..10 apply [NoiseReducer] with growing
+     * strength, and from [NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL] the phone's suppressor is enabled too.
      */
     @SuppressLint("MissingPermission") // caller holds RECORD_AUDIO; an init failure is handled below.
     fun start(
         audioSource: Int = MediaRecorder.AudioSource.MIC,
         pcmSink: ((pcm16: ByteArray, len: Int) -> Unit)? = null,
+        noiseLevel: Int = NoiseReducer.DEFAULT_LEVEL,
     ) {
         if (recording) return
         val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL, ENCODING)
@@ -106,6 +116,8 @@ class RecordingController(private val cacheDir: File) {
             runCatching { rec.release() }
             throw t
         }
+        configurePlatformSuppressor(rec, noiseLevel)
+        reducer = if (noiseLevel > 0) NoiseReducer(noiseLevel) else null
         record = rec
         raf = out
         outputFile = file
@@ -124,14 +136,22 @@ class RecordingController(private val cacheDir: File) {
                 if (!recording) break
                 // Keep reading while paused (so the mic buffer never overflows) but drop the samples.
                 if (n > 0 && !paused) {
-                    // Write under the lock so a concurrent rotate() sees a consistent raf/pcmBytes and the
-                    // frame lands in the correct segment file (never split across a rotation).
-                    synchronized(fileLock) {
-                        runCatching { raf?.write(buf, 0, n) }
-                        pcmBytes += n
+                    val nr = reducer
+                    val (data, len) = if (nr != null) {
+                        runCatching { nr.process(buf, n) }.getOrElse { reducer = null; buf to n }
+                    } else {
+                        buf to n
                     }
-                    updatePeak(buf, n)
-                    if (pcmSink != null) runCatching { pcmSink(buf, n) }
+                    if (len > 0) {
+                        // Write under the lock so a concurrent rotate() sees a consistent raf/pcmBytes and the
+                        // frame lands in the correct segment file (never split across a rotation).
+                        synchronized(fileLock) {
+                            runCatching { raf?.write(data, 0, len) }
+                            pcmBytes += len
+                        }
+                        updatePeak(data, len)
+                        if (pcmSink != null) runCatching { pcmSink(data, len) }
+                    }
                 }
             }
         }.also { it.start() }
@@ -208,9 +228,16 @@ class RecordingController(private val cacheDir: File) {
         }
         thread = null
         if (stopped) runCatching { rec?.release() }
+        runCatching { platformSuppressor?.release() }
+        platformSuppressor = null
+        val tail = reducer?.let { nr -> runCatching { nr.flush() }.getOrNull() }
+        reducer = null
         return synchronized(fileLock) {
             val out = raf ?: return@synchronized null
             raf = null
+            if (tail != null && tail.second > 0) {
+                runCatching { out.write(tail.first, 0, tail.second) }.onSuccess { pcmBytes += tail.second }
+            }
             val bytes = pcmBytes
             val file = outputFile
             try {
@@ -247,6 +274,13 @@ class RecordingController(private val cacheDir: File) {
     fun cancel() {
         stop()
         outputFile?.delete()
+    }
+
+    private fun configurePlatformSuppressor(rec: AudioRecord, noiseLevel: Int) {
+        if (!runCatching { NoiseSuppressor.isAvailable() }.getOrDefault(false)) return
+        platformSuppressor = runCatching { NoiseSuppressor.create(rec.audioSessionId) }.getOrNull()?.also { ns ->
+            runCatching { ns.enabled = noiseLevel >= NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL }
+        }
     }
 
     private fun updatePeak(buf: ByteArray, length: Int) {

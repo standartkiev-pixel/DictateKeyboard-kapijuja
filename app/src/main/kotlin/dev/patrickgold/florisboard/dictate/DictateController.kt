@@ -41,6 +41,7 @@ import dev.patrickgold.florisboard.dictate.audio.LiveSpeechSplitter
 import dev.patrickgold.florisboard.dictate.audio.SmartTurnModel
 import dev.patrickgold.florisboard.dictate.audio.Pcm16Resampler
 import dev.patrickgold.florisboard.dictate.audio.RecordingController
+import dev.patrickgold.florisboard.dictate.audio.NoiseReducer
 import dev.patrickgold.florisboard.dictate.audio.SpeechGate
 import dev.patrickgold.florisboard.dictate.data.prompts.DictatePromptDefaults
 import dev.patrickgold.florisboard.dictate.data.prompts.PromptModel
@@ -1447,7 +1448,13 @@ object DictateController {
                     else -> null
                 }
                 // The recorder receives no Context and therefore cannot retain an Android component.
-                recorder = RecordingController(appContext.cacheDir).also { it.start(audioSource, pcmSink); inputRouter.bind(it) }
+                val noiseLevel = prefs.dictate.noiseSuppressionLevel.get()
+                    .coerceIn(NoiseReducer.MIN_LEVEL, NoiseReducer.MAX_LEVEL)
+                SpeechGate.noiseLevel = noiseLevel
+                recorder = RecordingController(appContext.cacheDir).also {
+                    it.start(audioSource, pcmSink, noiseLevel)
+                    inputRouter.bind(it)
+                }
                 if (prefs.dictate.skipSilentRecordings.get()) {
                     // Hide the one-time native VAD/session setup behind the user's recording time.
                     scope.launch { SpeechGate.prewarm(appContext) }
@@ -1837,6 +1844,7 @@ object DictateController {
                 //   • Silence trimming (#232): long internal pauses are cut out so a gappy dictation uploads
                 //     less audio (less cost/latency) without losing a word.
                 // Both fail open (treated as speech, left untrimmed) if the check can't run.
+                SpeechGate.noiseLevel = prefs.dictate.noiseSuppressionLevel.get()
                 val skipSilent = prefs.dictate.skipSilentRecordings.get()
                 val trimGaps = prefs.dictate.trimSilentGaps.get()
                 val longform = prefs.dictate.longformMode.get().isEnabled

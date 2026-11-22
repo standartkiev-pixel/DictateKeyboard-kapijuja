@@ -52,6 +52,29 @@ object SpeechGate {
     private const val LOG_TAG = "DictateLatency"
     private val vadMutex = Mutex()
     private var cachedVad: Vad? = null
+    private var cachedThreshold = Float.NaN
+
+    /**
+     * Noise suppression level from settings (0..10, Kapijuja). Sets the Silero speech threshold
+     * ([NoiseReducer.vadThreshold]): lower levels treat quieter sound as speech, so soft words are
+     * neither trimmed out nor make a recording count as silent. Level 10 is the old fixed 0.5.
+     */
+    @Volatile
+    var noiseLevel: Int = NoiseReducer.DEFAULT_LEVEL
+
+    /** Returns the cached session, rebuilding it when the threshold changed. Call under [vadMutex]. */
+    private fun vadFor(model: File): Vad? {
+        val threshold = NoiseReducer.vadThreshold(noiseLevel)
+        if (cachedVad != null && cachedThreshold != threshold) {
+            runCatching { cachedVad?.release() }
+            cachedVad = null
+        }
+        if (cachedVad == null) {
+            cachedVad = createVad(model, threshold)
+            cachedThreshold = threshold
+        }
+        return cachedVad
+    }
 
     /**
      * Creates the native VAD session while the user is still speaking so stopping a recording does not
@@ -61,7 +84,7 @@ object SpeechGate {
         val startedNanos = System.nanoTime()
         val model = ensureVadModel(context.applicationContext) ?: return@withContext
         vadMutex.withLock {
-            if (cachedVad == null) cachedVad = createVad(model)
+            vadFor(model)
         }
         Log.i(LOG_TAG, "speechGate prewarmMs=${elapsedMillis(startedNanos)} ready=${cachedVad != null}")
     }
@@ -83,8 +106,7 @@ object SpeechGate {
 
         vadMutex.withLock {
             val createStartedNanos = System.nanoTime()
-            val vad = cachedVad ?: createVad(model)?.also { cachedVad = it }
-                ?: return@withLock true
+            val vad = vadFor(model) ?: return@withLock true
             val createMs = elapsedMillis(createStartedNanos)
             val runStartedNanos = System.nanoTime()
             try {
@@ -157,7 +179,7 @@ object SpeechGate {
             return@withContext SpeechAnalysis(samples, AudioDecode.TARGET_SAMPLE_RATE, emptyList())
         }
         vadMutex.withLock {
-            val vad = cachedVad ?: createVad(model)?.also { cachedVad = it } ?: return@withLock null
+            val vad = vadFor(model) ?: return@withLock null
             try {
                 vad.reset()
                 val segments = ArrayList<IntRange>()
@@ -262,12 +284,12 @@ object SpeechGate {
     /** Below this much removed silence, trimming isn't worth the re-encode (issue #232). */
     private const val MIN_TRIM_MS = 500
 
-    private fun createVad(model: File): Vad? = runCatching {
+    private fun createVad(model: File, threshold: Float): Vad? = runCatching {
         Vad(
             config = VadModelConfig().apply {
                 sileroVadModelConfig = SileroVadModelConfig(
                     model = model.absolutePath,
-                    threshold = 0.5f,
+                    threshold = threshold,
                     minSilenceDuration = 0.25f,
                     minSpeechDuration = 0.25f,
                     windowSize = WINDOW,

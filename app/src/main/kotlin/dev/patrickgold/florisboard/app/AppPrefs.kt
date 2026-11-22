@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.driver.speech.SpeechEngineId
 import dev.patrickgold.florisboard.dictate.DictateLongformMode
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
 import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
+import dev.patrickgold.florisboard.dictate.audio.NoiseReducer
 import dev.patrickgold.florisboard.dictate.DictateLegacyLayout
 import dev.patrickgold.florisboard.dictate.DictatePromptsLayout
 import dev.patrickgold.florisboard.dictate.DictateRecordingAnimation
@@ -412,6 +413,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = DictateAudioSource.DEFAULT,
         )
         // Keep the screen awake while a recording is in progress (default on).
+        // Experimental noise suppression strength for dictation, 0 (off) .. 10 (strong). Default 1: barely
+        // audible (≤2.5 dB, see NoiseReducer) so it never removes words. Also loosens the Silero speech
+        // threshold used by the silence gate / pause trimmer at low levels.
+        val noiseSuppressionLevel = int(
+            key = "dictate__noise_suppression_level",
+            default = NoiseReducer.DEFAULT_LEVEL,
+        )
         val keepScreenAwake = boolean(
             key = "dictate__keep_screen_awake",
             default = true,
