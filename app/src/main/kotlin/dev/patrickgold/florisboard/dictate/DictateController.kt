@@ -41,6 +41,7 @@ import dev.patrickgold.florisboard.dictate.audio.LiveSpeechSplitter
 import dev.patrickgold.florisboard.dictate.audio.SmartTurnModel
 import dev.patrickgold.florisboard.dictate.audio.Pcm16Resampler
 import dev.patrickgold.florisboard.dictate.audio.RecordingController
+import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
 import dev.patrickgold.florisboard.dictate.audio.NoiseReducer
 import dev.patrickgold.florisboard.dictate.audio.SpeechGate
 import dev.patrickgold.florisboard.dictate.data.prompts.DictatePromptDefaults
@@ -1421,9 +1422,21 @@ object DictateController {
                 reconcileActiveLanguage()
                 requestAudioFocusIfEnabled(appContext)
                 val inputRouter = RecordingInputRouter(appContext).also { recordingInputRouter = it }
-                val audioSource = inputRouter.sourceForStart(
-                    prefs.dictate.useBluetoothMic.get(), prefs.dictate.audioInputSource.get().resolve(appContext),
-                )
+                val noiseLevel = prefs.dictate.noiseSuppressionLevel.get()
+                    .coerceIn(NoiseReducer.MIN_LEVEL, NoiseReducer.MAX_LEVEL)
+                // Below the "strong" levels our own gentle reducer replaces the phone's processing. The
+                // default MIC source runs the phone's voice pipeline (noise gate / suppression / AGC),
+                // which makes background noise and soft speech sound chopped, so record from the clean
+                // VOICE_RECOGNITION source instead. An explicitly chosen source is respected.
+                val chosenSource = prefs.dictate.audioInputSource.get()
+                val localSource = if (chosenSource == DictateAudioSource.DEFAULT &&
+                    noiseLevel < NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL
+                ) {
+                    android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION
+                } else {
+                    chosenSource.resolve(appContext)
+                }
+                val audioSource = inputRouter.sourceForStart(prefs.dictate.useBluetoothMic.get(), localSource)
                 // Long-form segmented dictation (#170): transcribe cut segments in the background while
                 // recording continues. Off for realtime / live-prompt / overlay / multimodal (see the gate).
                 val segmented = isSegmentedMode(appContext)
@@ -1448,8 +1461,6 @@ object DictateController {
                     else -> null
                 }
                 // The recorder receives no Context and therefore cannot retain an Android component.
-                val noiseLevel = prefs.dictate.noiseSuppressionLevel.get()
-                    .coerceIn(NoiseReducer.MIN_LEVEL, NoiseReducer.MAX_LEVEL)
                 SpeechGate.noiseLevel = noiseLevel
                 recorder = RecordingController(appContext.cacheDir).also {
                     it.start(audioSource, pcmSink, noiseLevel)
@@ -1896,6 +1907,9 @@ object DictateController {
                 val speedPercent = prefs.dictate.audioSpeedUpPercent.get()
                 if (speedPercent > AudioSpeedUp.MIN_PERCENT &&
                     source != DictateHistorySource.IMPORT &&
+                    // History keeps the audio exactly as it was sent, so a re-transcribe of a
+                    // successful entry must not speed it up a second time.
+                    !isReplay &&
                     preset.transcriptionApi != TranscriptionApi.LOCAL_ONDEVICE
                 ) {
                     val spedUp = AudioSpeedUp.process(
@@ -2041,7 +2055,10 @@ object DictateController {
                 // Shared finalize: rewording/formatting + mappings + commit + stats. Reused by the
                 // realtime path (issue #128), which supplies its own already-streamed transcript.
                 val capture = HistoryCapture(
-                    audioFile = audioFile,
+                    // History keeps exactly what was sent for recognition (after noise suppression,
+                    // pause trimming, speed-up and packing), so listening to it shows what the
+                    // recognizer heard. Failed dictations keep the original via retainFailedAudio.
+                    audioFile = uploadFile,
                     providerId = account.providerId,
                     providerName = historyProviderName,
                     model = model,
@@ -2113,8 +2130,8 @@ object DictateController {
                     inFlightHistoryMeta = null
                 }
                 if (!keepAudio) audioFile.delete()
-                // Drop the derived upload copies — trimmed (#232) and/or sped up (#272); the original
-                // audioFile is the one history keeps.
+                // Drop the derived upload copies — trimmed (#232) and/or sped up (#272). History has
+                // already copied the sent file by now (recordHistory runs synchronously above).
                 if (uploadFile !== audioFile) runCatching { uploadFile.delete() }
                 localFallbackFile?.takeIf { it !== audioFile && it !== uploadFile }
                     ?.let { runCatching { it.delete() } }

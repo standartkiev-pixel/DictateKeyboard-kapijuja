@@ -15,6 +15,9 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.AudioEffect
+import android.media.audiofx.AutomaticGainControl
 import android.media.audiofx.NoiseSuppressor
 import java.io.File
 import java.io.RandomAccessFile
@@ -50,8 +53,8 @@ class RecordingController(private val cacheDir: File) {
     @Volatile private var pcmBytes = 0L
     /** Software noise suppression for this recording (null = off, level 0). Touched only by the capture thread and [stop]. */
     private var reducer: NoiseReducer? = null
-    /** The phone's own noise suppressor for this AudioRecord session, if the device exposes one. */
-    private var platformSuppressor: NoiseSuppressor? = null
+    /** The phone's own voice effects (noise suppressor, AGC, echo canceller) for this session, if exposed. */
+    private val platformEffects = ArrayList<AudioEffect>()
     /** Peak |sample| (0..32767) seen since the last [maxAmplitude] call; drives the waveform. */
     @Volatile private var peak = 0
 
@@ -100,8 +103,12 @@ class RecordingController(private val cacheDir: File) {
         if (recording) return
         val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL, ENCODING)
         require(minBuf > 0) { "AudioRecord unavailable on this device" }
+        // Read in small chunks but give the native side a large ring (≥0.5 s): a capture thread that is
+        // briefly descheduled (disk write, GC, a busy phone) must never overrun AudioRecord, because
+        // overruns drop samples and the recording then sounds chopped.
         val bufferSize = minBuf * 2
-        val rec = AudioRecord(audioSource, SAMPLE_RATE, CHANNEL, ENCODING, bufferSize)
+        val nativeBuffer = maxOf(bufferSize, MIN_NATIVE_BUFFER_BYTES)
+        val rec = AudioRecord(audioSource, SAMPLE_RATE, CHANNEL, ENCODING, nativeBuffer)
         if (rec.state != AudioRecord.STATE_INITIALIZED) {
             runCatching { rec.release() }
             error("AudioRecord failed to initialize")
@@ -116,7 +123,7 @@ class RecordingController(private val cacheDir: File) {
             runCatching { rec.release() }
             throw t
         }
-        configurePlatformSuppressor(rec, noiseLevel)
+        configurePlatformEffects(rec, noiseLevel)
         reducer = if (noiseLevel > 0) NoiseReducer(noiseLevel) else null
         record = rec
         raf = out
@@ -228,8 +235,8 @@ class RecordingController(private val cacheDir: File) {
         }
         thread = null
         if (stopped) runCatching { rec?.release() }
-        runCatching { platformSuppressor?.release() }
-        platformSuppressor = null
+        platformEffects.forEach { runCatching { it.release() } }
+        platformEffects.clear()
         val tail = reducer?.let { nr -> runCatching { nr.flush() }.getOrNull() }
         reducer = null
         return synchronized(fileLock) {
@@ -276,10 +283,32 @@ class RecordingController(private val cacheDir: File) {
         outputFile?.delete()
     }
 
-    private fun configurePlatformSuppressor(rec: AudioRecord, noiseLevel: Int) {
-        if (!runCatching { NoiseSuppressor.isAvailable() }.getOrDefault(false)) return
-        platformSuppressor = runCatching { NoiseSuppressor.create(rec.audioSessionId) }.getOrNull()?.also { ns ->
-            runCatching { ns.enabled = noiseLevel >= NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL }
+    /**
+     * Below [NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL] the phone's own noise suppressor, automatic gain
+     * control and echo canceller are switched off for this session (where the device lets us), because
+     * their gating is what makes noise and soft speech sound chopped. From that level on the phone's
+     * suppressor is enabled on purpose.
+     */
+    private fun configurePlatformEffects(rec: AudioRecord, noiseLevel: Int) {
+        val strong = noiseLevel >= NoiseReducer.PLATFORM_SUPPRESSOR_LEVEL
+        val session = rec.audioSessionId
+        if (runCatching { NoiseSuppressor.isAvailable() }.getOrDefault(false)) {
+            runCatching { NoiseSuppressor.create(session) }.getOrNull()?.let { ns ->
+                runCatching { ns.enabled = strong }
+                platformEffects.add(ns)
+            }
+        }
+        if (!strong && runCatching { AutomaticGainControl.isAvailable() }.getOrDefault(false)) {
+            runCatching { AutomaticGainControl.create(session) }.getOrNull()?.let { agc ->
+                runCatching { agc.enabled = false }
+                platformEffects.add(agc)
+            }
+        }
+        if (!strong && runCatching { AcousticEchoCanceler.isAvailable() }.getOrDefault(false)) {
+            runCatching { AcousticEchoCanceler.create(session) }.getOrNull()?.let { aec ->
+                runCatching { aec.enabled = false }
+                platformEffects.add(aec)
+            }
         }
     }
 
@@ -308,6 +337,8 @@ class RecordingController(private val cacheDir: File) {
         private const val STOP_JOIN_FORCE_MS = 250L
 
         private const val SAMPLE_RATE = 16_000
+        /** Half a second of 16 kHz mono PCM16 in the native capture ring. */
+        private const val MIN_NATIVE_BUFFER_BYTES = SAMPLE_RATE * 2 / 2
         private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
         private const val CHANNELS = 1

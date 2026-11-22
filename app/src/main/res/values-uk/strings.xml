@@ -1154,8 +1154,8 @@
     <string name="dictate__trim_silent_gaps_summary">Вирізає довгі паузи перед надсиланням — швидше завантаження, менші витрати</string>
     <string name="dictate__noise_suppression_title">Шумозаглушення (експеримент)</string>
     <string name="dictate__noise_suppression_off">Вимкнено</string>
-    <string name="dictate__noise_suppression_summary_off">Вимкнено: програмного заглушення немає, вбудоване заглушення телефона вимикається, де це можливо</string>
-    <string name="dictate__noise_suppression_summary">Що більше, то сильніше. Якщо зникають слова, зменште</string>
+    <string name="dictate__noise_suppression_summary_off">Вимкнено: жодного заглушення, чистий запис без вбудованої обробки телефона</string>
+    <string name="dictate__noise_suppression_summary">Що більше, то сильніше. До 7 вбудована обробка телефона вимкнена, з 8 додається. Якщо зникають слова, зменште</string>
     <string name="dictate__speed_up_title">Пришвидшувати аудіо</string>
     <string name="dictate__speed_up_off">Вимк.</string>
     <string name="dictate__speed_up_value">{rate}×</string>

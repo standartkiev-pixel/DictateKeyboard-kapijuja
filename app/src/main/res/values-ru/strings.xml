@@ -1316,8 +1316,8 @@
     <string name="dictate__trim_silent_gaps_summary">Вырезает длинные паузы перед отправкой — быстрее загрузка, меньше затрат</string>
     <string name="dictate__noise_suppression_title">Шумоподавление (эксперимент)</string>
     <string name="dictate__noise_suppression_off">Выключено</string>
-    <string name="dictate__noise_suppression_summary_off">Выключено: программного подавления нет, встроенное подавление телефона отключается, где это возможно</string>
-    <string name="dictate__noise_suppression_summary">Чем больше, тем сильнее. Если пропадают слова, уменьшите</string>
+    <string name="dictate__noise_suppression_summary_off">Выключено: никакого подавления, чистая запись без встроенной обработки телефона</string>
+    <string name="dictate__noise_suppression_summary">Чем больше, тем сильнее. До 7 встроенная обработка телефона выключена, с 8 добавляется. Если пропадают слова, уменьшите</string>
     <string name="dictate__speed_up_title">Ускорять аудио</string>
     <string name="dictate__speed_up_off">Выкл.</string>
     <string name="dictate__speed_up_value">{rate}×</string>

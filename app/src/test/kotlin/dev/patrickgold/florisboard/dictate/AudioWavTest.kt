@@ -124,6 +124,31 @@ class AudioWavTest {
         }
     }
 
+    @Test
+    fun cutJunctionsFadeInsteadOfClicking() {
+        val dir = Files.createTempDirectory("dictate-wav-fade").toFile()
+        try {
+            val samples = FloatArray(4_000) { 0.5f }
+            val output = File(dir, "faded.wav")
+            assertTrue(
+                AudioWav.write(
+                    samples, 16_000, output,
+                    ranges = listOf(intArrayOf(0, 1_000), intArrayOf(2_000, 3_000)),
+                ),
+            )
+            val written = AudioDecode.decodeToMono16k(output)
+            assertEquals(2_000, written.size)
+            // Start of the file and middle of each piece untouched, the splice itself is silent-ish.
+            assertQuantised(0.5f, written[0])
+            assertQuantised(0.5f, written[500])
+            assertTrue(written[999] < 0.01f, "fade-out ${written[999]}")
+            assertTrue(written[1_000] < 0.01f, "fade-in ${written[1_000]}")
+            assertQuantised(0.5f, written[1_500])
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
     private fun assertNear(expected: Float, actual: Float) {
         assertTrue(abs(expected - actual) < 0.000001f, "expected=$expected actual=$actual")
     }
