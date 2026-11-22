@@ -59,11 +59,12 @@ class OverlayAutoReadPrompt(
     private var title: TextView? = null
     private var pauseButton: Button? = null
     private var cancelButton: Button? = null
-    private var readingStarted = false
     private var dismissedBySwipe = false
     // SpeechCoordinator owns the shared notification while reading, even after a swipe.
 
     override fun showCountdown(secondsLeft: Int, paused: Boolean) {
+        // Swiped away: the countdown keeps running and reading starts as usual, just without the window.
+        if (dismissedBySwipe) return
         ensureShown()
         title?.text = if (paused) {
             localeContext.getString(if (isNotification) R.string.speech__notification_countdown_paused else R.string.speech__autoread_countdown_paused)
@@ -75,7 +76,6 @@ class OverlayAutoReadPrompt(
     }
 
     override fun showReading(paused: Boolean) {
-        readingStarted = true
         // A separate system MediaSession notification stays available after a swipe.
         if (dismissedBySwipe) return
         ensureShown()
@@ -100,9 +100,12 @@ class OverlayAutoReadPrompt(
         runCatching { windowManager?.removeViewImmediate(view) }
     }
 
+    /**
+     * A swipe only hides the window. Nothing else changes: the countdown continues, reading starts or
+     * continues, nothing is paused or cancelled. While reading, the system media notification still offers
+     * Pause/Stop; a new copy or notification shows a fresh window.
+     */
     private fun dismissWindowOnly() {
-        // Countdown cannot be dismissed: it would otherwise start reading with no visible Stop.
-        if (!readingStarted) return
         dismissedBySwipe = true
         removeWindow()
     }
@@ -154,20 +157,75 @@ class OverlayAutoReadPrompt(
             ).apply { topMargin = dp(6) })
         }
         val panel = object : LinearLayout(ctx) {
-            private var downY: Float? = null
+            private val touchSlop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
+            private var downX = 0f
+            private var downY = 0f
+            private var tracking = false
+            private var dragging = false
+            private var velocity: android.view.VelocityTracker? = null
 
             override fun dispatchTouchEvent(event: MotionEvent): Boolean {
                 when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> downY = event.rawY
-                    MotionEvent.ACTION_UP -> {
-                        val movement = downY?.let { kotlin.math.abs(event.rawY - it) } ?: 0f
-                        downY = null
-                        if (readingStarted && movement >= dp(56)) {
-                            dismissWindowOnly()
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = event.rawX
+                        downY = event.rawY
+                        tracking = true
+                        dragging = false
+                        velocity?.recycle()
+                        velocity = android.view.VelocityTracker.obtain().also { it.addMovement(event) }
+                    }
+                    MotionEvent.ACTION_MOVE -> if (tracking) {
+                        velocity?.addMovement(event)
+                        val dx = event.rawX - downX
+                        val dy = event.rawY - downY
+                        if (!dragging && (kotlin.math.abs(dx) > touchSlop || kotlin.math.abs(dy) > touchSlop)) {
+                            dragging = true
+                            // Take the gesture away from the buttons so a swipe never presses one.
+                            val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+                            super.dispatchTouchEvent(cancel)
+                            cancel.recycle()
+                        }
+                        if (dragging) {
+                            translationX = dx
+                            translationY = dy
+                            val progress = (kotlin.math.max(kotlin.math.abs(dx) / width.coerceAtLeast(1), kotlin.math.abs(dy) / height.coerceAtLeast(1)))
+                            alpha = (1f - progress).coerceIn(0.3f, 1f)
                             return true
                         }
                     }
-                    MotionEvent.ACTION_CANCEL -> downY = null
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (tracking) {
+                        tracking = false
+                        val wasDragging = dragging
+                        dragging = false
+                        if (wasDragging) {
+                            velocity?.addMovement(event)
+                            velocity?.computeCurrentVelocity(1000)
+                            val vx = velocity?.xVelocity ?: 0f
+                            val vy = velocity?.yVelocity ?: 0f
+                            velocity?.recycle()
+                            velocity = null
+                            val dx = event.rawX - downX
+                            val dy = event.rawY - downY
+                            val horizontal = kotlin.math.abs(dx) >= kotlin.math.abs(dy)
+                            val fling = dp(800).toFloat()
+                            val dismiss = event.actionMasked == MotionEvent.ACTION_UP && if (horizontal) {
+                                kotlin.math.abs(dx) > width * 0.3f || (kotlin.math.abs(vx) > fling && kotlin.math.abs(dx) > dp(24))
+                            } else {
+                                kotlin.math.abs(dy) > dp(56) || (kotlin.math.abs(vy) > fling && kotlin.math.abs(dy) > dp(24))
+                            }
+                            if (dismiss) {
+                                val toX = if (horizontal) (if (dx > 0) width.toFloat() else -width.toFloat()) else translationX
+                                val toY = if (horizontal) translationY else (if (dy > 0) height.toFloat() else -height.toFloat())
+                                animate().translationX(toX).translationY(toY).alpha(0f).setDuration(150)
+                                    .withEndAction { dismissWindowOnly() }.start()
+                            } else {
+                                animate().translationX(0f).translationY(0f).alpha(1f).setDuration(150).start()
+                            }
+                            return true
+                        }
+                        velocity?.recycle()
+                        velocity = null
+                    }
                 }
                 return super.dispatchTouchEvent(event)
             }

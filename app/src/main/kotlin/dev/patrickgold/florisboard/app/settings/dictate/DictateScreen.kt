@@ -18,6 +18,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.Segment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -97,6 +98,7 @@ import dev.patrickgold.florisboard.dictate.DictateLegacyLayout
 import dev.patrickgold.florisboard.dictate.DictateRecordingAnimation
 import dev.patrickgold.florisboard.dictate.audio.AudioSpeedUp
 import dev.patrickgold.florisboard.dictate.audio.DictateAudioSource
+import dev.patrickgold.florisboard.dictate.audio.NoiseReducer
 import dev.patrickgold.florisboard.dictate.audio.SmartTurnModel
 import dev.patrickgold.florisboard.dictate.provider.LocalModelCatalog
 import dev.patrickgold.florisboard.dictate.provider.LocalModelDownloads
@@ -404,6 +406,23 @@ fun DictateRecordingScreen() = FlorisScreen {
                     stringRes(R.string.dictate__audio_source_voice_communication_summary),
                 )
             },
+        )
+        // Experimental, adjustable noise suppression (Kapijuja): 0 = off, 10 = strong, default 1 (gentle).
+        DialogSliderPreference(
+            prefs.dictate.noiseSuppressionLevel,
+            icon = Icons.Default.Hearing,
+            modifier = Modifier.settingsSearchAnchor("dictate__noise_suppression_title"),
+            title = stringRes(R.string.dictate__noise_suppression_title),
+            valueLabel = { level -> noiseLevelLabel(level) },
+            summary = { level ->
+                when {
+                    level <= NoiseReducer.MIN_LEVEL -> stringRes(R.string.dictate__noise_suppression_summary_off)
+                    else -> noiseLevelLabel(level) + " · " + stringRes(R.string.dictate__noise_suppression_summary)
+                }
+            },
+            min = NoiseReducer.MIN_LEVEL,
+            max = NoiseReducer.MAX_LEVEL,
+            stepIncrement = 1,
         )
         SwitchPreference(
             prefs.dictate.keepScreenAwake,
@@ -852,3 +871,11 @@ private fun LongformModeRow(
         }
     }
 }
+
+@Composable
+private fun noiseLevelLabel(level: Int): String =
+    if (level <= NoiseReducer.MIN_LEVEL) {
+        stringRes(R.string.dictate__noise_suppression_off)
+    } else {
+        "$level / ${NoiseReducer.MAX_LEVEL}"
+    }

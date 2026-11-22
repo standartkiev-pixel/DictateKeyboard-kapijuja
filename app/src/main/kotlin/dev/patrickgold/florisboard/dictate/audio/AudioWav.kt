@@ -51,9 +51,19 @@ internal object AudioWav {
                 os.write(header(sampleRate, channels = 1, bitsPerSample = 16, dataLen = count.toLong() * 2))
                 val buf = ByteArray(8192) // even size: two bytes per sample
                 var bi = 0
-                for (range in clamped) {
+                // Where audio was cut out (pause trimming), a hard splice clicks and makes the result sound
+                // chopped. Fade 10 ms out and back in at every real junction; contiguous ranges are untouched.
+                val fade = (sampleRate / 100).coerceAtLeast(1)
+                for ((ri, range) in clamped.withIndex()) {
+                    // Ranges too short to fade (only seen in tests) are written as they are.
+                    val fadeable = range[1] - range[0] >= 2 * fade
+                    val cutBefore = fadeable && ri > 0 && clamped[ri - 1][1] != range[0]
+                    val cutAfter = fadeable && ri < clamped.size - 1 && clamped[ri + 1][0] != range[1]
                     for (i in range[0] until range[1]) {
-                        val v = pcm16Sample(samples[i])
+                        var gain = 1f
+                        if (cutBefore) gain = minOf(gain, (i - range[0] + 1).toFloat() / fade)
+                        if (cutAfter) gain = minOf(gain, (range[1] - i).toFloat() / fade)
+                        val v = pcm16Sample(if (gain < 1f) samples[i] * gain else samples[i])
                         buf[bi++] = (v and 0xff).toByte()
                         buf[bi++] = ((v shr 8) and 0xff).toByte()
                         if (bi == buf.size) {

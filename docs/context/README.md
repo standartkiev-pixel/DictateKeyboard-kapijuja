@@ -80,6 +80,10 @@ Never generate a replacement permanent signing key merely because an old chat ca
 
 Read `DRIVER_ASSISTANT_SPEECH.md`. Spec: `docs/roadmap/KAPIJUJA_DRIVER_ASSISTANT_SPEC_2026-11-11.md`, issue #7.
 
+### Dictation audio quality / noise suppression
+
+Read `DICTATION_AUDIO_QUALITY.md` (noise level slider, audio source choice, VAD threshold, what History stores).
+
 ### UI / Smartbar / prompt panel / History
 
 Start from the concrete screen/composable involved. Do not load provider internals unless the UI bug crosses that boundary.
